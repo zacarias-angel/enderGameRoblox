@@ -27,6 +27,21 @@ local fireWeapon = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("
 
 local lastFireLocal = 0
 
+local function getAimRay()
+	-- Propósito: Construir el rayo desde la cámara pasando por la mira en
+	--            pantalla (centro + offset del HUD), para que el disparo vaya
+	--            exactamente adonde se ve la mira.
+	-- Precondiciones:
+	--   1. camera es la CurrentCamera.
+	-- Ubicación: StarterPlayerScripts/ShootingController
+	-- Retorna: (Vector3 origin, Vector3 direction unitaria)
+	local viewport = camera.ViewportSize
+	local screenX = viewport.X / 2 + weaponCfg.CROSSHAIR_OFFSET_X
+	local screenY = viewport.Y / 2 + weaponCfg.CROSSHAIR_OFFSET_Y
+	local ray = camera:ViewportPointToRay(screenX, screenY)
+	return ray.Origin, ray.Direction.Unit
+end
+
 local function getMuzzle(character)
 	-- Propósito: Obtener el Attachment "Muzzle" del blaster si existe.
 	-- Precondiciones:
@@ -140,9 +155,8 @@ local function fire()
 	end
 	lastFireLocal = now
 
-	-- Dirección desde la cámara; origen para gameplay = root (validado en server).
-	local aimOrigin = camera.CFrame.Position
-	local direction = camera.CFrame.LookVector
+	-- Dirección desde la cámara a través de la mira en pantalla.
+	local aimOrigin, direction = getAimRay()
 
 	-- Raycast desde la cámara para saber a qué se apunta.
 	local params = RaycastParams.new()

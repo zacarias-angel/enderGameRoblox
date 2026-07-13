@@ -35,6 +35,12 @@ Config.Orientation = {
 
 -- ===== Pose procedural de astronauta =====
 Config.Pose = {
+	-- Modo de animación de flotación:
+	--   "swim"       = usa la animación oficial de natación de Roblox (recomendado)
+	--   "procedural" = pose generada por código (Motor6D + ondas seno)
+	MODE = "swim",
+	SWIM_SPEED = 0.35,          -- Velocidad FIJA de las brazadas (baja = lento)
+	SWIM_SPEED_HINT = 12,       -- Velocidad simulada para el Humanoid en modo swim
 	BOB_SPEED = 1.6,            -- Velocidad del balanceo idle (rad/s)
 	ARM_SWING_DEG = 14,         -- Amplitud del balanceo de brazos (idle)
 	LEG_SWING_DEG = 10,         -- Amplitud del balanceo de piernas (idle)
@@ -57,6 +63,10 @@ Config.Weapon = {
 	MAX_RANGE = 500,            -- Alcance máximo del pulso (studs)
 	FIRE_COOLDOWN = 0.18,       -- Cadencia mínima entre disparos (s)
 	SERVER_RANGE_TOLERANCE = 1.15, -- Margen anti-desync en validación servidor
+	-- Offset de la mira en pantalla (píxeles) respecto al centro.
+	-- Debe coincidir con el usado por el HUD para que el rayo apunte a la mira.
+	CROSSHAIR_OFFSET_X = 40,    -- Positivo = a la derecha
+	CROSSHAIR_OFFSET_Y = -80,   -- Negativo = hacia arriba
 	-- VFX del láser
 	LASER_COLOR = Color3.fromRGB(90, 220, 255), -- Color neón del pulso
 	LASER_WIDTH = 0.6,          -- Grosor del beam (studs)
@@ -94,6 +104,25 @@ Config.LedColors = {
 	DAMAGED = Color3.fromRGB(255, 213, 79),  -- 🟡 Extremidad dañada
 	FROZEN = Color3.fromRGB(255, 82, 82),    -- 🔴 Congelado / eliminado
 	ICE_TINT = Color3.fromRGB(140, 210, 255) -- Tinte de extremidad congelada
+}
+
+-- ===== Agarre / Cobertura (grab & launch) =====
+Config.Grab = {
+	KEY = Enum.KeyCode.E,           -- Tecla del ProximityPrompt (mantener)
+	ATTRIBUTE = "cubrirce",         -- Atributo que marca objetos agarrables
+	HOLD_OFFSET = 3.0,              -- Distancia del centro del cuerpo a la superficie
+	ATTACH_TIME = 0.25,             -- Duración del lerp suave al pegarse (s)
+	POSE_ANIM_ID = "rbxassetid://133886935716379", -- Pose de agarre
+	POSE_FADE = 0.3,                -- Crossfade de la pose de agarre (s)
+	LAUNCH_SPEED = 90,              -- Velocidad de impulso al soltar (studs/s)
+	LAUNCH_UP_BIAS = 0.05,          -- Sesgo hacia arriba en el impulso (0..1)
+	-- ProximityPrompt
+	MAX_ACTIVATION_DISTANCE = 12,   -- Distancia a la que aparece el prompt (studs)
+	HOLD_DURATION = 0,              -- Tiempo de mantener para activar (0 = inmediato)
+	ACTION_TEXT = "Cubrirse",       -- Texto de acción del prompt
+	OBJECT_TEXT = "Cobertura",      -- Texto del objeto del prompt
+	-- Depuración
+	DEBUG = true,                   -- true = imprime logs [ZB Grab] en el Output
 }
 
 return Config

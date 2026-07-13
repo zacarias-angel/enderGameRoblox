@@ -22,6 +22,7 @@ StarterPlayer/
 ├── StarterPlayerScripts/
 │   ├── MovementController   (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/MovementController.client.lua
 │   ├── ShootingController   (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/ShootingController.client.lua
+│   ├── GrabController       (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/GrabController.client.lua
 │   └── HudController        (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HudController.client.lua
 └── StarterCharacterScripts/
     ├── ZeroGSetup           (LocalScript)    <- src/StarterPlayer/StarterCharacterScripts/ZeroGSetup.client.lua
@@ -38,7 +39,12 @@ StarterPlayer/
    `PlayerStateService` **auto-crean** `ReplicatedStorage/RemoteEvents` con
    `FireWeapon` y `StateChanged` al iniciar. Solo necesitas crear a mano las
    carpetas `Shared` y `Modules` (donde van `Config` y `FreezeMap`).
-4. Pega cada script en su lugar respetando el **nombre exacto** y el **tipo**.
+4. **Objetos agarrables (cubrirse)**: a los `Part`/`Model` de cobertura a los
+   que quieras poder aferrarte, agrégales un **Atributo** booleano llamado
+   `cubrirce` = true (pestaña Propiedades → Attributes → Add Attribute). El
+   `GrabController` crea automáticamente un **ProximityPrompt** (tecla E) en
+   cada objeto con ese atributo, así aparece el hint al acercarte.
+5. Pega cada script en su lugar respetando el **nombre exacto** y el **tipo**.
 
 ## Orden de prueba
 
@@ -50,7 +56,10 @@ StarterPlayer/
 3. Añade `FreezeMap` + los 3 servicios + `ShootingController` → dispara: verás
    el láser desde el cañón + destello + impacto, y congelación/eliminación por
    zona sobre un dummy R15.
-4. Añade `HudController` → LED, energía y mira.
+4. Añade `GrabController` + un cubo con atributo `cubrirce` → acércate y
+   **mantené E** para aferrarte (pose de agarre), mirá con la cámara y **soltá
+   E** para impulsarte hacia donde mirás.
+5. Añade `HudController` → LED, energía y mira.
 
 > Nota: las extensiones `.client.lua` / `.server.lua` son solo convención de
 > nombre para saber el contexto. En Studio, el **tipo** de instancia

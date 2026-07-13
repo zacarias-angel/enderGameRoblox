@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local energyCfg = Config.Energy
+local weaponCfg = Config.Weapon
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -44,7 +45,7 @@ ledCorner.Parent = led
 local crosshair = Instance.new("Frame")
 crosshair.Name = "Crosshair"
 crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
-crosshair.Position = UDim2.fromScale(0.5, 0.5)
+crosshair.Position = UDim2.new(0.5, weaponCfg.CROSSHAIR_OFFSET_X, 0.5, weaponCfg.CROSSHAIR_OFFSET_Y)
 crosshair.Size = UDim2.fromOffset(6, 6)
 crosshair.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 crosshair.BackgroundTransparency = 0.2

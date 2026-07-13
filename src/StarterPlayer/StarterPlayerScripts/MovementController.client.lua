@@ -154,6 +154,13 @@ local function onHeartbeat(dt)
 		return
 	end
 
+	-- Mientras se está aferrado, GrabController controla posición y orientación.
+	if player:GetAttribute("Grabbing") then
+		thrustForce.Force = Vector3.zero
+		smoothedThrust = Vector3.zero
+		return
+	end
+
 	updateOrientation(dt)
 
 	local wantsBoost = UserInputService:IsKeyDown(moveCfg.BOOST_KEY)
