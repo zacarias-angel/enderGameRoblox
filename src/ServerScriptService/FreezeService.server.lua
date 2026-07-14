@@ -109,6 +109,11 @@ local function eliminate(character)
 	if humanoid then
 		humanoid.PlatformStand = true
 	end
+
+	-- Escudo humano: marcar el cuerpo como agarrable para que los compañeros
+	-- vivos puedan aferrarse a él como cobertura móvil (GrabController crea
+	-- el ProximityPrompt en el cliente al detectar este atributo).
+	character:SetAttribute(Config.Grab.ATTRIBUTE, true)
 end
 
 function FreezeService.apply(character, hitResult)

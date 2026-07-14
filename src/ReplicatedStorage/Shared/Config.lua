@@ -121,6 +121,8 @@ Config.Grab = {
 	HOLD_DURATION = 0,              -- Tiempo de mantener para activar (0 = inmediato)
 	ACTION_TEXT = "Cubrirse",       -- Texto de acción del prompt
 	OBJECT_TEXT = "Cobertura",      -- Texto del objeto del prompt
+	SHIELD_ACTION_TEXT = "Sujetar", -- Prompt al aferrarse a un cuerpo eliminado
+	SHIELD_OBJECT_TEXT = "Escudo",  -- Texto del objeto (compañero neutralizado)
 	-- Depuración
 	DEBUG = true,                   -- true = imprime logs [ZB Grab] en el Output
 }

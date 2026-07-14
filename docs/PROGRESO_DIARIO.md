@@ -4,6 +4,44 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesión 8
+
+**Objetivo:** convertir a los cuerpos eliminados en escudos humanos (cobertura móvil).
+
+### Hecho
+- `FreezeService.eliminate`: al neutralizar a un personaje (jugador o dummy) le
+  asigna el atributo `cubrirce = true`, marcándolo como agarrable.
+- `GrabController`: nuevo watcher de personajes (`watchCharacter` /
+  `scanCharacters`) que detecta cuando un Model con Humanoid queda marcado
+  —incluso si el atributo se pone en runtime al morir— y crea **un solo**
+  ProximityPrompt en su torso (`ensureShieldPrompt`). No permite aferrarse a
+  uno mismo.
+- `Config.Grab`: textos `SHIELD_ACTION_TEXT` ("Sujetar") / `SHIELD_OBJECT_TEXT`
+  ("Escudo") para el prompt del cuerpo eliminado.
+
+### Notas
+- Reutiliza la mecánica de agarre existente: un vivo se aferra al cuerpo y lo
+  usa de cobertura. **Empujar** el cuerpo (escudo activo por delante) es una
+  mejora pendiente para una sesión futura.
+- Probado con dummy R15: congelar extremidades / eliminar por torso-cabeza ya
+  funciona; el prompt de escudo aparece sobre el cuerpo flotante.
+
+### Próxima sesión (planificado)
+- [ ] **Empujar el cuerpo (escudo activo):** que el vivo lleve el cuerpo
+  congelado por delante y pueda desplazarlo, en vez de solo aferrarse.
+  Definir si el empuje es cliente (feel) con validación de estado en servidor.
+- [ ] **Limpiar el atributo al revivir/reset:** cuando el personaje respawnee o
+  se reinicie la ronda, quitar `cubrirce` para que deje de ser agarrable.
+- [ ] **Feedback en HUD del portador:** indicar cuándo estás sujetando un
+  escudo (icono/estado).
+- [ ] **Poner `Config.Grab.DEBUG = false`** antes de cerrar el pulido.
+- [ ] Cerrar checklist MVP: verificar en Studio "reducción de empuje por piernas
+  congeladas" (`MovementController` + `LEG_*_FROZEN_MULT`).
+- [ ] Tras cerrar MVP, arrancar **Fase 2**: sistema de equipos Azul/Rojo
+  (prerequisito de Puerta de Extracción y escudos por equipo).
+
+---
+
 ## Sesión 7
 
 **Objetivo:** arreglar temblor/empuje al cubrirse y suavizar el pegado.

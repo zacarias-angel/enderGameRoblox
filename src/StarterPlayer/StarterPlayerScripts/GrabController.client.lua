@@ -255,15 +255,91 @@ local function onInputEnded(input)
 end
 
 -- Conexiones
+local function pickShieldPart(model)
+	-- Propósito: Elegir la parte donde colocar el prompt de escudo (torso).
+	-- Precondiciones:
+	--   1. model es un Model con Humanoid (R15/R6).
+	-- Ubicación: StarterPlayerScripts/GrabController
+	-- Retorna: BasePart o nil.
+	return model:FindFirstChild("UpperTorso")
+		or model:FindFirstChild("Torso")
+		or model:FindFirstChild("HumanoidRootPart")
+end
+
+local function ensureShieldPrompt(model)
+	-- Propósito: Crear un único ProximityPrompt en un cuerpo eliminado para
+	--            usarlo como escudo / cobertura móvil (sujetarse a él).
+	-- Precondiciones:
+	--   1. model es un Model con Humanoid y el atributo de agarre en true.
+	-- Ubicación: StarterPlayerScripts/GrabController
+	-- Retorna: nil
+	if model == player.Character then return end  -- no aferrarse a uno mismo
+	local part = pickShieldPart(model)
+	if not part or part:FindFirstChild(PROMPT_NAME) then return end
+
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = PROMPT_NAME
+	prompt.ActionText = grabCfg.SHIELD_ACTION_TEXT
+	prompt.ObjectText = grabCfg.SHIELD_OBJECT_TEXT
+	prompt.KeyboardKeyCode = grabCfg.KEY
+	prompt.HoldDuration = grabCfg.HOLD_DURATION
+	prompt.MaxActivationDistance = grabCfg.MAX_ACTIVATION_DISTANCE
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = part
+
+	prompt.Triggered:Connect(function()
+		log("Prompt de escudo activado en", model.Name)
+		startGrab(part)
+	end)
+	prompt.PromptButtonHoldEnded:Connect(function()
+		releaseGrab()
+	end)
+	log("Prompt de escudo creado en", model.Name)
+end
+
+local function watchCharacter(model)
+	-- Propósito: Vigilar un Model con Humanoid; cuando quede marcado como
+	--            agarrable (eliminado), crear su prompt de escudo. Cubre el
+	--            caso de que el atributo se ponga en runtime al morir.
+	-- Precondiciones:
+	--   1. model existe y (idealmente) tiene un Humanoid.
+	-- Ubicación: StarterPlayerScripts/GrabController
+	-- Retorna: nil
+	if not model or not model:FindFirstChildOfClass("Humanoid") then return end
+	if model:GetAttribute(grabCfg.ATTRIBUTE) then
+		ensureShieldPrompt(model)
+	end
+	model:GetAttributeChangedSignal(grabCfg.ATTRIBUTE):Connect(function()
+		if model:GetAttribute(grabCfg.ATTRIBUTE) then
+			ensureShieldPrompt(model)
+		end
+	end)
+end
+
+local function scanCharacters()
+	-- Propósito: Vigilar todos los personajes (con Humanoid) ya presentes.
+	-- Precondiciones: ninguna.
+	-- Ubicación: StarterPlayerScripts/GrabController
+	-- Retorna: nil
+	for _, inst in ipairs(workspace:GetDescendants()) do
+		if inst:IsA("Humanoid") and inst.Parent then
+			watchCharacter(inst.Parent)
+		end
+	end
+end
+
 if player.Character then
 	bindCharacter(player.Character)
 end
 player.CharacterAdded:Connect(bindCharacter)
 
 scanGrabbables()
+scanCharacters()
 workspace.DescendantAdded:Connect(function(inst)
 	if isGrabbable(inst) then
 		ensurePrompt(inst)
+	elseif inst:IsA("Humanoid") then
+		watchCharacter(inst.Parent)
 	end
 end)
 
