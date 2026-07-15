@@ -38,7 +38,12 @@ Roadmap por fases. El MVP es el núcleo jugable; el resto se construye encima.
 
 ## Fase 2 — Equipos y objetivo
 - [ ] Sistema de equipos Azul/Rojo + spawns por equipo.
-- [ ] Escudos humanos (empujar cuerpos congelados).
+- [ ] Escudos humanos: anclaje a la espalda del torso (sin cancelar giro);
+      carry completo en evaluación (ver Sesión 9 en `PROGRESO_DIARIO.md`).
+- [ ] Mira ADS: mantener click derecho (FOV + mira + sensibilidad).
+- [ ] Lobby con gravedad normal + modo batalla/duelo en 0g.
+- [ ] Interruptor caótico del lobby: `Workspace.Gravity = 0` global
+      (no afecta al modo batalla, que ya está en 0g).
 - [ ] Puerta de Extracción: 4 sensores + captura 3–5 s (`CaptureService`).
 - [ ] UI de progreso de captura + marcador.
 - [ ] Condición de victoria 1 (aniquilación) y 2 (puerta).

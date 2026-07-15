@@ -4,6 +4,57 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesión 9
+
+**Objetivo:** sesión de diseño (sin código). Evaluar "empujar el cuerpo",
+mira ADS y gravedad 0 por modos.
+
+### Decisiones
+
+**Escudo humano (agarre de cuerpos):**
+- **NO cancelar el giro** del cuerpo al agarrarlo: que siga girando es parte
+  del feel/caos de 0g. Si resulta divertido, se queda (regla del proyecto).
+- **SÍ anclaje fijo a la espalda del torso**: al agarrar un cuerpo eliminado,
+  el punto de sujeción deja de ser "superficie más cercana"
+  (`computeHoldCFrame`) y pasa a ser siempre la **espalda del torso**, para
+  que el cuerpo quede entre el portador y el frente (cobertura real).
+- **Carry completo (diseño A, llevar el cuerpo por delante):** queda en
+  evaluación. Riesgos identificados: network ownership del cuerpo, colisiones
+  con el mapa (collision groups), lock de portador en servidor (robo de
+  cuerpo), soltar con inercia si eliminan al portador, validación
+  anti-exploit de mover Models ajenos. Primero se prueba el anclaje a la
+  espalda; si con eso ya es divertido, quizá el carry no haga falta.
+
+**Mira / ADS:**
+- Apuntar = **mantener click derecho**: zoom de FOV (lerp), mira en pantalla,
+  sensibilidad reducida.
+- Pendiente de definir: hipfire con dispersión vs. solo disparo en ADS;
+  subir `Responsiveness` de orientación durante ADS; conflicto con la
+  rotación de cámara default de Roblox (click derecho).
+
+**Gravedad 0 por modos (no por zonas):**
+- La gravedad 0 es del **modo batalla / modo duelo** (la arena). El lobby
+  tiene gravedad normal.
+- **Interruptor del lobby (opción B — global):** un switch en el lobby pone
+  `Workspace.Gravity = 0` **para todos** como evento caótico/divertido. No
+  afecta al modo batalla porque ese modo **ya está en 0g**.
+- Nota técnica abierta: `Workspace.Gravity` es global; hay que definir cómo
+  convive el lobby con gravedad normal y la arena en 0g (modo 0g por
+  personaje al entrar a la arena vs. places separados). Se decide cuando se
+  implemente el ciclo de modos.
+
+### Próxima sesión (planificado)
+- [ ] Implementar **anclaje a la espalda del torso** en `GrabController`
+  (cuerpos-escudo; sin cancelar el giro).
+- [ ] Prototipo de **ADS con click derecho** (FOV + mira + sensibilidad).
+- [ ] Definir estructura lobby / modo batalla para la gravedad por modos +
+  interruptor caótico del lobby.
+- [ ] Pendientes que siguen de Sesión 8: limpiar `cubrirce` al
+  revivir/reset, feedback en HUD del portador, `Config.Grab.DEBUG = false`,
+  verificar reducción de empuje por piernas congeladas.
+
+---
+
 ## Sesión 8
 
 **Objetivo:** convertir a los cuerpos eliminados en escudos humanos (cobertura móvil).
