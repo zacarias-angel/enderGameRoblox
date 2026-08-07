@@ -183,6 +183,14 @@ local function fire()
 		serverDir = direction
 	end
 	fireWeapon:FireServer(rootPart.Position, serverDir)
+
+	-- Retroceso (recoil): el disparo nos empuja hacia atrás en 0g.
+	-- Solo se aplica si existe el VectorForce (modo batalla/duelo).
+	local thrust = rootPart:FindFirstChild("ZB_ThrustForce")
+	if thrust and thrust:IsA("VectorForce") then
+		local recoil = -direction * weaponCfg.RECOIL_FORCE
+		thrust.Force = thrust.Force + recoil
+	end
 end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)

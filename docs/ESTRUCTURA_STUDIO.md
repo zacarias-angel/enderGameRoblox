@@ -31,7 +31,8 @@ StarterPlayer/
 │   ├── GrabController       (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/GrabController.client.lua
 │   ├── HudController        (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HudController.client.lua
 │   ├── GravityController    (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/GravityController.client.lua
-│   └── PortalController     (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/PortalController.client.lua
+│   ├── PortalController     (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/PortalController.client.lua
+│   └── HookController       (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HookController.client.lua
 └── StarterCharacterScripts/
     ├── ZeroGSetup           (LocalScript)    <- src/StarterPlayer/StarterCharacterScripts/ZeroGSetup.client.lua
     ├── AstronautPose        (LocalScript)    <- src/StarterPlayer/StarterCharacterScripts/AstronautPose.client.lua

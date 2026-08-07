@@ -78,15 +78,19 @@ Además existe un **Boost** que consume energía.
 - Movimiento basado en **empuje con inercia** (VectorForce), no velocidad fija.
 - Al soltar los controles el jugador **sigue derivando**.
 - Clamp de velocidad máxima + drag suave para mantener control.
+- **En modo batalla el WASD está reducido al 4%**. El movimiento real se logra
+  con el gancho (Q), el retroceso del disparo y el agarre/impulso (E).
 
 ### Controles (MVP, teclado)
 | Acción | Tecla |
 |--------|-------|
-| Adelante / Atrás / Izq / Der | W A S D |
-| Subir | Espacio |
-| Bajar | Ctrl |
+| Deriva mínima | W A S D (4% en batalla) |
+| Subir / Bajar (deriva) | Espacio / Ctrl |
 | Boost | Shift |
+| **Gancho** (agarrarse a superficies) | **Q** (mantener) |
+| **Agarre / Impulso** (coberturas) | **E** (mantener, soltar impulsa) |
 | Disparar | Click izquierdo |
+| Portal (unirse a partida) | F |
 
 ---
 

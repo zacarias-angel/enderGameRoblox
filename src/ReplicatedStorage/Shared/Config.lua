@@ -23,6 +23,8 @@ Config.Movement = {
 	-- Reducción de empuje por piernas congeladas
 	LEG_ONE_FROZEN_MULT = 0.55, -- Una pierna congelada
 	LEG_TWO_FROZEN_MULT = 0.15, -- Dos piernas congeladas (arrastre lento)
+	-- En modo batalla el WASD es casi imperceptible (el movimiento real es con gancho y recoil)
+	BATTLE_THRUST_MULT = 0.008, -- Solo 0.8% del empuje normal con WASD en batalla
 }
 
 -- ===== Orientación / Inclinación del cuerpo =====
@@ -72,6 +74,20 @@ Config.Weapon = {
 	LASER_WIDTH = 0.6,          -- Grosor del beam (studs)
 	LASER_LIFETIME = 0.25,      -- Duración del beam con fade (s)
 	MUZZLE_FLASH_TIME = 0.08,   -- Duración del destello de disparo (s)
+	RECOIL_FORCE = 600,         -- Fuerza de retroceso al disparar (empuja fuerte hacia atrás)
+}
+
+-- ===== Gancho (grappling hook) =====
+Config.Hook = {
+	KEY = Enum.KeyCode.Q,               -- Tecla para lanzar/retraer el gancho
+	MAX_RANGE = 250,                    -- Alcance máximo del gancho (studs)
+	PULL_FORCE = 4200,                  -- Fuerza con la que tira hacia el punto de anclaje
+	MAX_PULL_SPEED = 95,                -- Velocidad máxima al ser tirado por el gancho
+	COOLDOWN = 0.5,                     -- Tiempo mínimo entre lanzamientos (s)
+	CABLE_COLOR = Color3.fromRGB(90, 220, 255),  -- Color del cable
+	CABLE_WIDTH = 0.15,                 -- Grosor del cable visual (studs)
+	BREAK_DISTANCE = 2.5,               -- Distancia al anclaje a la que se suelta automáticamente
+	DRIFT_RETENTION = 0.88,             -- Cuánta inercia se conserva al soltar (0..1)
 }
 
 -- ===== Estados de extremidad =====

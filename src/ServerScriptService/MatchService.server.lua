@@ -60,6 +60,7 @@ end
 
 local joinRequest = ensureRemote("JoinMatchRequest")
 local matchStateChanged = ensureRemote("MatchStateChanged")
+local modeChanged = ensureRemote("GameModeChanged")
 
 -- ===== Estado global =====
 local currentState = matchCfg.STATE_LOBBY
@@ -395,6 +396,10 @@ function MatchService.requestJoin(player)
 	if currentState == matchCfg.STATE_COUNTDOWN then
 		table.insert(queue, player)
 		assignTeam(player)
+
+		-- Notificar a este jugador que está en modo BATTLE (ya empezó).
+		modeChanged:FireClient(player, modeCfg.BATTLE, modeCfg.LOBBY)
+
 		broadcastState()
 		return true
 	end
@@ -403,6 +408,11 @@ function MatchService.requestJoin(player)
 	if currentState == matchCfg.STATE_ACTIVE then
 		assignTeam(player)
 		teleportToArena(player)
+
+		-- Notificar al cliente que está en modo BATTLE para que active
+		-- físicas 0g, pose de nado, etc. (GameModeChanged global ya pasó).
+		modeChanged:FireClient(player, modeCfg.BATTLE, modeCfg.LOBBY)
+
 		broadcastState()
 		return true
 	end

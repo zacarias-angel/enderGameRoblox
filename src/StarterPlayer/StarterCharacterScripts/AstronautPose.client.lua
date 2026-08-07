@@ -10,8 +10,9 @@
 	                  (swim + swimidle) con crossfade según la velocidad.
 	  "procedural" -> pose generada por código animando los Motor6D (C0) con
 	                  ondas seno.
-	En ambos casos desactiva el script Animate por defecto para evitar que las
-	animaciones de caminar/idle peleen con la flotación. Es visual/local.
+	Solo se activa en BATTLE o DUEL. En LOBBY, el personaje usa las
+	animaciones por defecto (caminar, correr, idle).
+	Escucha GameModeChanged para activar/desactivar en caliente.
 ]]
 
 local Players = game:GetService("Players")
@@ -21,6 +22,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local poseCfg = Config.Pose
 local moveCfg = Config.Movement
+local modeCfg = Config.GameMode
 
 -- IDs de las animaciones oficiales R15 de natación de Roblox.
 local SWIM_ANIM_ID = "rbxassetid://913384386"
@@ -29,6 +31,7 @@ local player = Players.LocalPlayer
 local character = script.Parent
 
 local rootPart
+local humanoid
 
 -- Estado modo procedural
 local joints = {}          -- [name] = { motor = Motor6D, base = CFrame }
@@ -39,6 +42,16 @@ local JOINT_NAMES = {
 
 -- Estado modo swim
 local swimTrack
+local zeroGActive = false  -- true si estamos en modo 0g (BATTLE/DUEL)
+
+local function shouldActivate()
+	-- Propósito: Saber si el modo actual es 0g.
+	-- Precondiciones: ninguna.
+	-- Ubicación: StarterCharacterScripts/AstronautPose
+	-- Retorna: boolean
+	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
+	return mode == modeCfg.BATTLE or mode == modeCfg.DUEL
+end
 
 local function isOwnTrack(track)
 	-- Propósito: Saber si una pista es de nuestras animaciones de flotación.
@@ -62,12 +75,11 @@ local function isAllowedForeignTrack(track)
 	return false
 end
 
-local function stopDefaultAnimations(humanoid)
-	-- Propósito: Desactivar el script Animate por defecto y matar cualquier
-	--            pista ajena (caminar/idle) que intente reproducirse, incluso
-	--            si Animate se inserta tarde.
+local function stopDefaultAnimations()
+	-- Propósito: Desactivar el script Animate por defecto para que las
+	--            animaciones de caminar no peleen con la flotación.
 	-- Precondiciones:
-	--   1. humanoid es el Humanoid del personaje local.
+	--   1. character y humanoid válidos.
 	-- Ubicación: StarterCharacterScripts/AstronautPose
 	-- Retorna: nil
 	local animate = character:WaitForChild("Animate", 5)
@@ -92,6 +104,37 @@ local function stopDefaultAnimations(humanoid)
 	end)
 end
 
+local function enableNormalAnimations()
+	-- Propósito: Reactivar el script Animate para caminar/idle en LOBBY.
+	-- Precondiciones:
+	--   1. character válido.
+	-- Ubicación: StarterCharacterScripts/AstronautPose
+	-- Retorna: nil
+	local animate = character:FindFirstChild("Animate")
+	if animate then
+		animate.Disabled = false
+	end
+	-- Humanoid a estado Running para que Animate tome el control.
+	if humanoid then
+		humanoid:ChangeState(Enum.HumanoidStateType.Running)
+	end
+end
+
+local function deactivateZeroG()
+	-- Propósito: Desactivar el modo 0g: parar natación, restaurar Animate.
+	-- Precondiciones: ninguna.
+	-- Ubicación: StarterCharacterScripts/AstronautPose
+	-- Retorna: nil
+	if not zeroGActive then return end
+	zeroGActive = false
+
+	if swimTrack then
+		swimTrack:Stop(0.3)
+	end
+
+	enableNormalAnimations()
+end
+
 local function computeSpeedRatio()
 	-- Propósito: Ratio 0..1 de la velocidad actual respecto a la máxima.
 	-- Precondiciones:
@@ -104,13 +147,14 @@ end
 
 -- ===== Modo SWIM =====
 
-local function setupSwim(humanoid)
+local function setupSwim()
 	-- Propósito: Cargar y arrancar la animación de natación en bucle, a
 	--            velocidad fija y lenta, tanto en reposo como en movimiento.
 	-- Precondiciones:
 	--   1. humanoid es el Humanoid del personaje local.
 	-- Ubicación: StarterCharacterScripts/AstronautPose
 	-- Retorna: nil
+	if not humanoid then return end
 	local animator = humanoid:FindFirstChildOfClass("Animator")
 	if not animator then
 		animator = Instance.new("Animator")
@@ -127,6 +171,45 @@ local function setupSwim(humanoid)
 	swimTrack:Play(0.3)
 	swimTrack:AdjustWeight(1, 0.3)
 	swimTrack:AdjustSpeed(poseCfg.SWIM_SPEED)
+end
+
+-- ===== Modo PROCEDURAL =====
+
+local function cacheJoints()
+	-- Propósito: Localizar los Motor6D relevantes y guardar su C0 base.
+	-- Precondiciones:
+	--   1. character contiene un rig R15 con Motor6D estándar.
+	-- Ubicación: StarterCharacterScripts/AstronautPose
+	-- Retorna: nil
+	for _, motor in ipairs(character:GetDescendants()) do
+		if motor:IsA("Motor6D") then
+			for _, name in ipairs(JOINT_NAMES) do
+				if motor.Name == name then
+					joints[name] = { motor = motor, base = motor.C0 }
+					currentOffsets[name] = CFrame.new()
+				end
+			end
+		end
+	end
+end
+
+local function activateZeroG()
+	-- Propósito: Activar el modo 0g: desactivar Animate, iniciar natación.
+	-- Precondiciones: ninguna.
+	-- Ubicación: StarterCharacterScripts/AstronautPose
+	-- Retorna: nil
+	if zeroGActive then return end
+	zeroGActive = true
+
+	if not humanoid then return end
+
+	stopDefaultAnimations()
+
+	if poseCfg.MODE == "swim" then
+		setupSwim()
+	else
+		cacheJoints()
+	end
 end
 
 local function updateSwim(dt)
@@ -150,26 +233,6 @@ local function updateSwim(dt)
 	end
 	swimTrack:AdjustWeight(1, 0.1)
 	swimTrack:AdjustSpeed(poseCfg.SWIM_SPEED)
-end
-
--- ===== Modo PROCEDURAL =====
-
-local function cacheJoints()
-	-- Propósito: Localizar los Motor6D relevantes y guardar su C0 base.
-	-- Precondiciones:
-	--   1. character contiene un rig R15 con Motor6D estándar.
-	-- Ubicación: StarterCharacterScripts/AstronautPose
-	-- Retorna: nil
-	for _, motor in ipairs(character:GetDescendants()) do
-		if motor:IsA("Motor6D") then
-			for _, name in ipairs(JOINT_NAMES) do
-				if motor.Name == name then
-					joints[name] = { motor = motor, base = motor.C0 }
-					currentOffsets[name] = CFrame.new()
-				end
-			end
-		end
-	end
 end
 
 local function targetOffsets(t, speedRatio)
@@ -221,9 +284,12 @@ end
 
 local function onRenderStepped(dt)
 	-- Propósito: Actualizar la animación de flotación según el modo activo.
+	--            Solo ejecuta si estamos en modo 0g (BATTLE/DUEL).
 	-- Precondiciones: ninguna.
 	-- Ubicación: StarterCharacterScripts/AstronautPose
 	-- Retorna: nil
+	if not zeroGActive then return end
+
 	if poseCfg.MODE == "swim" then
 		updateSwim(dt)
 	else
@@ -232,23 +298,32 @@ local function onRenderStepped(dt)
 end
 
 local function setup()
-	-- Propósito: Inicializar el modo de flotación al aparecer el personaje.
+	-- Propósito: Inicializar según el modo actual al aparecer el personaje.
+	--            En LOBBY: el personaje usa animaciones normales.
+	--            En BATTLE/DUEL: activa la pose de flotación.
 	-- Precondiciones:
 	--   1. character es el modelo del personaje local.
 	-- Ubicación: StarterCharacterScripts/AstronautPose
 	-- Retorna: nil
-	local humanoid = character:WaitForChild("Humanoid")
+	humanoid = character:WaitForChild("Humanoid")
 	rootPart = character:WaitForChild("HumanoidRootPart")
 	character:WaitForChild("UpperTorso", 5)
 	task.wait(0.1)
-	stopDefaultAnimations(humanoid)
 
-	if poseCfg.MODE == "swim" then
-		setupSwim(humanoid)
-	else
-		cacheJoints()
+	if shouldActivate() then
+		activateZeroG()
 	end
 end
+
+-- Escuchar cambios de modo para activar/desactivar la pose en caliente.
+local modeChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameModeChanged")
+modeChanged.OnClientEvent:Connect(function(mode)
+	if mode == modeCfg.BATTLE or mode == modeCfg.DUEL then
+		activateZeroG()
+	else
+		deactivateZeroG()
+	end
+end)
 
 setup()
 RunService.RenderStepped:Connect(onRenderStepped)

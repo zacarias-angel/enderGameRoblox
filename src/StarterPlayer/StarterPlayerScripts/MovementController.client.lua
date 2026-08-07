@@ -198,6 +198,18 @@ local function onHeartbeat(dt)
 		return
 	end
 
+	-- Si el gancho está activo, HookController controla el empuje.
+	-- Solo aplicamos drag y orientación; el WASD no empuja.
+	if player:GetAttribute("Hooking") then
+		updateOrientation(dt)
+		local velocity = rootPart.AssemblyLinearVelocity
+		local mass = rootPart.AssemblyMass
+		local drag = -velocity * moveCfg.DRAG * mass
+		thrustForce.Force = drag
+		smoothedThrust = Vector3.zero
+		return
+	end
+
 	updateOrientation(dt)
 
 	local wantsBoost = UserInputService:IsKeyDown(moveCfg.BOOST_KEY)
@@ -206,8 +218,9 @@ local function onHeartbeat(dt)
 	local direction = getInputVector()
 	local velocity = rootPart.AssemblyLinearVelocity
 
-	-- Empuje objetivo
-	local thrustMag = moveCfg.THRUST_FORCE * legMultiplier()
+	-- Empuje objetivo (reducido drásticamente en modo batalla).
+	local battleMult = zeroGActive and moveCfg.BATTLE_THRUST_MULT or 1
+	local thrustMag = moveCfg.THRUST_FORCE * legMultiplier() * battleMult
 	if boosting then
 		thrustMag *= moveCfg.BOOST_MULTIPLIER
 	end
