@@ -21,6 +21,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local moveCfg = Config.Movement
 local energyCfg = Config.Energy
 local orientCfg = Config.Orientation
+local modeCfg = Config.GameMode
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
@@ -30,12 +31,28 @@ local character, humanoid, rootPart, thrustForce, alignOrient
 local frozenLegs = { left = false, right = false }
 local eliminated = false
 local smoothedThrust = Vector3.zero
+local zeroGActive = false
 
 -- Energía compartida con el HUD vía atributo del jugador
 player:SetAttribute("BoostEnergy", energyCfg.MAX)
+player:SetAttribute("GameMode", modeCfg.LOBBY)
+
+local function cachePhysics()
+	-- Propósito: Intentar obtener las referencias de física (ZB_ThrustForce,
+	--            ZB_AlignOrientation) si ya existen en el rootPart.
+	--            En LOBBY no existen aún; se capturan al cambiar a BATTLE/DUEL.
+	-- Precondiciones:
+	--   1. rootPart es válido.
+	-- Ubicación: StarterPlayerScripts/MovementController
+	-- Retorna: nil
+	if not rootPart then return end
+	thrustForce = rootPart:FindFirstChild("ZB_ThrustForce")
+	alignOrient = rootPart:FindFirstChild("ZB_AlignOrientation")
+end
 
 local function bindCharacter(char)
-	-- Propósito: Cachear referencias del personaje y su VectorForce.
+	-- Propósito: Cachear referencias del personaje. No espera por ZB_ThrustForce
+	--            porque en LOBBY no existe; se captura al cambiar de modo.
 	-- Precondiciones:
 	--   1. char es el modelo del personaje local.
 	-- Ubicación: StarterPlayerScripts/MovementController
@@ -43,8 +60,17 @@ local function bindCharacter(char)
 	character = char
 	humanoid = char:WaitForChild("Humanoid")
 	rootPart = char:WaitForChild("HumanoidRootPart")
-	thrustForce = rootPart:WaitForChild("ZB_ThrustForce")
-	alignOrient = rootPart:WaitForChild("ZB_AlignOrientation")
+	cachePhysics()
+
+	-- Escuchar cuando ZeroGSetup cree las físicas (al cambiar a BATTLE/DUEL).
+	rootPart.ChildAdded:Connect(function(child)
+		if child.Name == "ZB_ThrustForce" then
+			thrustForce = child
+		elseif child.Name == "ZB_AlignOrientation" then
+			alignOrient = child
+		end
+	end)
+
 	frozenLegs.left = false
 	frozenLegs.right = false
 	eliminated = false
@@ -140,11 +166,22 @@ end
 
 local function onHeartbeat(dt)
 	-- Propósito: Aplicar empuje con inercia, drag y clamp de velocidad.
+	--            Solo actúa si el modo actual es 0g (BATTLE/DUEL).
+	--            En LOBBY, el personaje camina normalmente.
 	-- Precondiciones:
 	--   1. Personaje y VectorForce válidos.
 	-- Ubicación: StarterPlayerScripts/MovementController
 	-- Retorna: nil
 	if not rootPart or not thrustForce or not thrustForce.Parent then
+		return
+	end
+
+	local currentMode = player:GetAttribute("GameMode") or modeCfg.LOBBY
+	zeroGActive = (currentMode == modeCfg.BATTLE or currentMode == modeCfg.DUEL)
+
+	if not zeroGActive then
+		thrustForce.Force = Vector3.zero
+		smoothedThrust = Vector3.zero
 		return
 	end
 

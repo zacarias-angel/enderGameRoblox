@@ -44,15 +44,15 @@ local fireWeapon = ensureRemote("FireWeapon")
 local lastFire = {}
 
 local function getServices()
-	-- Propósito: Obtener PlayerState y FreezeService (esperando si aún no cargan).
+	-- Propósito: Obtener PlayerState, FreezeService y RankService.
 	-- Precondiciones: ninguna.
 	-- Ubicación: ServerScriptService/ShootingService
-	-- Retorna: (PlayerState, FreezeService) o (nil, nil)
+	-- Retorna: (PlayerState, FreezeService, RankService) o (nil, nil, nil)
 	local zb = _G.ZB
 	if zb then
-		return zb.PlayerState, zb.FreezeService
+		return zb.PlayerState, zb.FreezeService, zb.RankService
 	end
-	return nil, nil
+	return nil, nil, nil
 end
 
 local function characterFromPart(part)
@@ -108,7 +108,7 @@ local function onFire(shooter, origin, direction)
 	--   2. origin/direction llegan del cliente y NO son de confianza.
 	-- Ubicación: ServerScriptService/ShootingService
 	-- Retorna: nil
-	local PlayerState, FreezeService = getServices()
+	local PlayerState, FreezeService, RankService = getServices()
 	if not PlayerState or not FreezeService then return end
 
 	-- Validación de tipos (input no confiable).
@@ -120,6 +120,12 @@ local function onFire(shooter, origin, direction)
 
 	-- El tirador debe estar vivo.
 	if not PlayerState.isAlive(shooter) then return end
+
+	-- Solo se puede disparar durante una partida activa (batalla/duelo).
+	-- En LOBBY no se permite disparar.
+	if _G.ZB and _G.ZB.GameMode and not _G.ZB.GameMode.isZeroG() then
+		return
+	end
 
 	-- Cadencia.
 	local now = os.clock()
@@ -144,7 +150,16 @@ local function onFire(shooter, origin, direction)
 	-- No permitir autolesión.
 	if targetChar == shooter.Character then return end
 
-	FreezeService.apply(targetChar, hitResult)
+	local applied = FreezeService.apply(targetChar, hitResult)
+
+	-- Sumar puntos al ranking si se aplicó el efecto y hay RankService.
+	if applied and RankService then
+		if hitResult == Config.HitResult.ELIMINATE then
+			RankService.addScore(shooter, "elimination")
+		else
+			RankService.addScore(shooter, "limbFreeze")
+		end
+	end
 end
 
 fireWeapon.OnServerEvent:Connect(onFire)

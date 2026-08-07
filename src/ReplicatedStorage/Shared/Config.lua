@@ -106,6 +106,77 @@ Config.LedColors = {
 	ICE_TINT = Color3.fromRGB(140, 210, 255) -- Tinte de extremidad congelada
 }
 
+-- ===== Modos de juego / Gravedad =====
+Config.GameMode = {
+	NORMAL_GRAVITY = 196.2,         -- Gravedad de Roblox por defecto
+	ZERO_GRAVITY = 0,               -- Gravedad de la arena (batalla/duelo)
+	LOBBY = "LOBBY",                -- Lobby con gravedad normal (correr, caminar)
+	BATTLE = "BATTLE",              -- Modo batalla por equipos (0g)
+	DUEL = "DUEL",                  -- Modo duelo 1v1 (0g)
+	DEFAULT = "LOBBY",              -- Modo por defecto al iniciar el servidor
+	MODE_CHANGE_FADE = 1.5,         -- Tiempo de transición entre modos (s)
+	-- Para activar/desactivar desde consola o admin:
+	-- _G.ZB.GameMode:setMode(Config.GameMode.BATTLE)
+	-- _G.ZB.GameMode:setMode(Config.GameMode.LOBBY)
+}
+
+-- ===== Partida / Portal / Equipos =====
+Config.Match = {
+	JOIN_WINDOW = 60,               -- Tiempo desde inicio de partida para poder entrar (s)
+	MATCH_DURATION = 300,           -- Duración máxima de partida (s)
+	COUNTDOWN = 10,                 -- Cuenta regresiva antes de iniciar partida (s)
+	RESET_TIME = 8,                 -- Tiempo entre partidas para volver al lobby (s)
+	MIN_PLAYERS_TO_START = 1,       -- Mínimo de jugadores para arrancar (1 = debug)
+	-- Estados de la partida (interno del servidor)
+	STATE_LOBBY = "LOBBY",          -- No hay partida, aceptando jugadores
+	STATE_COUNTDOWN = "COUNTDOWN",  -- Cuenta regresiva antes de empezar
+	STATE_ACTIVE = "ACTIVE",        -- Partida en curso, ventana de entrada abierta
+	STATE_LOCKED = "LOCKED",        -- Partida en curso, ventana de entrada cerrada
+	STATE_ENDING = "ENDING",        -- Partida terminando (resultado)
+	STATE_RESET = "RESET",          -- Volviendo al lobby
+	-- Equipos
+	TEAM_AZUL = "Azul",
+	TEAM_ROJO = "Rojo",
+	-- Colores de portal según estado
+	PORTAL_OPEN = Color3.fromRGB(85, 255, 127),     -- Verde: abierto
+	PORTAL_HURRY = Color3.fromRGB(255, 213, 79),    -- Amarillo: partida empezó, apurate
+	PORTAL_CLOSED = Color3.fromRGB(255, 82, 82),    -- Rojo: cerrado
+	PORTAL_IDLE = Color3.fromRGB(100, 100, 120),    -- Gris: esperando jugadores
+	-- Spawns (los busca en Workspace > Arena > SpawnAzul / SpawnRojo)
+	-- Si no existen, usa offsets desde el portal.
+	SPAWN_AZUL_NAME = "SpawnAzul",
+	SPAWN_ROJO_NAME = "SpawnRojo",
+	ARENA_SPAWN_BLUE_OFFSET = Vector3.new(-30, 0, 0),
+	ARENA_SPAWN_RED_OFFSET = Vector3.new(30, 0, 0),
+}
+
+Config.Portal = {
+	ATTRIBUTE = "isPortal",         -- Atributo que marca el portal en el workspace
+	PROMPT_ACTION = "Entrar a la arena",
+	PROMPT_OBJECT = "Portal de Batalla",
+	KEY = Enum.KeyCode.F,           -- Tecla para activar el portal
+	MAX_DISTANCE = 15,              -- Distancia para mostrar el prompt
+	-- Labels según estado
+	TEXT_OPEN = "Unirse a la partida",
+	TEXT_HURRY = "Partida en curso - Unirse",
+	TEXT_CLOSED = "Partida cerrada",
+	TEXT_WAITING = "Esperando jugadores...",
+}
+
+-- ===== Ranking / Placas =====
+Config.Rank = {
+	UPDATE_INTERVAL = 3,            -- Cada cuántos segundos se actualizan las placas (s)
+	MAX_PLACES = 3,                 -- Número de placas (1º, 2º, 3º)
+	-- Nombres de las placas en workspace/placas/
+	PLACA_NAMES = { "Placa1", "Placa2", "Placa3" },
+	-- Los puntos se ganan así:
+	POINTS_PER_ELIMINATION = 10,    -- Por eliminar a un enemigo
+	POINTS_PER_LIMB_FREEZE = 3,     -- Por congelar una extremidad
+	-- Las placas se encuentran en Workspace > placas > Placa1 / Placa2 / Placa3
+	-- Cada placa debe ser un Part con un SurfaceGui (Face = Front) que tenga
+	-- un TextLabel llamado "RankLabel". El servicio actualiza el texto.
+}
+
 -- ===== Agarre / Cobertura (grab & launch) =====
 Config.Grab = {
 	KEY = Enum.KeyCode.E,           -- Tecla del ProximityPrompt (mantener)
