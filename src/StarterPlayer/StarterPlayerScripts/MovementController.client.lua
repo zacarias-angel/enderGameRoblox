@@ -199,13 +199,9 @@ local function onHeartbeat(dt)
 	end
 
 	-- Si el gancho está activo, HookController controla el empuje.
-	-- Solo aplicamos drag y orientación; el WASD no empuja.
+	-- No tocamos thrustForce para no pisar la fuerza del gancho.
 	if player:GetAttribute("Hooking") then
 		updateOrientation(dt)
-		local velocity = rootPart.AssemblyLinearVelocity
-		local mass = rootPart.AssemblyMass
-		local drag = -velocity * moveCfg.DRAG * mass
-		thrustForce.Force = drag
 		smoothedThrust = Vector3.zero
 		return
 	end

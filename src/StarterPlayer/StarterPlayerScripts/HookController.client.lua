@@ -43,7 +43,7 @@ player:SetAttribute("Hooking", false)
 -- ===== Funciones de setup =====
 
 local function destroyRope()
-	-- Propósito: Eliminar la cuerda visual si existe.
+	-- Propósito: Eliminar la cuerda visual y proyectil si existen.
 	-- Precondiciones: ninguna.
 	-- Ubicación: StarterPlayerScripts/HookController
 	-- Retorna: nil
@@ -55,10 +55,14 @@ local function destroyRope()
 		ropeAttach1:Destroy()
 		ropeAttach1 = nil
 	end
+	if hookProjectile then
+		hookProjectile:Destroy()
+		hookProjectile = nil
+	end
 end
 
 local function createRope(fromPos, toPos)
-	-- Propósito: Crear la cuerda elástica visual (Beam) entre jugador y anclaje.
+	-- Propósito: Crear la cuerda elástica (Beam) entre jugador y anclaje.
 	-- Precondiciones:
 	--   1. rootPart tiene ZB_HookAttach.
 	--   2. fromPos y toPos son Vector3.
@@ -76,22 +80,64 @@ local function createRope(fromPos, toPos)
 
 	ropeAttach1 = Instance.new("Attachment")
 	ropeAttach1.Name = "ZB_HookTarget"
-	ropeAttach1.Anchored = true
 	ropeAttach1.WorldPosition = toPos
-	ropeAttach1.Parent = workspace.Terrain
+	ropeAttach1.Parent = workspace
 
 	ropeBeam = Instance.new("Beam")
 	ropeBeam.Name = "ZB_HookRope"
 	ropeBeam.Attachment0 = ropeAttach0
 	ropeBeam.Attachment1 = ropeAttach1
 	ropeBeam.Color = ColorSequence.new(hookCfg.CABLE_COLOR)
-	ropeBeam.Width0 = hookCfg.CABLE_WIDTH * 2
-	ropeBeam.Width1 = hookCfg.CABLE_WIDTH
-	ropeBeam.Transparency = NumberSequence.new(0.25)
-	ropeBeam.Texture = "rbxassetid://26622840"  -- textura de línea suave
-	ropeBeam.TextureMode = Enum.TextureMode.Wrap
-	ropeBeam.TextureLength = 3
-	ropeBeam.Parent = workspace.Terrain
+	ropeBeam.Width0 = 0.35
+	ropeBeam.Width1 = 0.22
+	ropeBeam.Transparency = NumberSequence.new(0.1)
+	ropeBeam.Texture = ""
+	ropeBeam.TextureMode = Enum.TextureMode.Static
+	ropeBeam.TextureLength = 1
+	ropeBeam.LightEmission = 0.6
+	ropeBeam.Parent = workspace
+end
+
+local hookProjectile = nil
+
+local function spawnProjectile(fromPos, toPos)
+	-- Propósito: Crear un proyectil visual que viaja al punto de impacto.
+	-- Precondiciones:
+	--   1. fromPos y toPos son Vector3.
+	-- Ubicación: StarterPlayerScripts/HookController
+	-- Retorna: nil
+	if hookProjectile then
+		hookProjectile:Destroy()
+		hookProjectile = nil
+	end
+
+	local distance = (toPos - fromPos).Magnitude
+	if distance < 0.5 then return end
+
+	local mid = (fromPos + toPos) / 2
+
+	local proj = Instance.new("Part")
+	proj.Name = "ZB_HookProj"
+	proj.Anchored = true
+	proj.CanCollide = false
+	proj.CanQuery = false
+	proj.CastShadow = false
+	proj.Material = Enum.Material.Neon
+	proj.Color = hookCfg.CABLE_COLOR
+	proj.Transparency = 0.2
+	proj.Size = Vector3.new(0.35, 0.35, distance)
+	proj.CFrame = CFrame.lookAt(fromPos, toPos) * CFrame.new(0, 0, -distance / 2)
+	proj.Parent = workspace
+
+	local tween = game:GetService("TweenService"):Create(
+		proj,
+		TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Transparency = 0.7 }
+	)
+	tween:Play()
+	game:GetService("Debris"):AddItem(proj, 0.2)
+
+	hookProjectile = proj
 end
 
 local function bindCharacter(char)
@@ -113,24 +159,29 @@ end
 -- ===== Raycast y enganche =====
 
 local function raycastHook()
-	-- Propósito: Lanzar un raycast desde la cámara. Se engancha a todo
-	--            menos al propio personaje (incluye otros jugadores).
+	-- Propósito: Lanzar un raycast desde la cámara a través de la mira
+	--            (mismo offset que ShootingController usa para disparar).
+	--            Se engancha a todo menos al propio personaje.
 	-- Precondiciones:
 	--   1. camera y character válidos.
 	-- Ubicación: StarterPlayerScripts/HookController
 	-- Retorna: (Vector3 hitPos, Instance hitPart) o (nil, nil)
 	if not camera or not character then return nil, nil end
 
-	local origin = camera.CFrame.Position
-	local direction = camera.CFrame.LookVector
+	local viewport = camera.ViewportSize
+	local screenX = viewport.X / 2 + Config.Weapon.CROSSHAIR_OFFSET_X
+	local screenY = viewport.Y / 2 + Config.Weapon.CROSSHAIR_OFFSET_Y
+	local ray = camera:ViewportPointToRay(screenX, screenY)
+	local origin = ray.Origin
+	local direction = ray.Direction.Unit
 
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { character }
 
-	local ray = workspace:Raycast(origin, direction * hookCfg.MAX_RANGE, params)
-	if ray then
-		return ray.Position, ray.Instance
+	local hit = workspace:Raycast(origin, direction * hookCfg.MAX_RANGE, params)
+	if hit then
+		return hit.Position, hit.Instance
 	end
 	return nil, nil
 end
@@ -173,23 +224,43 @@ local function fireHook()
 	-- Ubicación: StarterPlayerScripts/HookController
 	-- Retorna: boolean (true si se enganchó)
 	if hookActive then return false end
-	if not rootPart or not thrustForce then return false end
-	if not thrustForce.Parent then return false end
+	-- Evitar conflicto con el agarre (E): no enganchar si estamos agarrados.
+	if player:GetAttribute("Grabbing") then return false end
+	if not rootPart then
+		warn("[ZB Hook] No hay rootPart, personaje no cargado")
+		return false
+	end
+	if not thrustForce then
+		warn("[ZB Hook] No hay ZB_ThrustForce - estas en modo batalla?")
+		return false
+	end
+	if not thrustForce.Parent then
+		warn("[ZB Hook] ZB_ThrustForce sin Parent")
+		return false
+	end
 
 	local now = os.clock()
 	if (now - lastHookTime) < hookCfg.COOLDOWN then return false end
 	lastHookTime = now
 
 	local hitPos, hitPart = raycastHook()
-	if not hitPos or not hitPart then return false end
+	if not hitPos or not hitPart then
+		warn("[ZB Hook] El gancho no impacto nada en rango (" .. hookCfg.MAX_RANGE .. " studs)")
+		return false
+	end
 
 	anchorPoint = hitPos
-	anchorTarget = findCharacterModel(hitPart)  -- nil si no es jugador
+	anchorTarget = findCharacterModel(hitPart)
 
 	hookActive = true
 	player:SetAttribute("Hooking", true)
 
+	-- Mostrar el viaje del gancho como un proyectil, y luego la cuerda.
+	spawnProjectile(rootPart.Position, hitPos)
+	task.wait(0.05)
 	createRope(rootPart.Position, anchorPoint)
+
+	print("[ZB Hook] Enganchado a", hitPart:GetFullName(), "distancia =", math.floor((hitPos - rootPart.Position).Magnitude))
 	return true
 end
 

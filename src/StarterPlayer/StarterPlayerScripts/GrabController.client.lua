@@ -133,6 +133,12 @@ local function startGrab(part)
 		return
 	end
 
+	-- Evitar conflicto con el gancho (Q): no agarrar si estamos enganchados.
+	if player:GetAttribute("Hooking") then
+		log("startGrab ignorado (hooking activo)")
+		return
+	end
+
 	local target = computeHoldCFrame(part)
 	currentPart = part
 	grabRelCFrame = part.CFrame:ToObjectSpace(target)  -- objetivo relativo (sigue al objeto)
