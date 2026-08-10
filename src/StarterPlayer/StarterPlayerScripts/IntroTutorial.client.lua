@@ -21,13 +21,19 @@ end
 
 print("[ZB Intro] Creando panel de bienvenida...")
 
+-- Esperar a que la UI este completamente lista (camara, viewport, etc.)
+task.wait(1.5)
+
+print("[ZB Intro] PlayerGui listo, creando UI...")
+
 local screen = Instance.new("ScreenGui")
 screen.Name = "ZB_Intro"
 screen.ResetOnSpawn = false
 screen.IgnoreGuiInset = true
-screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screen.DisplayOrder = 999
+screen.ZIndexBehavior = Enum.ZIndexBehavior.Global
+screen.DisplayOrder = 10
 screen.Parent = playerGui
+print("[ZB Intro] ScreenGui parentado a PlayerGui. Visible = " .. tostring(screen.Enabled))
 
 local bg = Instance.new("Frame")
 bg.Size = UDim2.fromScale(1, 1)
