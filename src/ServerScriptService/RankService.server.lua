@@ -39,12 +39,13 @@ end
 
 local function getLabel(placa)
 	-- Propósito: Obtener el TextLabel "RankLabel" dentro de la placa.
+	--            Busca en BillboardGui o SurfaceGui.
 	-- Precondiciones:
-	--   1. placa es un Part con SurfaceGui.
+	--   1. placa es un Part con BillboardGui o SurfaceGui.
 	-- Ubicación: ServerScriptService/RankService
 	-- Retorna: TextLabel o nil
 	if not placa then return nil end
-	local gui = placa:FindFirstChildOfClass("SurfaceGui")
+	local gui = placa:FindFirstChildOfClass("BillboardGui") or placa:FindFirstChildOfClass("SurfaceGui")
 	if not gui then return nil end
 	return gui:FindFirstChild("RankLabel")
 end

@@ -22,7 +22,8 @@ ServerScriptService/
 ├── ShootingService         (Script)          <- src/ServerScriptService/ShootingService.server.lua
 ├── GameModeService         (Script)          <- src/ServerScriptService/GameModeService.server.lua
 ├── MatchService            (Script)          <- src/ServerScriptService/MatchService.server.lua
-└── RankService             (Script)          <- src/ServerScriptService/RankService.server.lua
+├── RankService             (Script)          <- src/ServerScriptService/RankService.server.lua
+└── HoloLevitation          (Script)          <- src/ServerScriptService/HoloLevitation.server.lua
 
 StarterPlayer/
 ├── StarterPlayerScripts/
@@ -32,7 +33,8 @@ StarterPlayer/
 │   ├── HudController        (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HudController.client.lua
 │   ├── GravityController    (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/GravityController.client.lua
 │   ├── PortalController     (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/PortalController.client.lua
-│   └── HookController       (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HookController.client.lua
+│   ├── HookController       (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HookController.client.lua
+│   └── IntroTutorial        (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/IntroTutorial.client.lua
 └── StarterCharacterScripts/
     ├── ZeroGSetup           (LocalScript)    <- src/StarterPlayer/StarterCharacterScripts/ZeroGSetup.client.lua
     ├── AstronautPose        (LocalScript)    <- src/StarterPlayer/StarterCharacterScripts/AstronautPose.client.lua
@@ -63,11 +65,14 @@ StarterPlayer/
    la arena). Este es el punto donde aparecen los jugadores al unirse al
    servidor. Sin esto, Roblox puede spawnear jugadores en cualquier lado,
    incluso dentro de la arena.
-5. **Placas de ranking**: crea una carpeta `placas` en Workspace. Dentro, añade
-   3 Parts llamadas **Placa1**, **Placa2**, **Placa3**. A cada una ponle un
-   **SurfaceGui** (Face = Front) con un **TextLabel** llamado `"RankLabel"`.
-   El `RankService` actualiza automáticamente estas placas con el top 3.
-6. **Arena de prueba**: crea un `Part` grande hueco o 6 paredes formando un
+5. **Placas de ranking**: crea una carpeta `placas` en Workspace. Dentro, 3 Parts
+   (`placas1`, `placas2`, `placas3`) estilo holograma: Neon, opacidad 85%,
+   con SurfaceGui (Face = Right) y TextLabel `"RankLabel"`. El `RankService`
+   actualiza automáticamente el top 3 cada 3 s.
+6. **Hologramas de controles**: crea una carpeta `Hologramas` en Workspace.
+   Paneles Neon flotantes con SurfaceGui (Face = Right) mostrando los controles.
+   El script `HoloLevitation` los hace levitar suavemente.
+7. **Arena de prueba**: crea un `Part` grande hueco o 6 paredes formando un
    cubo alrededor de los spawns. Añade cubos anclados flotando como coberturas.
 7. **Objetos agarrables**: a los `Part`/`Model` de cobertura, agrégales un
    **Atributo** booleano `cubrirce` = true. El `GrabController` crea un
