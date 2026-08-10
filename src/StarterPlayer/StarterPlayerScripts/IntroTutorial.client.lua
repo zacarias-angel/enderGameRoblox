@@ -120,10 +120,16 @@ local function close()
 	if closed then return end
 	closed = true
 	screen:Destroy()
+	print("[ZB Intro] Panel cerrado")
 end
 
+-- Pequena pausa para evitar que InputBegan cierre la UI al instante
+task.wait(0.3)
+
 task.delay(12, close)
-UserInputService.InputBegan:Connect(function() close() end)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not closed and not gameProcessed then close() end
+end)
 
 local dismiss = Instance.new("TextLabel", panel)
 dismiss.Size = UDim2.fromOffset(400, 24)
