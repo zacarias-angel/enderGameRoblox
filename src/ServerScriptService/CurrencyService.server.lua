@@ -7,7 +7,8 @@
 	Sistema de monedas del juego. Las monedas sirven para comprar/mejorar
 	items (pendiente). Este servicio:
 	- Crea el leaderstat "Monedas" en cada jugador.
-	- Spawnea monedas en el lobby y en la arena (~100 por hora).
+	- Spawnea monedas en el lobby (piso) y en la arena (cúpula geodésica).
+	  ~100 monedas cada 30 minutos.
 	- Detecta cuando un jugador toca una moneda y la recolecta.
 
 	Expone API: _G.ZB.CurrencyService.
@@ -19,7 +20,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local curCfg = Config.Currency
 
-local activeCoins = {}  -- [coin] = true
+local activeCoins = {}
 
 local function getCoinFolder()
 	-- Propósito: Obtener/crear la carpeta de monedas en workspace.
@@ -57,49 +58,60 @@ local function getLeaderstat(player)
 	return coins
 end
 
-local function getRandomSpawnPosition()
-	-- Propósito: Obtener una posición aleatoria en el lobby o arena.
+local function randomLobbyPosition()
+	-- Propósito: Posición aleatoria dentro del lobby (piso).
 	-- Precondiciones: ninguna.
 	-- Ubicación: ServerScriptService/CurrencyService
 	-- Retorna: Vector3
-	-- Lobby (piso)
 	local piso = workspace:FindFirstChild("piso")
-	if piso then
-		local pos = piso.Position
-		local hw = piso.Size.X / 2
-		local hd = piso.Size.Z / 2
-		local top = pos.Y + piso.Size.Y / 2
+	if not piso then return nil end
+	local pos = piso.Position
+	local hw = piso.Size.X / 2
+	local hd = piso.Size.Z / 2
+	local top = pos.Y + piso.Size.Y / 2
 
-		-- 50% lobby, 50% arena
-		if math.random() < 0.5 then
-			local x = pos.X + (math.random() * 2 - 1) * (hw - 10)
-			local z = pos.Z + (math.random() * 2 - 1) * (hd - 10)
-			return Vector3.new(x, top + curCfg.SPAWN_HEIGHT, z)
-		end
+	local x = pos.X + (math.random() * 2 - 1) * (hw - 8)
+	local z = pos.Z + (math.random() * 2 - 1) * (hd - 8)
+	return Vector3.new(x, top + curCfg.SPAWN_HEIGHT, z)
+end
+
+local function randomArenaPosition()
+	-- Propósito: Posición aleatoria dentro de la cúpula geodésica (arena).
+	-- Precondiciones: ninguna.
+	-- Ubicación: ServerScriptService/CurrencyService
+	-- Retorna: Vector3 o nil
+	local geo = workspace:FindFirstChild("sm_Roblox_spaceshooter_geodesica_V2 (1)")
+	if not geo then return nil end
+
+	local estructura = geo:FindFirstChild("estructura")
+	if not estructura or not estructura:IsA("BasePart") then return nil end
+
+	local center = estructura.Position
+	local half = estructura.Size / 2
+
+	local x = center.X + (math.random() * 2 - 1) * (half.X - 20)
+	local y = center.Y + (math.random() * 2 - 1) * (half.Y - 20)
+	local z = center.Z + (math.random() * 2 - 1) * (half.Z - 20)
+	return Vector3.new(x, y, z)
+end
+
+local function getRandomSpawnPosition()
+	-- Propósito: Elegir una posición de spawn (lobby o arena).
+	-- Precondiciones: ninguna.
+	-- Ubicación: ServerScriptService/CurrencyService
+	-- Retorna: Vector3
+	-- 50% lobby, 50% arena
+	if math.random() < 0.5 then
+		local lobby = randomLobbyPosition()
+		if lobby then return lobby end
 	end
+	local arena = randomArenaPosition()
+	if arena then return arena end
 
-	-- Arena
-	local arena = workspace:FindFirstChild("Arena")
-	if arena then
-		local center = Vector3.zero
-		local spawns = {}
-		for _, child in ipairs(arena:GetDescendants()) do
-			if child:IsA("BasePart") then
-				table.insert(spawns, child.Position)
-			end
-		end
-		if #spawns > 0 then
-			center = spawns[math.random(#spawns)]
-			return center + Vector3.new(
-				(math.random() * 2 - 1) * 20,
-				curCfg.SPAWN_HEIGHT,
-				(math.random() * 2 - 1) * 20
-			)
-		end
-	end
-
-	-- Fallback: origen
-	return Vector3.new(math.random() * 40 - 20, 5, math.random() * 40 - 20)
+	-- Fallback al lobby
+	local lobby = randomLobbyPosition()
+	if lobby then return lobby end
+	return Vector3.new(0, 10, 0)
 end
 
 local function spawnCoin()
@@ -107,10 +119,12 @@ local function spawnCoin()
 	-- Precondiciones: ninguna.
 	-- Ubicación: ServerScriptService/CurrencyService
 	-- Retorna: nil
+	if #activeCoins >= curCfg.MAX_CONCURRENT_COINS then return end
+
 	local coin = Instance.new("Part")
 	coin.Name = curCfg.COIN_NAME
 	coin.Anchored = true
-	coin.CanCollide = false
+	coin.CanCollide = true   -- IMPORTANTE: true para que Touched funcione
 	coin.CanQuery = false
 	coin.CastShadow = false
 	coin.Shape = Enum.PartType.Ball
@@ -120,15 +134,15 @@ local function spawnCoin()
 	coin.CFrame = CFrame.new(getRandomSpawnPosition())
 	coin.Parent = getCoinFolder()
 
-	-- Luz para que sea visible
 	local light = Instance.new("PointLight")
 	light.Color = curCfg.COIN_COLOR
 	light.Range = 8
 	light.Brightness = 1.5
 	light.Parent = coin
 
-	-- Recolección por toque
+	local collected = false
 	coin.Touched:Connect(function(hit)
+		if collected then return end
 		local character = hit.Parent
 		if not character then return end
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -136,29 +150,15 @@ local function spawnCoin()
 		local player = Players:GetPlayerFromCharacter(character)
 		if not player then return end
 
-		-- Recolectar
+		collected = true
 		local coins = getLeaderstat(player)
 		coins.Value = coins.Value + curCfg.COIN_VALUE
 
-		-- Efecto: destello breve antes de destruir
-		coin.CanCollide = false
-		coin:Destroy()
 		activeCoins[coin] = nil
+		coin:Destroy()
 	end)
 
 	activeCoins[coin] = true
-
-	-- Auto-limpiar monedas que exceden el máximo concurrente
-	if #activeCoins > curCfg.MAX_CONCURRENT_COINS then
-		-- Eliminar la moneda más antigua
-		for oldCoin in pairs(activeCoins) do
-			if oldCoin ~= coin then
-				oldCoin:Destroy()
-				activeCoins[oldCoin] = nil
-				break
-			end
-		end
-	end
 end
 
 local CurrencyService = {}
@@ -169,8 +169,7 @@ function CurrencyService.getCoins(player)
 	--   1. player es un Player válido.
 	-- Ubicación: ServerScriptService/CurrencyService
 	-- Retorna: number
-	local coins = getLeaderstat(player)
-	return coins.Value
+	return getLeaderstat(player).Value
 end
 
 function CurrencyService.addCoins(player, amount)
@@ -196,15 +195,13 @@ function CurrencyService.spendCoins(player, amount)
 	return true
 end
 
--- Inicializar leaderstats para jugadores existentes
+-- Inicializar leaderstats.
 for _, player in ipairs(Players:GetPlayers()) do
 	getLeaderstat(player)
 end
-Players.PlayerAdded:Connect(function(player)
-	getLeaderstat(player)
-end)
+Players.PlayerAdded:Connect(getLeaderstat)
 
--- Bucle de spawn de monedas (~100 por hora)
+-- Bucle de spawn (~100 monedas cada 30 min).
 task.spawn(function()
 	while true do
 		task.wait(curCfg.SPAWN_INTERVAL)

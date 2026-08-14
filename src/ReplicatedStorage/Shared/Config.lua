@@ -202,17 +202,14 @@ Config.Rank = {
 -- ===== Monedas / Economía =====
 Config.Currency = {
 	COIN_NAME = "ZB_Coin",          -- Nombre de la instancia de moneda
-	COINS_PER_HOUR = 100,           -- Límite aproximado de monedas por hora
-	SPAWN_INTERVAL = 36,            -- Cada cuántos segundos spawnea una moneda (3600/100)
-	MAX_CONCURRENT_COINS = 25,      -- Máximo de monedas simultáneas en el mapa
-	COIN_SIZE = Vector3.new(1.2, 1.2, 1.2),
+	COINS_PER_HOUR = 200,           -- Aprox (100 cada 30 min)
+	SPAWN_INTERVAL = 18,            -- Cada cuántos segundos spawnea una moneda (1800/100)
+	MAX_CONCURRENT_COINS = 50,      -- Máximo de monedas simultáneas en el mapa
+	COIN_SIZE = Vector3.new(1.5, 1.5, 1.5),
 	COIN_COLOR = Color3.fromRGB(255, 210, 60),  -- Dorado
 	COIN_VALUE = 1,                 -- Valor de cada moneda
-	-- Zonas de spawn (lobby y arena)
-	SPAWN_HEIGHT = 3,               -- Altura sobre el piso para spawnear
-	-- Si el jugador tiene 0 monedas al empezar
+	SPAWN_HEIGHT = 5,               -- Altura sobre el piso para spawnear
 	STARTING_COINS = 0,
-	-- Clave del leaderstat
 	LEADERSTAT = "Monedas",
 }
 

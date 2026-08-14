@@ -7,10 +7,13 @@
 	Sistema de ranking que se muestra en las 3 placas del workspace.
 	Las placas están en Workspace > placas > placas1 / placas2 / placas3.
 
-	Cada placa muestra una categoría distinta (top jugador):
-	- placas1 = "CONGELADOS" (mayor cantidad de enemigos congelados)
-	- placas2 = "PARTIDAS"  (mayor cantidad de partidas jugadas)
-	- placas3 = "MONEDAS"   (mayor cantidad de monedas recolectadas)
+	Cada placa muestra una categoría (top jugadores):
+	- placas1 = "CONGELADOS" (más enemigos congelados)
+	- placas2 = "PARTIDAS"  (más partidas jugadas)
+	- placas3 = "MONEDAS"   (más monedas recolectadas)
+
+	Debajo del título, lista de jugadores con formato:
+		#pos  Nombre  [valor]
 
 	Expone API: _G.ZB.RankService.
 ]]
@@ -21,6 +24,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local rankCfg = Config.Rank
 local curCfg = Config.Currency
+
+local MAX_LISTED = 5  -- Máximo de jugadores mostrados por placa
 
 local playerStats = {}  -- [player] = { eliminations, limbsFrozen, matchesPlayed }
 
@@ -41,7 +46,7 @@ local function ensureStats(player)
 end
 
 local function getCoins(player)
-	-- Propósito: Obtener las monedas actuales de un jugador (del leaderstat).
+	-- Propósito: Obtener las monedas de un jugador (del leaderstat).
 	-- Precondiciones:
 	--   1. player es un Player válido.
 	-- Ubicación: ServerScriptService/RankService
@@ -77,13 +82,13 @@ local function getLabels(placa)
 	return gui:FindFirstChild("RankTitle"), gui:FindFirstChild("RankLabel")
 end
 
-local function topForCategory(categoryKey)
-	-- Propósito: Obtener el jugador top en una categoría.
+local function rankedPlayers(categoryKey)
+	-- Propósito: Obtener la lista de jugadores ordenada por la categoría.
 	-- Precondiciones:
 	--   1. categoryKey es "eliminations", "matchesPlayed" o "coins".
 	-- Ubicación: ServerScriptService/RankService
-	-- Retorna: table { player, value } o nil
-	local best = nil
+	-- Retorna: table de { player, value } ordenada descendente.
+	local list = {}
 	for player, stats in pairs(playerStats) do
 		if player.Parent then
 			local value
@@ -92,12 +97,13 @@ local function topForCategory(categoryKey)
 			else
 				value = stats[categoryKey] or 0
 			end
-			if not best or value > best.value then
-				best = { player = player, value = value }
-			end
+			table.insert(list, { player = player, value = value })
 		end
 	end
-	return best
+	table.sort(list, function(a, b)
+		return a.value > b.value
+	end)
+	return list
 end
 
 local function updatePlacas()
@@ -110,14 +116,19 @@ local function updatePlacas()
 		if placa then
 			local titleLabel, valueLabel = getLabels(placa)
 			if titleLabel then
-				titleLabel.Text = "#" .. index .. " " .. cat.title
+				titleLabel.Text = cat.title
 			end
 			if valueLabel then
-				local top = topForCategory(cat.key)
-				if top then
-					valueLabel.Text = top.player.Name .. "\n" .. top.value
+				local ranked = rankedPlayers(cat.key)
+				local lines = {}
+				for i = 1, math.min(MAX_LISTED, #ranked) do
+					local entry = ranked[i]
+					table.insert(lines, string.format("#%d %s [%d]", i, entry.player.Name, entry.value))
+				end
+				if #lines == 0 then
+					valueLabel.Text = "Esperando jugadores..."
 				else
-					valueLabel.Text = "---\n0"
+					valueLabel.Text = table.concat(lines, "\n")
 				end
 			end
 		end
@@ -127,7 +138,7 @@ end
 local RankService = {}
 
 function RankService.addScore(player, reason)
-	-- Propósito: Registrar una eliminación o congelación de extremidad.
+	-- Propósito: Registrar eliminación o congelación de extremidad.
 	-- Precondiciones:
 	--   1. player válido; reason "elimination" o "limbFreeze".
 	-- Ubicación: ServerScriptService/RankService
@@ -153,13 +164,11 @@ function RankService.addMatch(player)
 end
 
 function RankService.onModeStarted(mode)
-	-- Propósito: Llamado al iniciar una partida. Registra partidas jugadas
-	--            de todos los jugadores en la partida.
+	-- Propósito: Llamado al iniciar una partida.
 	-- Precondiciones:
 	--   1. mode es BATTLE o DUEL.
 	-- Ubicación: ServerScriptService/RankService
 	-- Retorna: nil
-	-- No resetear stats persistentes (congelados/partidas se acumulan).
 end
 
 -- Bucle de actualización de placas.
