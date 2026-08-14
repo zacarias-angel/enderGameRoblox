@@ -163,5 +163,32 @@ function FreezeService.apply(character, hitResult)
 	return true
 end
 
+function FreezeService.reset(character)
+	-- Propósito: Resetear un personaje (ej. dummy NPC) a estado "todo activo".
+	-- Precondiciones:
+	--   1. character es un Model con Humanoid.
+	-- Ubicación: ServerScriptService/FreezeService
+	-- Retorna: nil
+	if not character then return end
+
+	-- Limpiar el estado interno para que se recree fresco.
+	charStates[character] = nil
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.PlatformStand = false
+	end
+
+	-- Dejar de ser agarrable (escudo).
+	character:SetAttribute(Config.Grab.ATTRIBUTE, false)
+
+	-- Restaurar materiales/colores de las partes del cuerpo.
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") and (part.Material == Enum.Material.Ice) then
+			part.Material = Enum.Material.Plastic
+		end
+	end
+end
+
 _G.ZB = _G.ZB or {}
 _G.ZB.FreezeService = FreezeService

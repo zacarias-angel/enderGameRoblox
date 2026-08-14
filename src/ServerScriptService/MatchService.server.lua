@@ -71,9 +71,41 @@ local joinWindowTimer = 0  -- tiempo restante de ventana de entrada
 local countdownTimer = 0   -- tiempo restante de cuenta regresiva
 local matchActive = false
 local teamEliminated = {}  -- [team] = true si el equipo fue aniquilado
+local teleportedPlayers = {}  -- [player] = true si ya fue teleportado a la arena
+local finalizing = false      -- true durante el cronómetro final
+local finalizeCountdown = 0   -- segundos restantes del cronómetro final
+local finalizeWinner = nil    -- equipo ganador cuando termina el cronómetro
+local dummyModel = nil        -- NPC dummy en la arena
+local dummyTeam = matchCfg.TEAM_ROJO  -- el dummy va al equipo Rojo
+
+local function findDummy()
+	-- Propósito: Encontrar el dummy NPC (Humanoid sin Player) en el workspace.
+	-- Precondiciones: ninguna.
+	-- Ubicación: ServerScriptService/MatchService
+	-- Retorna: Model o nil
+	for _, inst in ipairs(workspace:GetDescendants()) do
+		if inst:IsA("Humanoid") and inst.Parent and inst.Parent:IsA("Model") then
+			local model = inst.Parent
+			local player = Players:GetPlayerFromCharacter(model)
+			if not player then
+				return model
+			end
+		end
+	end
+	return nil
+end
+
+local function isDummyAlive()
+	-- Propósito: Saber si el dummy está vivo (no eliminado).
+	-- Precondiciones: ninguna.
+	-- Ubicación: ServerScriptService/MatchService
+	-- Retorna: boolean
+	if not dummyModel or not dummyModel.Parent then return false end
+	return dummyModel:GetAttribute("cubrirce") ~= true
+end
 
 local function countTeamPlayers(team)
-	-- Propósito: Contar jugadores vivos en un equipo.
+	-- Propósito: Contar jugadores vivos en un equipo (incluye el dummy).
 	-- Precondiciones:
 	--   1. team es "Azul" o "Rojo".
 	-- Ubicación: ServerScriptService/MatchService
@@ -87,11 +119,15 @@ local function countTeamPlayers(team)
 			end
 		end
 	end
+	-- Dummy NPC
+	if dummyModel and dummyTeam == team and isDummyAlive() then
+		count = count + 1
+	end
 	return count
 end
 
 local function countTeamTotal(team)
-	-- Propósito: Contar jugadores totales (vivos o no) en un equipo.
+	-- Propósito: Contar jugadores totales (vivos o no) en un equipo (incluye dummy).
 	-- Precondiciones:
 	--   1. team es "Azul" o "Rojo".
 	-- Ubicación: ServerScriptService/MatchService
@@ -99,6 +135,9 @@ local function countTeamTotal(team)
 	local count = 0
 	for _, t in pairs(playerTeam) do
 		if t == team then count = count + 1 end
+	end
+	if dummyModel and dummyTeam == team then
+		count = count + 1
 	end
 	return count
 end
@@ -187,6 +226,8 @@ local function broadcastState()
 		joinWindow = joinWindowTimer,
 		countdown = countdownTimer,
 		matchDuration = matchCfg.MATCH_DURATION,
+		finalizing = finalizing,
+		finalizeCountdown = finalizeCountdown,
 		playersPerTeam = {
 			[matchCfg.TEAM_AZUL] = countTeamTotal(matchCfg.TEAM_AZUL),
 			[matchCfg.TEAM_ROJO] = countTeamTotal(matchCfg.TEAM_ROJO),
@@ -202,6 +243,33 @@ local function broadcastState()
 	end
 end
 
+local function teleportToLobby(player)
+	-- Propósito: Teletransportar al jugador de vuelta al lobby.
+	-- Precondiciones:
+	--   1. player tiene personaje.
+	-- Ubicación: ServerScriptService/MatchService
+	-- Retorna: nil
+	local char = player.Character
+	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local target = Vector3.zero
+	local spawnLoc = workspace:FindFirstChild("SpawnLocation")
+	if spawnLoc and spawnLoc:IsA("BasePart") then
+		target = spawnLoc.Position
+	else
+		local piso = workspace:FindFirstChild("piso")
+		if piso then
+			target = piso.Position + Vector3.new(0, 5, 0)
+		end
+	end
+
+	root.CFrame = CFrame.new(target)
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
+end
+
 local function resetMatch()
 	-- Propósito: Limpiar todo el estado de la partida y volver al lobby.
 	-- Precondiciones: ninguna.
@@ -215,12 +283,21 @@ local function resetMatch()
 	queue = {}
 	playerTeam = {}
 	teamEliminated = {}
+	teleportedPlayers = {}
+	finalizing = false
+	finalizeCountdown = 0
+	finalizeWinner = nil
 
-	-- Resetear estados de jugadores.
+	-- Resetear estados de jugadores y teleportarlos al lobby.
 	if _G.ZB and _G.ZB.PlayerState then
 		for _, player in ipairs(Players:GetPlayers()) do
 			_G.ZB.PlayerState.reset(player)
 			player:SetAttribute("Team", nil)
+			-- Resetear el estado físico del personaje (descongelar, desbloquear).
+			if player.Character and _G.ZB.FreezeService then
+				_G.ZB.FreezeService.reset(player.Character)
+			end
+			teleportToLobby(player)
 		end
 	end
 
@@ -229,11 +306,37 @@ local function resetMatch()
 		_G.ZB.GameMode.setMode(modeCfg.LOBBY)
 	end
 
+	-- Resetear el dummy NPC para la próxima partida.
+	if dummyModel and dummyModel.Parent then
+		if _G.ZB and _G.ZB.FreezeService then
+			_G.ZB.FreezeService.reset(dummyModel)
+		end
+	end
+	dummyModel = nil
+
 	broadcastState()
 end
 
+local function checkAnnihilation()
+	-- Propósito: Detectar si un equipo fue aniquilado (el otro gana).
+	-- Precondiciones: ninguna.
+	-- Ubicación: ServerScriptService/MatchService
+	-- Retorna: string (equipo ganador) o nil
+	local azulVivos = countTeamPlayers(matchCfg.TEAM_AZUL)
+	local rojoVivos = countTeamPlayers(matchCfg.TEAM_ROJO)
+	local azulTotal = countTeamTotal(matchCfg.TEAM_AZUL)
+	local rojoTotal = countTeamTotal(matchCfg.TEAM_ROJO)
+
+	if azulTotal > 0 and azulVivos == 0 and rojoVivos > 0 then
+		return matchCfg.TEAM_ROJO
+	elseif rojoTotal > 0 and rojoVivos == 0 and azulVivos > 0 then
+		return matchCfg.TEAM_AZUL
+	end
+	return nil
+end
+
 local function checkWinCondition()
-	-- Propósito: Verificar si un equipo fue aniquilado o se acabó el tiempo.
+	-- Propósito: Verificar si se acabó el tiempo (gana el equipo con más vivos).
 	-- Precondiciones: ninguna.
 	-- Ubicación: ServerScriptService/MatchService
 	-- Retorna: string (equipo ganador) o nil
@@ -243,17 +346,9 @@ local function checkWinCondition()
 	local rojoTotal = countTeamTotal(matchCfg.TEAM_ROJO)
 
 	if matchTimer >= matchCfg.MATCH_DURATION and azulTotal + rojoTotal > 0 then
-		-- Tiempo cumplido: gana el equipo con más vivos.
 		if azulVivos > rojoVivos then return matchCfg.TEAM_AZUL
 		elseif rojoVivos > azulVivos then return matchCfg.TEAM_ROJO
 		else return nil end -- empate
-	end
-
-	-- Aniquilación: un equipo no tiene jugadores vivos y el otro sí.
-	if azulTotal > 0 and azulVivos == 0 and rojoVivos > 0 then
-		return matchCfg.TEAM_ROJO
-	elseif rojoTotal > 0 and rojoVivos == 0 and azulVivos > 0 then
-		return matchCfg.TEAM_AZUL
 	end
 
 	return nil
@@ -294,6 +389,10 @@ local function startMatch()
 	currentState = matchCfg.STATE_COUNTDOWN
 	countdownTimer = matchCfg.COUNTDOWN
 	matchActive = true
+
+	-- Registrar el dummy NPC y asignarlo al equipo Rojo.
+	dummyModel = findDummy()
+
 	broadcastState()
 
 	-- Asignar equipos a todos los jugadores en cola.
@@ -319,6 +418,7 @@ local function startMatch()
 	for player, _ in pairs(playerTeam) do
 		if player.Parent then
 			teleportToArena(player)
+			teleportedPlayers[player] = true
 		end
 	end
 
@@ -408,6 +508,7 @@ function MatchService.requestJoin(player)
 	if currentState == matchCfg.STATE_ACTIVE then
 		assignTeam(player)
 		teleportToArena(player)
+		teleportedPlayers[player] = true
 
 		-- Notificar al cliente que está en modo BATTLE para que active
 		-- físicas 0g, pose de nado, etc. (GameModeChanged global ya pasó).
@@ -472,42 +573,53 @@ task.spawn(function()
 				end
 			end
 
-			-- Teleportar a los que cambiaron de equipo o son nuevos.
-				for player, _ in pairs(playerTeam) do
-					if player.Parent then
-						teleportToArena(player)
-					end
+			-- Teleportar solo a los nuevos (los que ya están en la arena no se mueven).
+			for player, _ in pairs(playerTeam) do
+				if player.Parent and not teleportedPlayers[player] then
+					teleportToArena(player)
+					teleportedPlayers[player] = true
 				end
-				broadcastState()
+			end
+			broadcastState()
 			else
 				broadcastState()
 			end
 
-		elseif currentState == matchCfg.STATE_ACTIVE then
+		elseif currentState == matchCfg.STATE_ACTIVE or currentState == matchCfg.STATE_LOCKED then
 			matchTimer = matchTimer + 1
-			joinWindowTimer = math.max(0, joinWindowTimer - 1)
 
-			if joinWindowTimer <= 0 then
-				-- Cerrar ventana de entrada.
-				currentState = matchCfg.STATE_LOCKED
-				broadcastState()
-			else
-				-- Verificar condición de victoria.
-				local winner = checkWinCondition()
-				if winner then
-					endMatch(winner)
+			if currentState == matchCfg.STATE_ACTIVE then
+				joinWindowTimer = math.max(0, joinWindowTimer - 1)
+				if joinWindowTimer <= 0 then
+					currentState = matchCfg.STATE_LOCKED
+				end
+			end
+
+			-- Cronómetro final (último equipo en pie).
+			if finalizing then
+				finalizeCountdown = finalizeCountdown - 1
+				if finalizeCountdown <= 0 then
+					endMatch(finalizeWinner)
 				else
 					broadcastState()
 				end
-			end
-
-		elseif currentState == matchCfg.STATE_LOCKED then
-			matchTimer = matchTimer + 1
-			local winner = checkWinCondition()
-			if winner then
-				endMatch(winner)
 			else
-				broadcastState()
+				-- Aniquilación: un equipo quedó sin jugadores vivos.
+				local annihilated = checkAnnihilation()
+				if annihilated then
+					finalizing = true
+					finalizeCountdown = matchCfg.FINALIZE_TIME
+					finalizeWinner = annihilated
+					broadcastState()
+				else
+					-- Tiempo cumplido.
+					local timeout = checkWinCondition()
+					if timeout then
+						endMatch(timeout)
+					else
+						broadcastState()
+					end
+				end
 			end
 
 		end

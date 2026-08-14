@@ -142,6 +142,7 @@ Config.Match = {
 	MATCH_DURATION = 300,           -- Duración máxima de partida (s)
 	COUNTDOWN = 10,                 -- Cuenta regresiva antes de iniciar partida (s)
 	RESET_TIME = 8,                 -- Tiempo entre partidas para volver al lobby (s)
+	FINALIZE_TIME = 10,             -- Cronómetro final cuando queda un solo equipo (s)
 	MIN_PLAYERS_TO_START = 1,       -- Mínimo de jugadores para arrancar (1 = debug)
 	-- Estados de la partida (interno del servidor)
 	STATE_LOBBY = "LOBBY",          -- No hay partida, aceptando jugadores
@@ -205,6 +206,7 @@ Config.Currency = {
 	COINS_PER_HOUR = 200,           -- Aprox (100 cada 30 min)
 	SPAWN_INTERVAL = 18,            -- Cada cuántos segundos spawnea una moneda (1800/100)
 	MAX_CONCURRENT_COINS = 50,      -- Máximo de monedas simultáneas en el mapa
+	INITIAL_COINS = 40,             -- Monedas visibles desde el arranque
 	COIN_SIZE = Vector3.new(1.5, 1.5, 1.5),
 	COIN_COLOR = Color3.fromRGB(255, 210, 60),  -- Dorado
 	COIN_VALUE = 1,                 -- Valor de cada moneda

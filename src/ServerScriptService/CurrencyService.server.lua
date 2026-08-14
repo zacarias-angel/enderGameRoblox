@@ -201,7 +201,12 @@ for _, player in ipairs(Players:GetPlayers()) do
 end
 Players.PlayerAdded:Connect(getLeaderstat)
 
--- Bucle de spawn (~100 monedas cada 30 min).
+-- Spawnear monedas visibles desde el arranque.
+for _ = 1, curCfg.INITIAL_COINS do
+	spawnCoin()
+end
+
+-- Bucle de respawn: repone monedas a medida que se recolectan.
 task.spawn(function()
 	while true do
 		task.wait(curCfg.SPAWN_INTERVAL)

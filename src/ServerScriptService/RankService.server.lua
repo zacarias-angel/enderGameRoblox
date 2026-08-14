@@ -72,6 +72,7 @@ end
 
 local function getLabels(placa)
 	-- Propósito: Obtener los TextLabels "RankTitle" y "RankLabel" de la placa.
+	--            Busca recursivamente (los labels pueden estar dentro de un Frame).
 	-- Precondiciones:
 	--   1. placa tiene SurfaceGui (o BillboardGui).
 	-- Ubicación: ServerScriptService/RankService
@@ -79,7 +80,7 @@ local function getLabels(placa)
 	if not placa then return nil, nil end
 	local gui = placa:FindFirstChildOfClass("SurfaceGui") or placa:FindFirstChildOfClass("BillboardGui")
 	if not gui then return nil, nil end
-	return gui:FindFirstChild("RankTitle"), gui:FindFirstChild("RankLabel")
+	return gui:FindFirstChild("RankTitle", true), gui:FindFirstChild("RankLabel", true)
 end
 
 local function rankedPlayers(categoryKey)
@@ -89,17 +90,22 @@ local function rankedPlayers(categoryKey)
 	-- Ubicación: ServerScriptService/RankService
 	-- Retorna: table de { player, value } ordenada descendente.
 	local list = {}
-	for player, stats in pairs(playerStats) do
-		if player.Parent then
-			local value
-			if categoryKey == "coins" then
-				value = getCoins(player)
-			else
-				value = stats[categoryKey] or 0
-			end
+
+	if categoryKey == "coins" then
+		-- Monedas: leer de TODOS los jugadores conectados (leaderstat),
+		-- no solo de los que hayan jugado una partida.
+		for _, player in ipairs(Players:GetPlayers()) do
+			local value = getCoins(player)
 			table.insert(list, { player = player, value = value })
 		end
+	else
+		for player, stats in pairs(playerStats) do
+			if player.Parent then
+				table.insert(list, { player = player, value = stats[categoryKey] or 0 })
+			end
+		end
 	end
+
 	table.sort(list, function(a, b)
 		return a.value > b.value
 	end)
