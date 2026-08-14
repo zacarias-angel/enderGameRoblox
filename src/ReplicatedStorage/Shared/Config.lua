@@ -182,15 +182,38 @@ Config.Portal = {
 -- ===== Ranking / Placas =====
 Config.Rank = {
 	UPDATE_INTERVAL = 3,            -- Cada cuántos segundos se actualizan las placas (s)
-	MAX_PLACES = 3,                 -- Número de placas (1º, 2º, 3º)
+	MAX_PLACES = 3,                 -- Número de placas (3 categorías)
 	-- Nombres de las placas en workspace/placas/
-	PLACA_NAMES = { "Placa1", "Placa2", "Placa3" },
-	-- Los puntos se ganan así:
+	PLACA_NAMES = { "placas1", "placas2", "placas3" },
+	-- Cada placa muestra una categoría distinta:
+	--   placas1 = "Congelados"  (mayor cantidad de enemigos congelados)
+	--   placas2 = "Partidas"    (mayor cantidad de partidas jugadas)
+	--   placas3 = "Monedas"     (mayor cantidad de monedas recolectadas)
+	CATEGORIES = {
+		{ key = "eliminations", title = "CONGELADOS" },
+		{ key = "matchesPlayed", title = "PARTIDAS" },
+		{ key = "coins", title = "MONEDAS" },
+	},
+	-- Puntos por acción
 	POINTS_PER_ELIMINATION = 10,    -- Por eliminar a un enemigo
 	POINTS_PER_LIMB_FREEZE = 3,     -- Por congelar una extremidad
-	-- Las placas se encuentran en Workspace > placas > Placa1 / Placa2 / Placa3
-	-- Cada placa debe ser un Part con un SurfaceGui (Face = Front) que tenga
-	-- un TextLabel llamado "RankLabel". El servicio actualiza el texto.
+}
+
+-- ===== Monedas / Economía =====
+Config.Currency = {
+	COIN_NAME = "ZB_Coin",          -- Nombre de la instancia de moneda
+	COINS_PER_HOUR = 100,           -- Límite aproximado de monedas por hora
+	SPAWN_INTERVAL = 36,            -- Cada cuántos segundos spawnea una moneda (3600/100)
+	MAX_CONCURRENT_COINS = 25,      -- Máximo de monedas simultáneas en el mapa
+	COIN_SIZE = Vector3.new(1.2, 1.2, 1.2),
+	COIN_COLOR = Color3.fromRGB(255, 210, 60),  -- Dorado
+	COIN_VALUE = 1,                 -- Valor de cada moneda
+	-- Zonas de spawn (lobby y arena)
+	SPAWN_HEIGHT = 3,               -- Altura sobre el piso para spawnear
+	-- Si el jugador tiene 0 monedas al empezar
+	STARTING_COINS = 0,
+	-- Clave del leaderstat
+	LEADERSTAT = "Monedas",
 }
 
 -- ===== Agarre / Cobertura (grab & launch) =====

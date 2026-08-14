@@ -4,18 +4,15 @@
 
 --[[
 	RankService
-	Sistema de ranking y puntuación que se muestra en las placas del workspace.
-	Las placas están en Workspace > placas > Placa1 / Placa2 / Placa3.
-	Cada placa debe ser un Part con un SurfaceGui (Face = Front) que tenga un
-	TextLabel llamado "RankLabel".
+	Sistema de ranking que se muestra en las 3 placas del workspace.
+	Las placas están en Workspace > placas > placas1 / placas2 / placas3.
 
-	Puntuación:
-	- +10 por eliminación de enemigo (ELIMINATE)
-	- +3 por congelar una extremidad enemiga (FREEZE_*)
+	Cada placa muestra una categoría distinta (top jugador):
+	- placas1 = "CONGELADOS" (mayor cantidad de enemigos congelados)
+	- placas2 = "PARTIDAS"  (mayor cantidad de partidas jugadas)
+	- placas3 = "MONEDAS"   (mayor cantidad de monedas recolectadas)
 
-	Actualiza las placas cada Config.Rank.UPDATE_INTERVAL segundos con el
-	top 3 de jugadores.
-	Expone API vía _G.ZB.RankService.
+	Expone API: _G.ZB.RankService.
 ]]
 
 local Players = game:GetService("Players")
@@ -23,13 +20,44 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local rankCfg = Config.Rank
+local curCfg = Config.Currency
 
-local playerScores = {}  -- [player] = { score, eliminations, limbsFrozen }
+local playerStats = {}  -- [player] = { eliminations, limbsFrozen, matchesPlayed }
+
+local function ensureStats(player)
+	-- Propósito: Obtener/crear las estadísticas de un jugador.
+	-- Precondiciones:
+	--   1. player es un Player válido.
+	-- Ubicación: ServerScriptService/RankService
+	-- Retorna: table { eliminations, limbsFrozen, matchesPlayed }
+	if not playerStats[player] then
+		playerStats[player] = {
+			eliminations = 0,
+			limbsFrozen = 0,
+			matchesPlayed = 0,
+		}
+	end
+	return playerStats[player]
+end
+
+local function getCoins(player)
+	-- Propósito: Obtener las monedas actuales de un jugador (del leaderstat).
+	-- Precondiciones:
+	--   1. player es un Player válido.
+	-- Ubicación: ServerScriptService/RankService
+	-- Retorna: number
+	local stats = player:FindFirstChild("leaderstats")
+	if stats then
+		local coins = stats:FindFirstChild(curCfg.LEADERSTAT)
+		if coins then return coins.Value end
+	end
+	return 0
+end
 
 local function getPlaca(name)
-	-- Propósito: Encontrar una placa en el workspace.
+	-- Propósito: Encontrar una placa en workspace/placas.
 	-- Precondiciones:
-	--   1. name es el nombre de la placa (ej. "Placa1").
+	--   1. name es el nombre de la placa.
 	-- Ubicación: ServerScriptService/RankService
 	-- Retorna: Instance o nil
 	local folder = workspace:FindFirstChild("placas")
@@ -37,168 +65,104 @@ local function getPlaca(name)
 	return folder:FindFirstChild(name)
 end
 
-local function getLabel(placa)
-	-- Propósito: Obtener el TextLabel "RankLabel" dentro de la placa.
-	--            Busca en BillboardGui o SurfaceGui.
+local function getLabels(placa)
+	-- Propósito: Obtener los TextLabels "RankTitle" y "RankLabel" de la placa.
 	-- Precondiciones:
-	--   1. placa es un Part con BillboardGui o SurfaceGui.
+	--   1. placa tiene SurfaceGui (o BillboardGui).
 	-- Ubicación: ServerScriptService/RankService
-	-- Retorna: TextLabel o nil
-	if not placa then return nil end
-	local gui = placa:FindFirstChildOfClass("BillboardGui") or placa:FindFirstChildOfClass("SurfaceGui")
-	if not gui then return nil end
-	return gui:FindFirstChild("RankLabel")
+	-- Retorna: (titleLabel, valueLabel) o (nil, nil)
+	if not placa then return nil, nil end
+	local gui = placa:FindFirstChildOfClass("SurfaceGui") or placa:FindFirstChildOfClass("BillboardGui")
+	if not gui then return nil, nil end
+	return gui:FindFirstChild("RankTitle"), gui:FindFirstChild("RankLabel")
 end
 
-local function ensureScore(player)
-	-- Propósito: Obtener/crear la entrada de puntuación de un jugador.
+local function topForCategory(categoryKey)
+	-- Propósito: Obtener el jugador top en una categoría.
 	-- Precondiciones:
-	--   1. player es un Player válido.
+	--   1. categoryKey es "eliminations", "matchesPlayed" o "coins".
 	-- Ubicación: ServerScriptService/RankService
-	-- Retorna: table { score, eliminations, limbsFrozen }
-	if not playerScores[player] then
-		playerScores[player] = {
-			score = 0,
-			eliminations = 0,
-			limbsFrozen = 0,
-		}
-	end
-	return playerScores[player]
-end
-
-local function addPoints(player, points)
-	-- Propósito: Sumar puntos a un jugador.
-	-- Precondiciones:
-	--   1. player es un Player válido.
-	--   2. points es un número positivo.
-	-- Ubicación: ServerScriptService/RankService
-	-- Retorna: number (nueva puntuación total)
-	local entry = ensureScore(player)
-	entry.score = entry.score + points
-	return entry.score
-end
-
-local function getTopPlayers(count)
-	-- Propósito: Obtener los N jugadores con mayor puntuación.
-	-- Precondiciones:
-	--   1. count es el número de posiciones (1..N).
-	-- Ubicación: ServerScriptService/RankService
-	-- Retorna: table de { player, score } ordenada descendente.
-	local list = {}
-	for player, entry in pairs(playerScores) do
+	-- Retorna: table { player, value } o nil
+	local best = nil
+	for player, stats in pairs(playerStats) do
 		if player.Parent then
-			table.insert(list, { player = player, score = entry.score, entry = entry })
+			local value
+			if categoryKey == "coins" then
+				value = getCoins(player)
+			else
+				value = stats[categoryKey] or 0
+			end
+			if not best or value > best.value then
+				best = { player = player, value = value }
+			end
 		end
 	end
-	table.sort(list, function(a, b)
-		return a.score > b.score
-	end)
-	local result = {}
-	for i = 1, math.min(count, #list) do
-		result[i] = list[i]
-	end
-	return result
+	return best
 end
 
 local function updatePlacas()
-	-- Propósito: Escribir el top 3 en las placas del workspace.
-	-- Precondiciones:
-	--   1. Las placas existen en workspace/placas/.
-	-- Ubicación: ServerScriptService/RankService
-	-- Retorna: nil
-	local top = getTopPlayers(rankCfg.MAX_PLACES)
-
-	for index = 1, rankCfg.MAX_PLACES do
-		local placa = getPlaca(rankCfg.PLACA_NAMES[index])
-		if not placa then
-			-- Placa no encontrada: no es error, simplemente no se encontró.
-			continue
-		end
-		local label = getLabel(placa)
-		if not label then
-			continue
-		end
-
-		local entry = top[index]
-		if entry then
-			local kills = entry.entry.eliminations
-			label.Text = string.format(
-				"#%d  %s\n%d pts  |  %d kills",
-				index,
-				entry.player.Name,
-				entry.score,
-				kills
-			)
-		else
-			label.Text = string.format("#%d  ---\n0 pts  |  0 kills", index)
-		end
-	end
-end
-
-local function fullReset()
-	-- Propósito: Limpiar todas las puntuaciones al volver al lobby.
+	-- Propósito: Escribir cada categoría en su placa.
 	-- Precondiciones: ninguna.
 	-- Ubicación: ServerScriptService/RankService
 	-- Retorna: nil
-	for _, entry in pairs(playerScores) do
-		entry.score = 0
-		entry.eliminations = 0
-		entry.limbsFrozen = 0
+	for index, cat in ipairs(rankCfg.CATEGORIES) do
+		local placa = getPlaca(rankCfg.PLACA_NAMES[index])
+		if placa then
+			local titleLabel, valueLabel = getLabels(placa)
+			if titleLabel then
+				titleLabel.Text = "#" .. index .. " " .. cat.title
+			end
+			if valueLabel then
+				local top = topForCategory(cat.key)
+				if top then
+					valueLabel.Text = top.player.Name .. "\n" .. top.value
+				else
+					valueLabel.Text = "---\n0"
+				end
+			end
+		end
 	end
-	updatePlacas()
 end
 
 local RankService = {}
 
 function RankService.addScore(player, reason)
-	-- Propósito: Sumar puntos con registro de la razón.
+	-- Propósito: Registrar una eliminación o congelación de extremidad.
 	-- Precondiciones:
-	--   1. player es un Player válido.
-	--   2. reason es "elimination" o "limbFreeze".
+	--   1. player válido; reason "elimination" o "limbFreeze".
 	-- Ubicación: ServerScriptService/RankService
 	-- Retorna: nil
 	if not player or not player.Parent then return end
-
-	local entry = ensureScore(player)
+	local stats = ensureStats(player)
 	if reason == "elimination" then
-		entry.eliminations = entry.eliminations + 1
-		addPoints(player, rankCfg.POINTS_PER_ELIMINATION)
+		stats.eliminations = stats.eliminations + 1
 	elseif reason == "limbFreeze" then
-		entry.limbsFrozen = entry.limbsFrozen + 1
-		addPoints(player, rankCfg.POINTS_PER_LIMB_FREEZE)
+		stats.limbsFrozen = stats.limbsFrozen + 1
 	end
 end
 
+function RankService.addMatch(player)
+	-- Propósito: Registrar que el jugador jugó una partida.
+	-- Precondiciones:
+	--   1. player es un Player válido.
+	-- Ubicación: ServerScriptService/RankService
+	-- Retorna: nil
+	if not player or not player.Parent then return end
+	local stats = ensureStats(player)
+	stats.matchesPlayed = stats.matchesPlayed + 1
+end
+
 function RankService.onModeStarted(mode)
-	-- Propósito: Llamado por GameModeService al entrar en batalla/duelo.
+	-- Propósito: Llamado al iniciar una partida. Registra partidas jugadas
+	--            de todos los jugadores en la partida.
 	-- Precondiciones:
 	--   1. mode es BATTLE o DUEL.
 	-- Ubicación: ServerScriptService/RankService
 	-- Retorna: nil
-	-- Resetear puntuaciones al iniciar una partida nueva.
-	fullReset()
+	-- No resetear stats persistentes (congelados/partidas se acumulan).
 end
 
--- Hookear en el FreezeService para sumar puntos automáticamente.
--- Esperamos a que FreezeService esté listo y lo envolvemos.
-task.spawn(function()
-	while not (_G.ZB and _G.ZB.FreezeService) do
-		task.wait(0.5)
-	end
-
-	local originalApply = _G.ZB.FreezeService.apply
-	_G.ZB.FreezeService.apply = function(character, hitResult)
-		local result = originalApply(character, hitResult)
-		if result then
-			-- El atacante se determina en ShootingService; aquí solo
-			-- registramos que hubo un efecto sobre el objetivo.
-			-- La atribución de puntos se hace desde ShootingService.
-		end
-		return result
-	end
-end)
-
--- Iniciar bucle de actualización de placas.
+-- Bucle de actualización de placas.
 task.spawn(function()
 	while true do
 		task.wait(rankCfg.UPDATE_INTERVAL)
@@ -208,7 +172,7 @@ end)
 
 -- Limpiar al salir un jugador.
 Players.PlayerRemoving:Connect(function(player)
-	playerScores[player] = nil
+	playerStats[player] = nil
 end)
 
 _G.ZB = _G.ZB or {}

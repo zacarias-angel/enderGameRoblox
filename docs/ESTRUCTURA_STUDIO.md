@@ -23,6 +23,7 @@ ServerScriptService/
 ├── GameModeService         (Script)          <- src/ServerScriptService/GameModeService.server.lua
 ├── MatchService            (Script)          <- src/ServerScriptService/MatchService.server.lua
 ├── RankService             (Script)          <- src/ServerScriptService/RankService.server.lua
+├── CurrencyService         (Script)          <- src/ServerScriptService/CurrencyService.server.lua
 └── HoloLevitation          (Script)          <- src/ServerScriptService/HoloLevitation.server.lua
 
 StarterPlayer/
@@ -65,10 +66,14 @@ StarterPlayer/
    la arena). Este es el punto donde aparecen los jugadores al unirse al
    servidor. Sin esto, Roblox puede spawnear jugadores en cualquier lado,
    incluso dentro de la arena.
-5. **Placas de ranking**: crea una carpeta `placas` en Workspace. Dentro, 3 Parts
-   (`placas1`, `placas2`, `placas3`) estilo holograma: Neon, opacidad 85%,
-   con SurfaceGui (Face = Right) y TextLabel `"RankLabel"`. El `RankService`
-   actualiza automáticamente el top 3 cada 3 s.
+5. **Placas de ranking**: carpeta `placas` en Workspace con 3 Parts estilo
+   holograma (Neon, SurfaceGui Face=Right). Cada una muestra una categoría:
+   - `placas1` = **CONGELADOS** (más enemigos congelados)
+   - `placas2` = **PARTIDAS** (más partidas jugadas)
+   - `placas3` = **MONEDAS** (más monedas recolectadas)
+6. **Monedas**: el `CurrencyService` spawnea monedas doradas (Neon) en el lobby
+   y la arena (~100/hora). Tocar una moneda suma al leaderstat "Monedas".
+   Las monedas servirán para comprar/mejorar items.
 6. **Hologramas de controles**: crea una carpeta `Hologramas` en Workspace.
    Paneles Neon flotantes con SurfaceGui (Face = Right) mostrando los controles.
    El script `HoloLevitation` los hace levitar suavemente.

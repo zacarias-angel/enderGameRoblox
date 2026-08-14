@@ -459,11 +459,20 @@ task.spawn(function()
 				end
 				queue = {}
 
-				currentState = matchCfg.STATE_ACTIVE
-				joinWindowTimer = matchCfg.JOIN_WINDOW
-				matchTimer = 0
+			currentState = matchCfg.STATE_ACTIVE
+			joinWindowTimer = matchCfg.JOIN_WINDOW
+			matchTimer = 0
 
-				-- Teleportar a los que cambiaron de equipo o son nuevos.
+			-- Registrar partida jugada en el ranking.
+			if _G.ZB and _G.ZB.RankService then
+				for player, _ in pairs(playerTeam) do
+					if player.Parent then
+						_G.ZB.RankService.addMatch(player)
+					end
+				end
+			end
+
+			-- Teleportar a los que cambiaron de equipo o son nuevos.
 				for player, _ in pairs(playerTeam) do
 					if player.Parent then
 						teleportToArena(player)
