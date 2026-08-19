@@ -45,6 +45,7 @@ local function enableWalking(character)
 	humanoid.AutoRotate = true
 	humanoid.PlatformStand = false
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
@@ -57,6 +58,12 @@ local function enableWalking(character)
 		local force = rootPart:FindFirstChild("ZB_ThrustForce")
 		if force and force:IsA("VectorForce") then
 			force.Force = Vector3.zero
+		end
+		-- Desactivar el AlignOrientation 0g para que no pelee con el
+		-- AutoRotate del Humanoid al caminar en el lobby.
+		local align = rootPart:FindFirstChild("ZB_AlignOrientation")
+		if align and align:IsA("AlignOrientation") then
+			align.Enabled = false
 		end
 	end
 end
@@ -85,6 +92,12 @@ local function enableZeroG(character)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+
+	-- Reactivar el AlignOrientation 0g (se desactiva al volver al lobby).
+	local align = rootPart:FindFirstChild("ZB_AlignOrientation")
+	if align and align:IsA("AlignOrientation") then
+		align.Enabled = true
+	end
 end
 
 local function onModeChanged(mode, prevMode)

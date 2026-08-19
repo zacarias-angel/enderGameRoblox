@@ -101,6 +101,19 @@ local function validateAndResolve(shooter, origin, direction)
 	return targetChar, hitResult
 end
 
+local function getWeapon(player)
+	-- Propósito: Devolver la config del arma equipada por el jugador.
+	-- Precondiciones:
+	--   1. player es un Player válido.
+	-- Ubicación: ServerScriptService/ShootingService
+	-- Retorna: table de Config.Weapons (o la primera por defecto)
+	local id = player:GetAttribute("WeaponId")
+	for _, weapon in ipairs(Config.Weapons) do
+		if weapon.id == id then return weapon end
+	end
+	return Config.Weapons[1]
+end
+
 local function onFire(shooter, origin, direction)
 	-- Propósito: Manejar una petición de disparo validando todo en servidor.
 	-- Precondiciones:
@@ -127,9 +140,12 @@ local function onFire(shooter, origin, direction)
 		return
 	end
 
-	-- Cadencia.
+	-- Arma equipada del tirador.
+	local weapon = getWeapon(shooter)
+
+	-- Cadencia (según el arma).
 	local now = os.clock()
-	if lastFire[shooter] and (now - lastFire[shooter]) < Config.Weapon.FIRE_COOLDOWN then
+	if lastFire[shooter] and (now - lastFire[shooter]) < weapon.fireCooldown then
 		return
 	end
 	lastFire[shooter] = now
@@ -139,6 +155,12 @@ local function onFire(shooter, origin, direction)
 	if not shooterRoot then return end
 	local maxOriginDist = 8
 	if (origin - shooterRoot.Position).Magnitude > maxOriginDist then
+		return
+	end
+
+	-- Estamina: cada tiro consume estamina (limita la cantidad de disparos).
+	local Stamina = _G.ZB and _G.ZB.Stamina
+	if Stamina and not Stamina.spend(shooter, weapon.shotCost) then
 		return
 	end
 

@@ -33,8 +33,7 @@ local eliminated = false
 local smoothedThrust = Vector3.zero
 local zeroGActive = false
 
--- Energía compartida con el HUD vía atributo del jugador
-player:SetAttribute("BoostEnergy", energyCfg.MAX)
+-- Modo de juego compartido con otros scripts vía atributo del jugador.
 player:SetAttribute("GameMode", modeCfg.LOBBY)
 
 local function cachePhysics()
@@ -144,26 +143,6 @@ local function updateOrientation(dt)
 	alignOrient.CFrame = baseCFrame * CFrame.Angles(pitch, 0, roll)
 end
 
-local function updateEnergy(dt, wantsBoost)
-	-- Propósito: Consumir o regenerar energía de boost y devolver si aplica.
-	-- Precondiciones:
-	--   1. dt es el delta de tiempo del frame.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: boolean (true si el boost está activo este frame)
-	local energy = player:GetAttribute("BoostEnergy") or energyCfg.MAX
-	local boosting = false
-
-	if wantsBoost and energy > energyCfg.MIN_TO_BOOST then
-		energy = math.max(0, energy - energyCfg.BOOST_DRAIN_PER_SEC * dt)
-		boosting = true
-	else
-		energy = math.min(energyCfg.MAX, energy + energyCfg.REGEN_PER_SEC * dt)
-	end
-
-	player:SetAttribute("BoostEnergy", energy)
-	return boosting
-end
-
 local function onHeartbeat(dt)
 	-- Propósito: Aplicar empuje con inercia, drag y clamp de velocidad.
 	--            Solo actúa si el modo actual es 0g (BATTLE/DUEL).
@@ -208,8 +187,7 @@ local function onHeartbeat(dt)
 
 	updateOrientation(dt)
 
-	local wantsBoost = UserInputService:IsKeyDown(moveCfg.BOOST_KEY)
-	local boosting = updateEnergy(dt, wantsBoost)
+	local boosting = UserInputService:IsKeyDown(moveCfg.BOOST_KEY)
 
 	local direction = getInputVector()
 	local velocity = rootPart.AssemblyLinearVelocity

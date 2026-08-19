@@ -27,6 +27,28 @@ local fireWeapon = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("
 
 local lastFireLocal = 0
 
+local function getWeaponCfg()
+	-- Propósito: Config del arma equipada por el jugador.
+	-- Precondiciones: ninguna.
+	-- Ubicación: StarterPlayerScripts/ShootingController
+	-- Retorna: table de Config.Weapons (o la primera por defecto)
+	local id = player:GetAttribute("WeaponId")
+	for _, w in ipairs(Config.Weapons) do
+		if w.id == id then return w end
+	end
+	return Config.Weapons[1]
+end
+
+local function getLaserColor(weapon)
+	-- Propósito: Color del láser (override del taller o el del arma).
+	-- Precondiciones: 1. weapon es una table de Config.Weapons.
+	-- Ubicación: StarterPlayerScripts/ShootingController
+	-- Retorna: Color3
+	local override = player:GetAttribute("LaserColor")
+	if override ~= nil then return override end
+	return weapon.color
+end
+
 local function getAimRay()
 	-- Propósito: Construir el rayo desde la cámara pasando por la mira en
 	--            pantalla (centro + offset del HUD), para que el disparo vaya
@@ -54,10 +76,10 @@ local function getMuzzle(character)
 	return barrel and barrel:FindFirstChild("Muzzle") or nil
 end
 
-local function drawLaser(fromPos, toPos)
+local function drawLaser(fromPos, toPos, color, width)
 	-- Propósito: VFX del láser: beam neón con fade entre origen e impacto.
 	-- Precondiciones:
-	--   1. fromPos y toPos son Vector3.
+	--   1. fromPos y toPos son Vector3; color es Color3; width es number.
 	-- Ubicación: StarterPlayerScripts/ShootingController
 	-- Retorna: nil
 	local distance = (toPos - fromPos).Magnitude
@@ -69,8 +91,8 @@ local function drawLaser(fromPos, toPos)
 	beam.CanQuery = false
 	beam.CastShadow = false
 	beam.Material = Enum.Material.Neon
-	beam.Color = weaponCfg.LASER_COLOR
-	beam.Size = Vector3.new(weaponCfg.LASER_WIDTH, weaponCfg.LASER_WIDTH, distance)
+	beam.Color = color
+	beam.Size = Vector3.new(width, width, distance)
 	beam.CFrame = CFrame.lookAt(fromPos, toPos) * CFrame.new(0, 0, -distance / 2)
 	beam.Parent = workspace
 
@@ -83,10 +105,10 @@ local function drawLaser(fromPos, toPos)
 	Debris:AddItem(beam, weaponCfg.LASER_LIFETIME + 0.05)
 end
 
-local function muzzleFlash(position)
+local function muzzleFlash(position, color)
 	-- Propósito: Destello breve en la boca del cañón.
 	-- Precondiciones:
-	--   1. position es Vector3.
+	--   1. position es Vector3; color es Color3.
 	-- Ubicación: StarterPlayerScripts/ShootingController
 	-- Retorna: nil
 	local flash = Instance.new("Part")
@@ -96,13 +118,13 @@ local function muzzleFlash(position)
 	flash.CastShadow = false
 	flash.Shape = Enum.PartType.Ball
 	flash.Material = Enum.Material.Neon
-	flash.Color = weaponCfg.LASER_COLOR
+	flash.Color = color
 	flash.Size = Vector3.new(0.9, 0.9, 0.9)
 	flash.CFrame = CFrame.new(position)
 	flash.Parent = workspace
 
 	local light = Instance.new("PointLight")
-	light.Color = weaponCfg.LASER_COLOR
+	light.Color = color
 	light.Brightness = 6
 	light.Range = 10
 	light.Parent = flash
@@ -148,9 +170,18 @@ local function fire()
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
 
+	local weapon = getWeaponCfg()
+
+	-- Estamina local (feedback): sin estamina no se dispara.
+	local stamina = player:GetAttribute("Stamina")
+	if stamina == nil then stamina = 0 end
+	if stamina < weapon.shotCost then
+		return
+	end
+
 	-- Cadencia local (feedback inmediato; el servidor revalida).
 	local now = os.clock()
-	if (now - lastFireLocal) < weaponCfg.FIRE_COOLDOWN then
+	if (now - lastFireLocal) < weapon.fireCooldown then
 		return
 	end
 	lastFireLocal = now
@@ -169,8 +200,9 @@ local function fire()
 	local muzzle = getMuzzle(character)
 	local muzzlePos = muzzle and muzzle.WorldPosition or rootPart.Position
 
-	muzzleFlash(muzzlePos)
-	drawLaser(muzzlePos, hitPos)
+	local laserColor = getLaserColor(weapon)
+	muzzleFlash(muzzlePos, laserColor)
+	drawLaser(muzzlePos, hitPos, laserColor, weapon.laserWidth)
 	if ray then
 		impactSpark(hitPos)
 	end

@@ -43,6 +43,7 @@ local JOINT_NAMES = {
 -- Estado modo swim
 local swimTrack
 local zeroGActive = false  -- true si estamos en modo 0g (BATTLE/DUEL)
+local animGuardConn = nil -- conexión del guardia de AnimationPlayed
 
 local function shouldActivate()
 	-- Propósito: Saber si el modo actual es 0g.
@@ -97,7 +98,11 @@ local function stopDefaultAnimations()
 	end
 
 	-- Guardia continua: si alguna pista ajena arranca, la detenemos.
-	humanoid.AnimationPlayed:Connect(function(track)
+	if animGuardConn then
+		animGuardConn:Disconnect()
+		animGuardConn = nil
+	end
+	animGuardConn = humanoid.AnimationPlayed:Connect(function(track)
 		if not isOwnTrack(track) and not isAllowedForeignTrack(track) then
 			track:Stop(0)
 		end
@@ -114,6 +119,14 @@ local function enableNormalAnimations()
 	if animate then
 		animate.Disabled = false
 	end
+
+	-- Desconectar el guardia que mata animaciones ajenas al 0g para que
+	-- las animaciones de caminar/correr vuelvan a reproducirse en el lobby.
+	if animGuardConn then
+		animGuardConn:Disconnect()
+		animGuardConn = nil
+	end
+
 	-- Humanoid a estado Running para que Animate tome el control.
 	if humanoid then
 		humanoid:ChangeState(Enum.HumanoidStateType.Running)

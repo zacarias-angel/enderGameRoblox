@@ -55,6 +55,7 @@ Config.Pose = {
 -- ===== Energía / Boost =====
 Config.Energy = {
 	MAX = 100,
+	SHOT_COST = 10,             -- Estamina consumida por disparo (base)
 	BOOST_DRAIN_PER_SEC = 35,   -- Consumo al mantener Boost
 	REGEN_PER_SEC = 20,         -- Regeneración cuando no se usa Boost
 	MIN_TO_BOOST = 5,           -- Energía mínima para poder activar Boost
@@ -75,6 +76,38 @@ Config.Weapon = {
 	LASER_LIFETIME = 0.25,      -- Duración del beam con fade (s)
 	MUZZLE_FLASH_TIME = 0.08,   -- Duración del destello de disparo (s)
 	RECOIL_FORCE = 600,         -- Fuerza de retroceso al disparar (empuja fuerte hacia atrás)
+}
+
+-- ===== Armas (taller) =====
+Config.Weapons = {
+	{ id = "blaster", name = "Blaster", cost = 0,   fireCooldown = 0.18, shotCost = 20, laserWidth = 0.6, color = Color3.fromRGB(90, 220, 255) },
+	{ id = "rifle",   name = "Rifle",   cost = 100, fireCooldown = 0.10, shotCost = 20, laserWidth = 0.4, color = Color3.fromRGB(255, 120, 130) },
+	{ id = "cannon",  name = "Cañon",   cost = 250, fireCooldown = 0.55, shotCost = 50, laserWidth = 1.2, color = Color3.fromRGB(255, 200, 80) },
+}
+
+-- ===== Colores de láser (taller) =====
+Config.LaserColors = {
+	{ id = "cyan",   name = "Cian",   cost = 0,   color = Color3.fromRGB(90, 220, 255) },
+	{ id = "red",    name = "Rojo",   cost = 100, color = Color3.fromRGB(255, 90, 90) },
+	{ id = "green",  name = "Verde",  cost = 100, color = Color3.fromRGB(120, 255, 120) },
+	{ id = "purple", name = "Morado", cost = 200, color = Color3.fromRGB(190, 120, 255) },
+	{ id = "gold",   name = "Dorado", cost = 300, color = Color3.fromRGB(255, 215, 90) },
+}
+
+-- ===== Mejora de estamina (taller) =====
+Config.StaminaUpgrade = {
+	COST_PER_TIER = 50,   -- Monedas por compra
+	INCREASE = 20,        -- + estamina máxima por compra
+	MAX_CAP = 300,        -- Límite de estamina máxima
+}
+
+-- ===== Taller =====
+Config.Workshop = {
+	ATTRIBUTE = "isTaller",      -- Atributo que marca el taller en el lobby
+	KEY = Enum.KeyCode.F,        -- Tecla para abrir el taller (ProximityPrompt)
+	PROMPT_ACTION = "Abrir taller",
+	PROMPT_OBJECT = "Taller",
+	MAX_DISTANCE = 12,           -- Distancia para mostrar el prompt
 }
 
 -- ===== Gancho (grappling hook) =====
@@ -211,7 +244,7 @@ Config.Currency = {
 	COIN_COLOR = Color3.fromRGB(255, 210, 60),  -- Dorado
 	COIN_VALUE = 1,                 -- Valor de cada moneda
 	SPAWN_HEIGHT = 5,               -- Altura sobre el piso para spawnear
-	STARTING_COINS = 0,
+	STARTING_COINS = 500,
 	LEADERSTAT = "Monedas",
 }
 

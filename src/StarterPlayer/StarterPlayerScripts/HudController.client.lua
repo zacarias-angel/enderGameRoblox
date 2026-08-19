@@ -17,6 +17,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local energyCfg = Config.Energy
 local weaponCfg = Config.Weapon
+local matchCfg = Config.Match
+local modeCfg = Config.GameMode
+local currencyCfg = Config.Currency
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -55,6 +58,22 @@ local chCorner = Instance.new("UICorner")
 chCorner.CornerRadius = UDim.new(1, 0)
 chCorner.Parent = crosshair
 
+-- Anuncio de partida / cuenta regresiva (centro de pantalla)
+local matchStatus = Instance.new("TextLabel")
+matchStatus.Name = "MatchStatus"
+matchStatus.AnchorPoint = Vector2.new(0.5, 0.5)
+matchStatus.Position = UDim2.new(0.5, 0, 0.32, 0)
+matchStatus.Size = UDim2.fromOffset(640, 64)
+matchStatus.BackgroundTransparency = 1
+matchStatus.BorderSizePixel = 0
+matchStatus.Text = ""
+matchStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
+matchStatus.Font = Enum.Font.GothamBold
+matchStatus.TextSize = 40
+matchStatus.TextStrokeTransparency = 0
+matchStatus.Visible = false
+matchStatus.Parent = screenGui
+
 -- Barra de energía (arriba-derecha)
 local energyBack = Instance.new("Frame")
 energyBack.Name = "EnergyBar"
@@ -77,6 +96,22 @@ energyFill.Parent = energyBack
 local efCorner = Instance.new("UICorner")
 efCorner.CornerRadius = UDim.new(0, 6)
 efCorner.Parent = energyFill
+
+-- Contador de monedas (arriba-derecha, visible solo en lobby)
+local coinsLabel = Instance.new("TextLabel")
+coinsLabel.Name = "CoinsLabel"
+coinsLabel.AnchorPoint = Vector2.new(1, 0)
+coinsLabel.Position = UDim2.new(1, -24, 0, 24)
+coinsLabel.Size = UDim2.fromOffset(160, 24)
+coinsLabel.BackgroundTransparency = 1
+coinsLabel.BorderSizePixel = 0
+coinsLabel.Text = "0 monedas"
+coinsLabel.TextColor3 = Color3.fromRGB(255, 210, 60)
+coinsLabel.Font = Enum.Font.GothamBold
+coinsLabel.TextSize = 20
+coinsLabel.TextXAlignment = Enum.TextXAlignment.Right
+coinsLabel.Visible = false
+coinsLabel.Parent = screenGui
 
 -- Panel de extremidades (abajo-izquierda)
 local limbPanel = Instance.new("Frame")
@@ -163,21 +198,75 @@ local function onStateChanged(state)
 	end
 end
 
-local function updateEnergy()
-	-- Propósito: Refrescar la barra de energía desde el atributo local.
+local function updateHud()
+	-- Propósito: Refrescar barra de estamina (batalla) o contador de monedas (lobby).
 	-- Precondiciones: ninguna.
 	-- Ubicación: StarterPlayerScripts/HudController
 	-- Retorna: nil
-	local energy = player:GetAttribute("BoostEnergy") or energyCfg.MAX
-	local ratio = math.clamp(energy / energyCfg.MAX, 0, 1)
-	energyFill.Size = UDim2.fromScale(ratio, 1)
-	if ratio < 0.15 then
-		energyFill.BackgroundColor3 = Config.LedColors.FROZEN
+	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
+	local inBattle = (mode == modeCfg.BATTLE or mode == modeCfg.DUEL)
+
+	if inBattle then
+		energyBack.Visible = true
+		coinsLabel.Visible = false
+
+		local maxStamina = player:GetAttribute("MaxStamina") or energyCfg.MAX
+		local stamina = player:GetAttribute("Stamina")
+		if stamina == nil then stamina = maxStamina end
+		local ratio = math.clamp(stamina / maxStamina, 0, 1)
+		energyFill.Size = UDim2.fromScale(ratio, 1)
+		if ratio < 0.15 then
+			energyFill.BackgroundColor3 = Config.LedColors.FROZEN
+		else
+			energyFill.BackgroundColor3 = Color3.fromRGB(90, 220, 255)
+		end
 	else
-		energyFill.BackgroundColor3 = Color3.fromRGB(90, 220, 255)
+		energyBack.Visible = false
+		coinsLabel.Visible = true
+
+		local coins = 0
+		local stats = player:FindFirstChild("leaderstats")
+		local coinsVal = stats and stats:FindFirstChild(currencyCfg.LEADERSTAT)
+		if coinsVal then coins = coinsVal.Value end
+		coinsLabel.Text = tostring(coins) .. " monedas"
 	end
 end
 
 local stateChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StateChanged")
 stateChanged.OnClientEvent:Connect(onStateChanged)
-RunService.RenderStepped:Connect(updateEnergy)
+RunService.RenderStepped:Connect(updateHud)
+
+-- ===== Anuncio de estado de partida (cuenta regresiva / ganador) =====
+local function onMatchStateChanged(payload)
+	-- Propósito: Mostrar en pantalla la cuenta regresiva de inicio, el
+	--            anuncio del ganador y la cuenta para volver al lobby.
+	-- Precondiciones:
+	--   1. payload es una tabla con state, countdown, resetCountdown, winner.
+	-- Ubicación: StarterPlayerScripts/HudController
+	-- Retorna: nil
+	if type(payload) ~= "table" then return end
+
+	local state = payload.state
+
+	if state == matchCfg.STATE_COUNTDOWN then
+		matchStatus.Text = "La partida comienza en " .. tostring(payload.countdown or 0) .. "s"
+		matchStatus.Visible = true
+	elseif state == matchCfg.STATE_RESET then
+		matchStatus.Text = "Volviendo al lobby en " .. tostring(payload.resetCountdown or 0) .. "s"
+		matchStatus.Visible = true
+	elseif state == matchCfg.STATE_ENDING then
+		local winner = payload.winner
+		if winner and winner ~= "Empate" then
+			matchStatus.Text = "¡Gana el equipo " .. tostring(winner) .. "!"
+		else
+			matchStatus.Text = "Empate"
+		end
+		matchStatus.Visible = true
+	else
+		matchStatus.Text = ""
+		matchStatus.Visible = false
+	end
+end
+
+local matchStateChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("MatchStateChanged")
+matchStateChanged.OnClientEvent:Connect(onMatchStateChanged)

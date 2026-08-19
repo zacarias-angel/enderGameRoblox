@@ -11,12 +11,27 @@
 ]]
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local player = Players.LocalPlayer
 local character = script.Parent
 
 local WEAPON_NAME = "ZB_Blaster"
 local MUZZLE_NAME = "Muzzle"
+
+local function getWeaponCfg()
+	-- Propósito: Config del arma equipada por el jugador.
+	-- Precondiciones: ninguna.
+	-- Ubicación: StarterCharacterScripts/WeaponSetup
+	-- Retorna: table de Config.Weapons (o la primera por defecto)
+	local id = player:GetAttribute("WeaponId")
+	for _, w in ipairs(Config.Weapons) do
+		if w.id == id then return w end
+	end
+	return Config.Weapons[1]
+end
 
 local function makePart(name, size, color, material)
 	-- Propósito: Crear una BasePart base para el blaster.
@@ -60,6 +75,8 @@ local function buildBlaster(hand)
 		return character:FindFirstChild(WEAPON_NAME)
 	end
 
+	local weapon = getWeaponCfg()
+
 	local model = Instance.new("Model")
 	model.Name = WEAPON_NAME
 
@@ -71,13 +88,13 @@ local function buildBlaster(hand)
 	body.CFrame = baseCF
 	body.Parent = model
 
-	-- Cañón.
-	local barrel = makePart("Barrel", Vector3.new(0.22, 0.22, 1.1), Color3.fromRGB(30, 32, 40))
+	-- Cañón (el grosor escala con el arma).
+	local barrel = makePart("Barrel", Vector3.new(weapon.laserWidth, weapon.laserWidth, 1.1), Color3.fromRGB(30, 32, 40))
 	barrel.CFrame = baseCF * CFrame.new(0, 0.12, -0.9)
 	barrel.Parent = model
 
-	-- Núcleo de energía (neón).
-	local core = makePart("Core", Vector3.new(0.14, 0.14, 0.5), Color3.fromRGB(90, 220, 255), Enum.Material.Neon)
+	-- Núcleo de energía (neón, color del arma).
+	local core = makePart("Core", Vector3.new(0.14, 0.14, 0.5), weapon.color, Enum.Material.Neon)
 	core.CFrame = baseCF * CFrame.new(0, 0.12, -0.6)
 	core.Parent = model
 

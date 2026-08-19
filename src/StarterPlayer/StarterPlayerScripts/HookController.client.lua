@@ -25,6 +25,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local hookCfg = Config.Hook
 local moveCfg = Config.Movement
+local modeCfg = Config.GameMode
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
@@ -224,6 +225,9 @@ local function fireHook()
 	-- Ubicación: StarterPlayerScripts/HookController
 	-- Retorna: boolean (true si se enganchó)
 	if hookActive then return false end
+	-- Solo se puede usar el gancho en batalla/duelo (0g), no en el lobby.
+	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
+	if mode ~= modeCfg.BATTLE and mode ~= modeCfg.DUEL then return false end
 	-- Evitar conflicto con el agarre (E): no enganchar si estamos agarrados.
 	if player:GetAttribute("Grabbing") then return false end
 	if not rootPart then
@@ -275,8 +279,16 @@ local function releaseHook(keepInertia)
 	anchorTarget = nil
 	destroyRope()
 
+	-- Dejar de aplicar fuerza de gancho inmediatamente.
+	if thrustForce and thrustForce:IsA("VectorForce") then
+		thrustForce.Force = Vector3.zero
+	end
+
 	if keepInertia and rootPart then
 		rootPart.AssemblyLinearVelocity = rootPart.AssemblyLinearVelocity * hookCfg.DRIFT_RETENTION
+	elseif rootPart then
+		-- Sin inercia (ej. al volver al lobby): frenar para no salir volando.
+		rootPart.AssemblyLinearVelocity = Vector3.zero
 	end
 end
 
@@ -297,6 +309,12 @@ local function updateHook(dt)
 	-- Precondiciones: ninguna.
 	-- Ubicación: StarterPlayerScripts/HookController
 	-- Retorna: nil
+	-- Si volvimos al lobby, soltar el gancho (no permitir tirar en lobby).
+	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
+	if (mode ~= modeCfg.BATTLE and mode ~= modeCfg.DUEL) and hookActive then
+		releaseHook(false)
+		return
+	end
 	if not hookActive or not rootPart or not thrustForce then return end
 	if not thrustForce.Parent then
 		releaseHook(false)
@@ -375,3 +393,11 @@ player.CharacterAdded:Connect(bindCharacter)
 UserInputService.InputBegan:Connect(onInputBegan)
 UserInputService.InputEnded:Connect(onInputEnded)
 RunService.Heartbeat:Connect(updateHook)
+
+-- Al volver al lobby, soltar el gancho y frenar (evita salir volando al vacío).
+local modeChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameModeChanged")
+modeChanged.OnClientEvent:Connect(function(mode)
+	if mode ~= modeCfg.BATTLE and mode ~= modeCfg.DUEL then
+		releaseHook(false)
+	end
+end)

@@ -69,6 +69,7 @@ local queue = {}           -- { player } jugadores que pidieron entrar (antes de
 local matchTimer = 0       -- tiempo transcurrido desde ACTIVE
 local joinWindowTimer = 0  -- tiempo restante de ventana de entrada
 local countdownTimer = 0   -- tiempo restante de cuenta regresiva
+local resetCountdown = 0   -- tiempo restante para volver al lobby
 local matchActive = false
 local teamEliminated = {}  -- [team] = true si el equipo fue aniquilado
 local teleportedPlayers = {}  -- [player] = true si ya fue teleportado a la arena
@@ -225,6 +226,7 @@ local function broadcastState()
 		matchTimer = matchTimer,
 		joinWindow = joinWindowTimer,
 		countdown = countdownTimer,
+		resetCountdown = resetCountdown,
 		matchDuration = matchCfg.MATCH_DURATION,
 		finalizing = finalizing,
 		finalizeCountdown = finalizeCountdown,
@@ -279,6 +281,7 @@ local function resetMatch()
 	matchTimer = 0
 	joinWindowTimer = 0
 	countdownTimer = 0
+	resetCountdown = 0
 	matchActive = false
 	queue = {}
 	playerTeam = {}
@@ -374,10 +377,8 @@ local function endMatch(winningTeam)
 	task.wait(3)
 
 	currentState = matchCfg.STATE_RESET
+	resetCountdown = matchCfg.RESET_TIME
 	broadcastState()
-
-	task.wait(matchCfg.RESET_TIME)
-	resetMatch()
 end
 
 local function startMatch()
@@ -622,6 +623,13 @@ task.spawn(function()
 				end
 			end
 
+		elseif currentState == matchCfg.STATE_RESET then
+			resetCountdown = resetCountdown - 1
+			if resetCountdown <= 0 then
+				resetMatch()
+			else
+				broadcastState()
+			end
 		end
 	end
 end)
@@ -659,7 +667,10 @@ Players.PlayerRemoving:Connect(function(player)
 
 	-- Si era el último de su equipo y la partida está activa, verificar victoria.
 	if matchActive and (currentState == matchCfg.STATE_ACTIVE or currentState == matchCfg.STATE_LOCKED) then
-		local winner = checkWinCondition()
+		local winner = checkAnnihilation()
+		if not winner then
+			winner = checkWinCondition()
+		end
 		if winner then
 			endMatch(winner)
 		end
