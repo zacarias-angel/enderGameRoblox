@@ -23,6 +23,7 @@ local currencyCfg = Config.Currency
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local battleOptOutChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("BattleOptOutChanged")
 
 -- ===== Construcción de UI =====
 local screenGui = Instance.new("ScreenGui")
@@ -62,17 +63,68 @@ chCorner.Parent = crosshair
 local matchStatus = Instance.new("TextLabel")
 matchStatus.Name = "MatchStatus"
 matchStatus.AnchorPoint = Vector2.new(0.5, 0.5)
-matchStatus.Position = UDim2.new(0.5, 0, 0.32, 0)
-matchStatus.Size = UDim2.fromOffset(640, 64)
+matchStatus.Position = UDim2.new(0.5, 0, 0, 72)
+matchStatus.Size = UDim2.fromOffset(420, 36)
 matchStatus.BackgroundTransparency = 1
 matchStatus.BorderSizePixel = 0
 matchStatus.Text = ""
 matchStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
 matchStatus.Font = Enum.Font.GothamBold
-matchStatus.TextSize = 40
+matchStatus.TextSize = 24
 matchStatus.TextStrokeTransparency = 0
 matchStatus.Visible = false
 matchStatus.Parent = screenGui
+
+local roundOptions = Instance.new("Frame")
+roundOptions.Name = "RoundOptions"
+roundOptions.AnchorPoint = Vector2.new(1, 0)
+roundOptions.Position = UDim2.new(1, -24, 0, 54)
+roundOptions.Size = UDim2.fromOffset(250, 28)
+roundOptions.BackgroundTransparency = 0.45
+roundOptions.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
+roundOptions.BorderSizePixel = 0
+roundOptions.Parent = screenGui
+local roundOptionsCorner = Instance.new("UICorner")
+roundOptionsCorner.CornerRadius = UDim.new(0, 8)
+roundOptionsCorner.Parent = roundOptions
+
+local optOutButton = Instance.new("TextButton")
+optOutButton.Name = "OptOutButton"
+optOutButton.AnchorPoint = Vector2.new(0, 0.5)
+optOutButton.Position = UDim2.fromOffset(8, 14)
+optOutButton.Size = UDim2.fromOffset(14, 14)
+optOutButton.BackgroundColor3 = Color3.fromRGB(50, 60, 75)
+optOutButton.BorderSizePixel = 0
+optOutButton.Text = ""
+optOutButton.AutoButtonColor = false
+optOutButton.Parent = roundOptions
+local optOutCorner = Instance.new("UICorner")
+optOutCorner.CornerRadius = UDim.new(0, 5)
+optOutCorner.Parent = optOutButton
+
+local optOutCheck = Instance.new("TextLabel")
+optOutCheck.Name = "Check"
+optOutCheck.Size = UDim2.fromScale(1, 1)
+optOutCheck.BackgroundTransparency = 1
+optOutCheck.Text = ""
+optOutCheck.TextColor3 = Color3.fromRGB(20, 30, 40)
+optOutCheck.Font = Enum.Font.GothamBold
+optOutCheck.TextSize = 12
+optOutCheck.Parent = optOutButton
+
+local optOutLabel = Instance.new("TextLabel")
+optOutLabel.Name = "OptOutLabel"
+optOutLabel.AnchorPoint = Vector2.new(0, 0.5)
+optOutLabel.Position = UDim2.fromOffset(28, 14)
+optOutLabel.Size = UDim2.fromOffset(214, 18)
+optOutLabel.BackgroundTransparency = 1
+optOutLabel.BorderSizePixel = 0
+optOutLabel.Text = "No entrar a la proxima batalla"
+optOutLabel.TextColor3 = Color3.fromRGB(230, 235, 245)
+optOutLabel.Font = Enum.Font.GothamMedium
+optOutLabel.TextSize = 13
+optOutLabel.TextXAlignment = Enum.TextXAlignment.Left
+optOutLabel.Parent = roundOptions
 
 -- Barra de energía (arriba-derecha)
 local energyBack = Instance.new("Frame")
@@ -232,6 +284,19 @@ local function updateHud()
 	end
 end
 
+local function updateOptOutUi()
+	local optedOut = player:GetAttribute(matchCfg.OPT_OUT_ATTRIBUTE) == true
+	if optedOut then
+		optOutButton.BackgroundColor3 = Color3.fromRGB(255, 213, 79)
+		optOutCheck.Text = "X"
+		optOutLabel.TextColor3 = Color3.fromRGB(255, 230, 150)
+	else
+		optOutButton.BackgroundColor3 = Color3.fromRGB(50, 60, 75)
+		optOutCheck.Text = ""
+		optOutLabel.TextColor3 = Color3.fromRGB(230, 235, 245)
+	end
+end
+
 local stateChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StateChanged")
 stateChanged.OnClientEvent:Connect(onStateChanged)
 RunService.RenderStepped:Connect(updateHud)
@@ -251,12 +316,18 @@ local function onMatchStateChanged(payload)
 	if state == matchCfg.STATE_COUNTDOWN then
 		matchStatus.Text = "La partida comienza en " .. tostring(payload.countdown or 0) .. "s"
 		matchStatus.Visible = true
-	elseif state == matchCfg.STATE_RESET then
-		matchStatus.Text = "Volviendo al lobby en " .. tostring(payload.resetCountdown or 0) .. "s"
+	elseif state == matchCfg.STATE_LOBBY then
+		matchStatus.Text = "Esperando jugadores: " .. tostring(payload.eligiblePlayers or 0) .. "/" .. tostring(matchCfg.MIN_PLAYERS_TO_START)
+		matchStatus.Visible = true
+	elseif state == matchCfg.STATE_ACTIVE or state == matchCfg.STATE_LOCKED then
+		local remaining = math.max(0, (payload.matchDuration or 0) - (payload.matchTimer or 0))
+		matchStatus.Text = "Tiempo restante: " .. tostring(remaining) .. "s"
 		matchStatus.Visible = true
 	elseif state == matchCfg.STATE_ENDING then
 		local winner = payload.winner
-		if winner and winner ~= "Empate" then
+		if winner == "Partida invalida" then
+			matchStatus.Text = "Partida invalida"
+		elseif winner and winner ~= "Empate" then
 			matchStatus.Text = "¡Gana el equipo " .. tostring(winner) .. "!"
 		else
 			matchStatus.Text = "Empate"
@@ -270,3 +341,11 @@ end
 
 local matchStateChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("MatchStateChanged")
 matchStateChanged.OnClientEvent:Connect(onMatchStateChanged)
+
+optOutButton.MouseButton1Click:Connect(function()
+	local nextValue = not (player:GetAttribute(matchCfg.OPT_OUT_ATTRIBUTE) == true)
+	battleOptOutChanged:FireServer(nextValue)
+end)
+
+player:GetAttributeChangedSignal(matchCfg.OPT_OUT_ATTRIBUTE):Connect(updateOptOutUi)
+updateOptOutUi()

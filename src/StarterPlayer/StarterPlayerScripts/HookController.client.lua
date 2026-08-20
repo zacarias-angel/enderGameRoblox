@@ -29,6 +29,7 @@ local modeCfg = Config.GameMode
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
+local hookVisual = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("HookVisual")
 
 local character, rootPart, thrustForce
 local hookActive = false
@@ -38,6 +39,7 @@ local ropeBeam = nil           -- Beam visual
 local ropeAttach0 = nil        -- Attachment en el jugador
 local ropeAttach1 = nil        -- Attachment en el punto de anclaje
 local lastHookTime = 0
+local lastHookVisualUpdate = 0
 
 player:SetAttribute("Hooking", false)
 
@@ -219,6 +221,13 @@ local function getAnchorPosition()
 	return anchorPoint
 end
 
+local function sendHookVisual(action)
+	if not rootPart then return end
+	hookVisual:FireServer(action, {
+		targetPos = getAnchorPosition(),
+	})
+end
+
 local function fireHook()
 	-- Propósito: Lanzar el gancho y engancharse al primer impacto.
 	-- Precondiciones: ninguna.
@@ -263,6 +272,7 @@ local function fireHook()
 	spawnProjectile(rootPart.Position, hitPos)
 	task.wait(0.05)
 	createRope(rootPart.Position, anchorPoint)
+	sendHookVisual("start")
 
 	print("[ZB Hook] Enganchado a", hitPart:GetFullName(), "distancia =", math.floor((hitPos - rootPart.Position).Magnitude))
 	return true
@@ -277,6 +287,7 @@ local function releaseHook(keepInertia)
 	hookActive = false
 	player:SetAttribute("Hooking", false)
 	anchorTarget = nil
+	sendHookVisual("release")
 	destroyRope()
 
 	-- Dejar de aplicar fuerza de gancho inmediatamente.
@@ -325,6 +336,10 @@ local function updateHook(dt)
 	local targetPos = getAnchorPosition()
 	local toAnchor = targetPos - rootPart.Position
 	local distance = toAnchor.Magnitude
+	if (os.clock() - lastHookVisualUpdate) >= 0.08 then
+		lastHookVisualUpdate = os.clock()
+		sendHookVisual("update")
+	end
 
 	if distance < hookCfg.BREAK_DISTANCE then
 		releaseHook(true)

@@ -173,10 +173,11 @@ Config.GameMode = {
 Config.Match = {
 	JOIN_WINDOW = 60,               -- Tiempo desde inicio de partida para poder entrar (s)
 	MATCH_DURATION = 300,           -- Duración máxima de partida (s)
-	COUNTDOWN = 10,                 -- Cuenta regresiva antes de iniciar partida (s)
+	COUNTDOWN = 60,                 -- Tiempo fijo antes de la siguiente partida (s)
 	RESET_TIME = 8,                 -- Tiempo entre partidas para volver al lobby (s)
 	FINALIZE_TIME = 10,             -- Cronómetro final cuando queda un solo equipo (s)
-	MIN_PLAYERS_TO_START = 1,       -- Mínimo de jugadores para arrancar (1 = debug)
+	MIN_PLAYERS_TO_START = 2,       -- Mínimo de jugadores conectados para arrancar
+	OPT_OUT_ATTRIBUTE = "BattleOptOut", -- Atributo del jugador para excluirlo de la siguiente batalla
 	-- Estados de la partida (interno del servidor)
 	STATE_LOBBY = "LOBBY",          -- No hay partida, aceptando jugadores
 	STATE_COUNTDOWN = "COUNTDOWN",  -- Cuenta regresiva antes de empezar
@@ -202,14 +203,14 @@ Config.Match = {
 
 Config.Portal = {
 	ATTRIBUTE = "isPortal",         -- Atributo que marca el portal en el workspace
-	PROMPT_ACTION = "Entrar a la arena",
+	PROMPT_ACTION = "Estado de la arena",
 	PROMPT_OBJECT = "Portal de Batalla",
 	KEY = Enum.KeyCode.F,           -- Tecla para activar el portal
 	MAX_DISTANCE = 15,              -- Distancia para mostrar el prompt
 	-- Labels según estado
-	TEXT_OPEN = "Unirse a la partida",
-	TEXT_HURRY = "Partida en curso - Unirse",
-	TEXT_CLOSED = "Partida cerrada",
+	TEXT_OPEN = "Proxima partida automatica",
+	TEXT_HURRY = "Partida en curso",
+	TEXT_CLOSED = "Partida en curso",
 	TEXT_WAITING = "Esperando jugadores...",
 }
 

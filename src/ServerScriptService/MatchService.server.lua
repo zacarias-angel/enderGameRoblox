@@ -4,37 +4,29 @@
 
 --[[
 	MatchService
-	Sistema completo de partidas con portal, equipos balanceados y timer.
+	Sistema de partidas automáticas con equipos balanceados y timer.
 	Flujo de una partida:
 
-	  LOBBY → COUNTDOWN → ACTIVE → LOCKED → ENDING → RESET → LOBBY ...
+	  LOBBY → COUNTDOWN → ACTIVE → ENDING → RESET → LOBBY ...
 
-	- LOBBY: jugadores en el lobby, portal abierto (verde).
-	         Se forma cola. Al llegar al mínimo o por comando admin, arranca
-	         la cuenta regresiva.
-	- COUNTDOWN: 10s de cuenta regresiva. Se asignan equipos balanceados.
-	             El portal sigue aceptando jugadores (verde).
+	- LOBBY: todos esperan en el lobby con gravedad normal.
+	- COUNTDOWN: cuenta regresiva global. Al terminar, entran juntos todos los
+	             jugadores conectados en ese momento.
 	- ACTIVE: partida en curso. Jugadores teleportados a spawns. Gravedad 0.
-	          JOIN_WINDOW (60s): el portal sigue abierto (amarillo), nuevos
-	          jugadores pueden entrar al equipo con menos jugadores.
-	- LOCKED: JOIN_WINDOW terminó. Portal cerrado (rojo). No entran más
-	          jugadores. La partida sigue hasta que un equipo elimine al otro
-	          o se acabe MATCH_DURATION (gana el equipo con más vivos).
 	- ENDING: se anuncia el ganador. 3s de pausa.
 	- RESET: se devuelve a todos al lobby, gravedad normal. Se limpia el
-	         estado. Luego vuelve a LOBBY.
+	         estado. Luego vuelve a LOBBY y, si hay suficientes jugadores,
+	         arranca otra cuenta regresiva.
 
-	RemoteEvents: JoinMatchRequest (cliente→servidor), MatchStateChanged (s→c).
+	RemoteEvents: JoinMatchRequest (compat), MatchStateChanged (s→c).
 	API: _G.ZB.MatchService.
 ]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local matchCfg = Config.Match
-local portalCfg = Config.Portal
 local modeCfg = Config.GameMode
 
 local function ensureRemote(name)
@@ -60,24 +52,83 @@ end
 
 local joinRequest = ensureRemote("JoinMatchRequest")
 local matchStateChanged = ensureRemote("MatchStateChanged")
-local modeChanged = ensureRemote("GameModeChanged")
+local battleOptOutChanged = ensureRemote("BattleOptOutChanged")
 
 -- ===== Estado global =====
 local currentState = matchCfg.STATE_LOBBY
 local playerTeam = {}      -- [player] = "Azul" | "Rojo"
-local queue = {}           -- { player } jugadores que pidieron entrar (antes de arrancar)
 local matchTimer = 0       -- tiempo transcurrido desde ACTIVE
-local joinWindowTimer = 0  -- tiempo restante de ventana de entrada
 local countdownTimer = 0   -- tiempo restante de cuenta regresiva
 local resetCountdown = 0   -- tiempo restante para volver al lobby
 local matchActive = false
 local teamEliminated = {}  -- [team] = true si el equipo fue aniquilado
-local teleportedPlayers = {}  -- [player] = true si ya fue teleportado a la arena
 local finalizing = false      -- true durante el cronómetro final
 local finalizeCountdown = 0   -- segundos restantes del cronómetro final
 local finalizeWinner = nil    -- equipo ganador cuando termina el cronómetro
 local dummyModel = nil        -- NPC dummy en la arena
 local dummyTeam = matchCfg.TEAM_ROJO  -- el dummy va al equipo Rojo
+local broadcastState
+
+local function isPlayerOptedOut(player)
+	return player:GetAttribute(matchCfg.OPT_OUT_ATTRIBUTE) == true
+end
+
+local function getConnectedPlayers()
+	local players = {}
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.Parent then
+			table.insert(players, player)
+		end
+	end
+	table.sort(players, function(a, b)
+		return a.UserId < b.UserId
+	end)
+	return players
+end
+
+local function getEligiblePlayers()
+	local eligible = {}
+	for _, player in ipairs(getConnectedPlayers()) do
+		if not isPlayerOptedOut(player) then
+			table.insert(eligible, player)
+		end
+	end
+	return eligible
+end
+
+local function canStartRound()
+	return #getEligiblePlayers() >= matchCfg.MIN_PLAYERS_TO_START
+end
+
+local function countActiveParticipants()
+	local count = 0
+	for player, _ in pairs(playerTeam) do
+		if player.Parent then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+local function startCountdown()
+	if currentState ~= matchCfg.STATE_LOBBY then return end
+	if not canStartRound() then return end
+
+	currentState = matchCfg.STATE_COUNTDOWN
+	countdownTimer = matchCfg.COUNTDOWN
+	broadcastState()
+end
+
+local function assignTeamsForPlayers(players)
+	playerTeam = {}
+	for index, player in ipairs(players) do
+		if index % 2 == 1 then
+			playerTeam[player] = matchCfg.TEAM_AZUL
+		else
+			playerTeam[player] = matchCfg.TEAM_ROJO
+		end
+	end
+end
 
 local function findDummy()
 	-- Propósito: Encontrar el dummy NPC (Humanoid sin Player) en el workspace.
@@ -143,23 +194,6 @@ local function countTeamTotal(team)
 	return count
 end
 
-local function assignTeam(player)
-	-- Propósito: Asignar al jugador al equipo con menos jugadores.
-	-- Precondiciones:
-	--   1. player es un Player válido.
-	-- Ubicación: ServerScriptService/MatchService
-	-- Retorna: string ("Azul" o "Rojo")
-	local azul = countTeamTotal(matchCfg.TEAM_AZUL)
-	local rojo = countTeamTotal(matchCfg.TEAM_ROJO)
-	if azul <= rojo then
-		playerTeam[player] = matchCfg.TEAM_AZUL
-		return matchCfg.TEAM_AZUL
-	else
-		playerTeam[player] = matchCfg.TEAM_ROJO
-		return matchCfg.TEAM_ROJO
-	end
-end
-
 local function getSpawnPosition(player)
 	-- Propósito: Calcular la posición de spawn según el equipo del jugador.
 	-- Precondiciones:
@@ -216,7 +250,7 @@ local function teleportToArena(player)
 	root.AssemblyAngularVelocity = Vector3.zero
 end
 
-local function broadcastState()
+broadcastState = function()
 	-- Propósito: Enviar el estado actual de la partida a todos los clientes.
 	-- Precondiciones: ninguna.
 	-- Ubicación: ServerScriptService/MatchService
@@ -224,12 +258,13 @@ local function broadcastState()
 	local payload = {
 		state = currentState,
 		matchTimer = matchTimer,
-		joinWindow = joinWindowTimer,
 		countdown = countdownTimer,
 		resetCountdown = resetCountdown,
 		matchDuration = matchCfg.MATCH_DURATION,
 		finalizing = finalizing,
 		finalizeCountdown = finalizeCountdown,
+		connectedPlayers = #getConnectedPlayers(),
+		eligiblePlayers = #getEligiblePlayers(),
 		playersPerTeam = {
 			[matchCfg.TEAM_AZUL] = countTeamTotal(matchCfg.TEAM_AZUL),
 			[matchCfg.TEAM_ROJO] = countTeamTotal(matchCfg.TEAM_ROJO),
@@ -279,14 +314,11 @@ local function resetMatch()
 	-- Retorna: nil
 	currentState = matchCfg.STATE_LOBBY
 	matchTimer = 0
-	joinWindowTimer = 0
 	countdownTimer = 0
 	resetCountdown = 0
 	matchActive = false
-	queue = {}
 	playerTeam = {}
 	teamEliminated = {}
-	teleportedPlayers = {}
 	finalizing = false
 	finalizeCountdown = 0
 	finalizeWinner = nil
@@ -317,6 +349,13 @@ local function resetMatch()
 	end
 	dummyModel = nil
 
+	if canStartRound() then
+		currentState = matchCfg.STATE_COUNTDOWN
+		countdownTimer = matchCfg.COUNTDOWN
+	else
+		currentState = matchCfg.STATE_LOBBY
+		countdownTimer = 0
+	end
 	broadcastState()
 end
 
@@ -357,7 +396,7 @@ local function checkWinCondition()
 	return nil
 end
 
-local function endMatch(winningTeam)
+local function endMatch(winningTeam, resultMessage)
 	-- Propósito: Finalizar la partida con un ganador.
 	-- Precondiciones:
 	--   1. winningTeam es "Azul", "Rojo" o nil (empate).
@@ -367,7 +406,7 @@ local function endMatch(winningTeam)
 	broadcastState()
 
 	-- Anunciar ganador a todos los clientes.
-	local result = winningTeam or "Empate"
+	local result = resultMessage or winningTeam or "Empate"
 	matchStateChanged:FireAllClients({
 		state = currentState,
 		winner = result,
@@ -375,40 +414,31 @@ local function endMatch(winningTeam)
 	})
 
 	task.wait(3)
-
-	currentState = matchCfg.STATE_RESET
-	resetCountdown = matchCfg.RESET_TIME
-	broadcastState()
+	resetMatch()
 end
 
 local function startMatch()
-	-- Propósito: Iniciar la partida: asignar equipos, teleportar, cambiar modo.
+	-- Propósito: Iniciar la partida con todos los jugadores conectados.
 	-- Precondiciones:
-	--   1. Hay al menos 1 jugador en cola.
+	--   1. Hay suficientes jugadores conectados.
 	-- Ubicación: ServerScriptService/MatchService
 	-- Retorna: nil
-	currentState = matchCfg.STATE_COUNTDOWN
-	countdownTimer = matchCfg.COUNTDOWN
+	local participants = getEligiblePlayers()
+	if #participants < matchCfg.MIN_PLAYERS_TO_START then
+		currentState = matchCfg.STATE_LOBBY
+		countdownTimer = 0
+		broadcastState()
+		return
+	end
+
+	assignTeamsForPlayers(participants)
+	currentState = matchCfg.STATE_ACTIVE
+	countdownTimer = 0
+	matchTimer = 0
 	matchActive = true
 
 	-- Registrar el dummy NPC y asignarlo al equipo Rojo.
 	dummyModel = findDummy()
-
-	broadcastState()
-
-	-- Asignar equipos a todos los jugadores en cola.
-	for _, player in ipairs(queue) do
-		if player.Parent then
-			assignTeam(player)
-		end
-	end
-
-	-- También asignar a cualquier jugador que ya tenga equipo (por reentrada).
-	for _, player in ipairs(Players:GetPlayers()) do
-		if not playerTeam[player] then
-			-- No está en la partida, puede ser espectador
-		end
-	end
 
 	-- Cambiar a gravedad cero.
 	if _G.ZB and _G.ZB.GameMode then
@@ -419,13 +449,17 @@ local function startMatch()
 	for player, _ in pairs(playerTeam) do
 		if player.Parent then
 			teleportToArena(player)
-			teleportedPlayers[player] = true
 		end
 	end
 
 	-- Notificar al RankService.
 	if _G.ZB and _G.ZB.RankService then
 		_G.ZB.RankService.onModeStarted(modeCfg.BATTLE)
+		for _, player in ipairs(participants) do
+			if player.Parent then
+				_G.ZB.RankService.addMatch(player)
+			end
+		end
 	end
 
 	broadcastState()
@@ -452,74 +486,25 @@ function MatchService.getPlayerTeam(player)
 end
 
 function MatchService.canJoin()
-	-- Propósito: Saber si un jugador nuevo puede entrar a la partida.
+	-- Propósito: Compatibilidad con el viejo portal manual.
 	-- Precondiciones: ninguna.
 	-- Ubicación: ServerScriptService/MatchService
 	-- Retorna: boolean
-	return currentState == matchCfg.STATE_LOBBY
-		or currentState == matchCfg.STATE_COUNTDOWN
-		or currentState == matchCfg.STATE_ACTIVE
+	return currentState == matchCfg.STATE_LOBBY or currentState == matchCfg.STATE_COUNTDOWN
 end
 
 function MatchService.requestJoin(player)
-	-- Propósito: Un jugador pide entrar a la partida vía portal.
+	-- Propósito: Compatibilidad con el viejo portal manual.
 	-- Precondiciones:
 	--   1. player es un Player válido y conectado.
 	-- Ubicación: ServerScriptService/MatchService
 	-- Retorna: boolean (true si fue aceptado)
 	if not player or not player.Parent then return false end
-
-	-- Ya está en la partida.
-	if playerTeam[player] then
-		return true
+	if currentState == matchCfg.STATE_LOBBY and canStartRound() then
+		startCountdown()
 	end
-
-	if not MatchService.canJoin() then
-		return false
-	end
-
-	-- En LOBBY: añadir a la cola.
-	if currentState == matchCfg.STATE_LOBBY then
-		table.insert(queue, player)
-		-- Asignar equipo temporal (se reasignará al arrancar la partida
-		-- para balancear con TODOS los de la cola).
-		assignTeam(player)
-
-		-- Si hay suficientes jugadores, iniciar cuenta regresiva.
-		if #queue >= matchCfg.MIN_PLAYERS_TO_START then
-			startMatch()
-		end
-		broadcastState()
-		return true
-	end
-
-	-- En COUNTDOWN: añadir a la cola y rebalancear.
-	if currentState == matchCfg.STATE_COUNTDOWN then
-		table.insert(queue, player)
-		assignTeam(player)
-
-		-- Notificar a este jugador que está en modo BATTLE (ya empezó).
-		modeChanged:FireClient(player, modeCfg.BATTLE, modeCfg.LOBBY)
-
-		broadcastState()
-		return true
-	end
-
-	-- En ACTIVE (ventana abierta): entrar directo, sin cola.
-	if currentState == matchCfg.STATE_ACTIVE then
-		assignTeam(player)
-		teleportToArena(player)
-		teleportedPlayers[player] = true
-
-		-- Notificar al cliente que está en modo BATTLE para que active
-		-- físicas 0g, pose de nado, etc. (GameModeChanged global ya pasó).
-		modeChanged:FireClient(player, modeCfg.BATTLE, modeCfg.LOBBY)
-
-		broadcastState()
-		return true
-	end
-
-	return false
+	broadcastState()
+	return MatchService.canJoin()
 end
 
 function MatchService.forceStart()
@@ -529,15 +514,10 @@ function MatchService.forceStart()
 	-- Ubicación: ServerScriptService/MatchService
 	-- Retorna: nil
 	if currentState ~= matchCfg.STATE_LOBBY then return end
-	-- Meter a todos los jugadores presentes en la cola.
-	for _, player in ipairs(Players:GetPlayers()) do
-		if not playerTeam[player] then
-			table.insert(queue, player)
-		end
-	end
-	if #queue > 0 then
-		startMatch()
-	end
+	if not canStartRound() then return end
+	currentState = matchCfg.STATE_COUNTDOWN
+	countdownTimer = matchCfg.COUNTDOWN
+	broadcastState()
 end
 
 -- ===== Loop principal (servidor, cada segundo) =====
@@ -546,42 +526,16 @@ task.spawn(function()
 		task.wait(1)
 
 		if currentState == matchCfg.STATE_COUNTDOWN then
+			if not canStartRound() then
+				currentState = matchCfg.STATE_LOBBY
+				countdownTimer = 0
+				broadcastState()
+				continue
+			end
+
 			countdownTimer = countdownTimer - 1
 			if countdownTimer <= 0 then
-				-- Rebalancear equipos con todos los de la cola.
-				local oldTeams = {}
-				for player, team in pairs(playerTeam) do
-					oldTeams[player] = team
-				end
-				playerTeam = {}
-				for _, player in ipairs(queue) do
-					if player.Parent then
-						assignTeam(player)
-					end
-				end
-				queue = {}
-
-			currentState = matchCfg.STATE_ACTIVE
-			joinWindowTimer = matchCfg.JOIN_WINDOW
-			matchTimer = 0
-
-			-- Registrar partida jugada en el ranking.
-			if _G.ZB and _G.ZB.RankService then
-				for player, _ in pairs(playerTeam) do
-					if player.Parent then
-						_G.ZB.RankService.addMatch(player)
-					end
-				end
-			end
-
-			-- Teleportar solo a los nuevos (los que ya están en la arena no se mueven).
-			for player, _ in pairs(playerTeam) do
-				if player.Parent and not teleportedPlayers[player] then
-					teleportToArena(player)
-					teleportedPlayers[player] = true
-				end
-			end
-			broadcastState()
+				startMatch()
 			else
 				broadcastState()
 			end
@@ -589,11 +543,9 @@ task.spawn(function()
 		elseif currentState == matchCfg.STATE_ACTIVE or currentState == matchCfg.STATE_LOCKED then
 			matchTimer = matchTimer + 1
 
-			if currentState == matchCfg.STATE_ACTIVE then
-				joinWindowTimer = math.max(0, joinWindowTimer - 1)
-				if joinWindowTimer <= 0 then
-					currentState = matchCfg.STATE_LOCKED
-				end
+			if countActiveParticipants() < matchCfg.MIN_PLAYERS_TO_START then
+				endMatch(nil, "Partida invalida")
+				continue
 			end
 
 			-- Cronómetro final (último equipo en pie).
@@ -636,9 +588,12 @@ end)
 
 -- ===== Manejo de nuevos jugadores y respawns =====
 Players.PlayerAdded:Connect(function(player)
-	-- Si el jugador se une durante una partida activa, asegurar que spawnee
-	-- en el lobby (no en la arena). El SpawnLocation del lobby debe existir.
-	-- No lo metemos a la partida automáticamente: debe usar el portal.
+	if currentState == matchCfg.STATE_LOBBY and canStartRound() then
+		startCountdown()
+	end
+	player:SetAttribute(matchCfg.OPT_OUT_ATTRIBUTE, player:GetAttribute(matchCfg.OPT_OUT_ATTRIBUTE) == true)
+	broadcastState()
+
 	player.CharacterAdded:Connect(function(char)
 		task.wait(0.3)
 		-- Si el jugador ya está en la partida y ésta está activa,
@@ -656,17 +611,26 @@ end)
 
 -- ===== Limpieza al salir =====
 Players.PlayerRemoving:Connect(function(player)
-	-- Eliminar de cola.
-	for i, p in ipairs(queue) do
-		if p == player then
-			table.remove(queue, i)
-			break
-		end
-	end
 	playerTeam[player] = nil
+	player:SetAttribute("Team", nil)
+
+	if currentState == matchCfg.STATE_COUNTDOWN then
+		if canStartRound() then
+			broadcastState()
+		else
+			currentState = matchCfg.STATE_LOBBY
+			countdownTimer = 0
+			broadcastState()
+		end
+		return
+	end
 
 	-- Si era el último de su equipo y la partida está activa, verificar victoria.
 	if matchActive and (currentState == matchCfg.STATE_ACTIVE or currentState == matchCfg.STATE_LOCKED) then
+		if countActiveParticipants() < matchCfg.MIN_PLAYERS_TO_START then
+			endMatch(nil, "Partida invalida")
+			return
+		end
 		local winner = checkAnnihilation()
 		if not winner then
 			winner = checkWinCondition()
@@ -677,6 +641,24 @@ Players.PlayerRemoving:Connect(function(player)
 	end
 end)
 
+battleOptOutChanged.OnServerEvent:Connect(function(player, optedOut)
+	if type(optedOut) ~= "boolean" then return end
+	player:SetAttribute(matchCfg.OPT_OUT_ATTRIBUTE, optedOut)
+
+	if currentState == matchCfg.STATE_LOBBY then
+		if canStartRound() then
+			startCountdown()
+		end
+	elseif currentState == matchCfg.STATE_COUNTDOWN and not canStartRound() then
+		currentState = matchCfg.STATE_LOBBY
+		countdownTimer = 0
+	end
+
+	broadcastState()
+end)
+
 -- ===== Exponer API =====
 _G.ZB = _G.ZB or {}
 _G.ZB.MatchService = MatchService
+
+broadcastState()

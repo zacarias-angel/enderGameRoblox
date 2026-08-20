@@ -39,6 +39,7 @@ local function ensureRemote(name)
 end
 
 local fireWeapon = ensureRemote("FireWeapon")
+local weaponFired = ensureRemote("WeaponFired")
 
 -- Control de cadencia por jugador.
 local lastFire = {}
@@ -89,16 +90,35 @@ local function validateAndResolve(shooter, origin, direction)
 
 	local ray = workspace:Raycast(origin, direction * Config.Weapon.MAX_RANGE, params)
 	if not ray or not ray.Instance then
-		return nil, Config.HitResult.NONE
+		return nil, Config.HitResult.NONE, origin + direction * Config.Weapon.MAX_RANGE
 	end
 
 	local targetChar = characterFromPart(ray.Instance)
 	if not targetChar then
-		return nil, Config.HitResult.NONE
+		return nil, Config.HitResult.NONE, ray.Position
 	end
 
 	local hitResult = FreezeMap.resolve(ray.Instance.Name)
-	return targetChar, hitResult
+	return targetChar, hitResult, ray.Position
+end
+
+local function getLaserColor(player, weapon)
+	local override = player:GetAttribute("LaserColor")
+	if typeof(override) == "Color3" then
+		return override
+	end
+	return weapon.color
+end
+
+local function getMuzzlePosition(character)
+	local blaster = character and character:FindFirstChild("ZB_Blaster")
+	local barrel = blaster and blaster:FindFirstChild("Barrel")
+	local muzzle = barrel and barrel:FindFirstChild("Muzzle")
+	if muzzle and muzzle:IsA("Attachment") then
+		return muzzle.WorldPosition
+	end
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return root and root.Position or nil
 end
 
 local function getWeapon(player)
@@ -164,7 +184,18 @@ local function onFire(shooter, origin, direction)
 		return
 	end
 
-	local targetChar, hitResult = validateAndResolve(shooter, origin, direction)
+	local targetChar, hitResult, hitPos = validateAndResolve(shooter, origin, direction)
+	local muzzlePos = getMuzzlePosition(shooter.Character)
+	if muzzlePos and hitPos then
+		weaponFired:FireAllClients({
+			shooterUserId = shooter.UserId,
+			fromPos = muzzlePos,
+			toPos = hitPos,
+			color = getLaserColor(shooter, weapon),
+			width = weapon.laserWidth,
+			hit = hitResult ~= Config.HitResult.NONE,
+		})
+	end
 	if not targetChar or hitResult == Config.HitResult.NONE then
 		return
 	end

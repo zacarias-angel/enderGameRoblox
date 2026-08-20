@@ -24,6 +24,7 @@ local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 local fireWeapon = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("FireWeapon")
+local weaponFired = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("WeaponFired")
 
 local lastFireLocal = 0
 
@@ -224,6 +225,19 @@ local function fire()
 		thrust.Force = thrust.Force + recoil
 	end
 end
+
+weaponFired.OnClientEvent:Connect(function(payload)
+	if type(payload) ~= "table" then return end
+	if payload.shooterUserId == player.UserId then return end
+	if typeof(payload.fromPos) ~= "Vector3" or typeof(payload.toPos) ~= "Vector3" then return end
+	if typeof(payload.color) ~= "Color3" or type(payload.width) ~= "number" then return end
+
+	muzzleFlash(payload.fromPos, payload.color)
+	drawLaser(payload.fromPos, payload.toPos, payload.color, payload.width)
+	if payload.hit then
+		impactSpark(payload.toPos)
+	end
+end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
