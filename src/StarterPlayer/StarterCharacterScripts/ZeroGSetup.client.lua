@@ -23,6 +23,7 @@ local modeCfg = Config.GameMode
 
 local player = Players.LocalPlayer
 local character = script.Parent
+local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
 
 local FORCE_NAME = "ZB_ThrustForce"
 local ALIGN_NAME = "ZB_AlignOrientation"
@@ -34,7 +35,7 @@ local function shouldActivate()
 	-- Ubicación: StarterCharacterScripts/ZeroGSetup
 	-- Retorna: boolean
 	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
-	return mode == modeCfg.BATTLE or mode == modeCfg.DUEL
+	return (mode == modeCfg.BATTLE or mode == modeCfg.DUEL) and player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true
 end
 
 local function disableWalking(humanoid)
@@ -109,7 +110,7 @@ end
 -- Escuchar cambios de modo para activar/desactivar 0g en caliente.
 local modeChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameModeChanged")
 modeChanged.OnClientEvent:Connect(function(mode)
-	if mode == modeCfg.BATTLE or mode == modeCfg.DUEL then
+	if (mode == modeCfg.BATTLE or mode == modeCfg.DUEL) and player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true then
 		-- Modo 0g activado: configurar físicas si no están ya.
 		if character and character.Parent then
 			local humanoid = character:FindFirstChild("Humanoid")

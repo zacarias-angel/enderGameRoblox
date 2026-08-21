@@ -68,6 +68,13 @@ local finalizeWinner = nil    -- equipo ganador cuando termina el cronómetro
 local dummyModel = nil        -- NPC dummy en la arena
 local dummyTeam = matchCfg.TEAM_ROJO  -- el dummy va al equipo Rojo
 local broadcastState
+local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
+
+local function setBattleParticipant(player, isParticipant)
+	if player and player.Parent then
+		player:SetAttribute(PARTICIPANT_ATTRIBUTE, isParticipant == true)
+	end
+end
 
 local function isPlayerOptedOut(player)
 	return player:GetAttribute(matchCfg.OPT_OUT_ATTRIBUTE) == true
@@ -176,6 +183,22 @@ local function countTeamPlayers(team)
 		count = count + 1
 	end
 	return count
+end
+
+local function countAlivePlayers()
+	local alive = 0
+	for player, _ in pairs(playerTeam) do
+		if player.Parent then
+			local PlayerState = _G.ZB and _G.ZB.PlayerState
+			if PlayerState and PlayerState.isAlive(player) then
+				alive = alive + 1
+			end
+		end
+	end
+	if isDummyAlive() then
+		alive = alive + 1
+	end
+	return alive
 end
 
 local function countTeamTotal(team)
@@ -328,6 +351,7 @@ local function resetMatch()
 		for _, player in ipairs(Players:GetPlayers()) do
 			_G.ZB.PlayerState.reset(player)
 			player:SetAttribute("Team", nil)
+			setBattleParticipant(player, false)
 			-- Resetear el estado físico del personaje (descongelar, desbloquear).
 			if player.Character and _G.ZB.FreezeService then
 				_G.ZB.FreezeService.reset(player.Character)
@@ -375,6 +399,24 @@ local function checkAnnihilation()
 		return matchCfg.TEAM_AZUL
 	end
 	return nil
+end
+
+local function getImmediateWinner()
+	local azulVivos = countTeamPlayers(matchCfg.TEAM_AZUL)
+	local rojoVivos = countTeamPlayers(matchCfg.TEAM_ROJO)
+	local alivePlayers = countAlivePlayers()
+
+	if alivePlayers <= 0 then
+		return nil
+	end
+
+	if azulVivos > 0 and rojoVivos == 0 then
+		return matchCfg.TEAM_AZUL
+	elseif rojoVivos > 0 and azulVivos == 0 then
+		return matchCfg.TEAM_ROJO
+	end
+
+	return checkAnnihilation()
 end
 
 local function checkWinCondition()
@@ -448,7 +490,13 @@ local function startMatch()
 	-- Teleportar jugadores a la arena.
 	for player, _ in pairs(playerTeam) do
 		if player.Parent then
+			setBattleParticipant(player, true)
 			teleportToArena(player)
+		end
+	end
+	for _, player in ipairs(Players:GetPlayers()) do
+		if not playerTeam[player] then
+			setBattleParticipant(player, false)
 		end
 	end
 
@@ -550,6 +598,15 @@ task.spawn(function()
 
 			-- Cronómetro final (último equipo en pie).
 			if finalizing then
+				local currentWinner = getImmediateWinner()
+				if not currentWinner then
+					finalizing = false
+					finalizeCountdown = 0
+					finalizeWinner = nil
+					broadcastState()
+					continue
+				end
+				finalizeWinner = currentWinner
 				finalizeCountdown = finalizeCountdown - 1
 				if finalizeCountdown <= 0 then
 					endMatch(finalizeWinner)
@@ -557,12 +614,12 @@ task.spawn(function()
 					broadcastState()
 				end
 			else
-				-- Aniquilación: un equipo quedó sin jugadores vivos.
-				local annihilated = checkAnnihilation()
-				if annihilated then
+				-- Cuando ya solo queda un lado con vida, iniciar el cierre.
+				local winnerNow = getImmediateWinner()
+				if winnerNow then
 					finalizing = true
 					finalizeCountdown = matchCfg.FINALIZE_TIME
-					finalizeWinner = annihilated
+					finalizeWinner = winnerNow
 					broadcastState()
 				else
 					-- Tiempo cumplido.
@@ -588,6 +645,7 @@ end)
 
 -- ===== Manejo de nuevos jugadores y respawns =====
 Players.PlayerAdded:Connect(function(player)
+	setBattleParticipant(player, false)
 	if currentState == matchCfg.STATE_LOBBY and canStartRound() then
 		startCountdown()
 	end
@@ -596,10 +654,16 @@ Players.PlayerAdded:Connect(function(player)
 
 	player.CharacterAdded:Connect(function(char)
 		task.wait(0.3)
+		if _G.ZB and _G.ZB.FreezeService then
+			_G.ZB.FreezeService.reset(char)
+		end
 		-- Si el jugador ya está en la partida y ésta está activa,
 		-- teleportarlo a su spawn de equipo (respawn).
 		if playerTeam[player] and (currentState == matchCfg.STATE_ACTIVE or currentState == matchCfg.STATE_LOCKED) then
+			setBattleParticipant(player, true)
 			teleportToArena(player)
+		else
+			setBattleParticipant(player, false)
 		end
 	end)
 end)
@@ -632,6 +696,9 @@ Players.PlayerRemoving:Connect(function(player)
 			return
 		end
 		local winner = checkAnnihilation()
+		if not winner then
+			winner = getImmediateWinner()
+		end
 		if not winner then
 			winner = checkWinCondition()
 		end

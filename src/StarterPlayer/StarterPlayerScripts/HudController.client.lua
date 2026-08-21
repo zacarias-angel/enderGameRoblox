@@ -24,6 +24,7 @@ local currencyCfg = Config.Currency
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local battleOptOutChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("BattleOptOutChanged")
+local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
 
 -- ===== Construcción de UI =====
 local screenGui = Instance.new("ScreenGui")
@@ -257,6 +258,7 @@ local function updateHud()
 	-- Retorna: nil
 	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
 	local inBattle = (mode == modeCfg.BATTLE or mode == modeCfg.DUEL)
+		and player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true
 
 	if inBattle then
 		energyBack.Visible = true

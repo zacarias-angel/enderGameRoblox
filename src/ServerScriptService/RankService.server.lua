@@ -257,7 +257,10 @@ local function rankedPlayers(categoryKey)
 	end
 
 	table.sort(list, function(a, b)
-		return a.value > b.value
+		if a.value ~= b.value then
+			return a.value > b.value
+		end
+		return a.player.UserId < b.player.UserId
 	end)
 	return list
 end

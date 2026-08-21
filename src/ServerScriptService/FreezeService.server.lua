@@ -28,6 +28,39 @@ local FreezeService = {}
 
 -- Estado por personaje (jugadores y dummies): [character] = { limbKey = state, eliminated }
 local charStates = {}
+local originalAppearance = {}
+
+local function cacheOriginalAppearance(character)
+	if originalAppearance[character] then return end
+	originalAppearance[character] = {}
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			originalAppearance[character][part] = {
+				color = part.Color,
+				material = part.Material,
+			}
+		end
+	end
+end
+
+local function restoreAppearance(character)
+	local saved = originalAppearance[character]
+	if not saved then return end
+	for part, data in pairs(saved) do
+		if part and part.Parent then
+			part.Color = data.color
+			part.Material = data.material
+		end
+	end
+	originalAppearance[character] = nil
+end
+
+local function isFullyFrozen(state)
+	return state[Config.Limb.LEFT_ARM] == Config.LimbState.FROZEN
+		and state[Config.Limb.RIGHT_ARM] == Config.LimbState.FROZEN
+		and state[Config.Limb.LEFT_LEG] == Config.LimbState.FROZEN
+		and state[Config.Limb.RIGHT_LEG] == Config.LimbState.FROZEN
+end
 
 local function freshCharState()
 	-- Propósito: Estado inicial "todo activo" para un personaje.
@@ -87,9 +120,12 @@ local function eliminate(character)
 	-- Retorna: nil
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	cacheOriginalAppearance(character)
 
 	-- Desactivar el empuje del jugador: neutraliza su VectorForce.
 	if rootPart then
+		rootPart.AssemblyLinearVelocity = Vector3.zero
+		rootPart.AssemblyAngularVelocity = Vector3.zero
 		local force = rootPart:FindFirstChild("ZB_ThrustForce")
 		if force and force:IsA("VectorForce") then
 			force.Force = Vector3.zero
@@ -107,6 +143,9 @@ local function eliminate(character)
 
 	-- El humanoid no debe morir: el cuerpo permanece flotando en la arena.
 	if humanoid then
+		humanoid.WalkSpeed = 0
+		humanoid.JumpPower = 0
+		humanoid.AutoRotate = false
 		humanoid.PlatformStand = true
 	end
 
@@ -128,6 +167,7 @@ function FreezeService.apply(character, hitResult)
 	if not character or not character:FindFirstChildOfClass("Humanoid") then
 		return false
 	end
+	cacheOriginalAppearance(character)
 
 	local state = getCharState(character)
 	local player = Players:GetPlayerFromCharacter(character)
@@ -160,6 +200,14 @@ function FreezeService.apply(character, hitResult)
 	if player and PlayerState then
 		PlayerState.setLimb(player, limbKey, Config.LimbState.FROZEN)
 	end
+
+	if isFullyFrozen(state) then
+		state.eliminated = true
+		eliminate(character)
+		if player and PlayerState then
+			PlayerState.eliminate(player)
+		end
+	end
 	return true
 end
 
@@ -176,18 +224,27 @@ function FreezeService.reset(character)
 
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
+		humanoid.WalkSpeed = 16
+		humanoid.JumpPower = 50
+		humanoid.AutoRotate = true
 		humanoid.PlatformStand = false
+	end
+
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	if rootPart then
+		rootPart.AssemblyLinearVelocity = Vector3.zero
+		rootPart.AssemblyAngularVelocity = Vector3.zero
+		local force = rootPart:FindFirstChild("ZB_ThrustForce")
+		if force and force:IsA("VectorForce") then
+			force.Force = Vector3.zero
+		end
 	end
 
 	-- Dejar de ser agarrable (escudo).
 	character:SetAttribute(Config.Grab.ATTRIBUTE, false)
 
-	-- Restaurar materiales/colores de las partes del cuerpo.
-	for _, part in ipairs(character:GetDescendants()) do
-		if part:IsA("BasePart") and (part.Material == Enum.Material.Ice) then
-			part.Material = Enum.Material.Plastic
-		end
-	end
+	-- Restaurar materiales/colores originales del personaje.
+	restoreAppearance(character)
 end
 
 _G.ZB = _G.ZB or {}

@@ -29,6 +29,7 @@ local SWIM_ANIM_ID = "rbxassetid://913384386"
 
 local player = Players.LocalPlayer
 local character = script.Parent
+local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
 
 local rootPart
 local humanoid
@@ -51,7 +52,7 @@ local function shouldActivate()
 	-- Ubicación: StarterCharacterScripts/AstronautPose
 	-- Retorna: boolean
 	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
-	return mode == modeCfg.BATTLE or mode == modeCfg.DUEL
+	return (mode == modeCfg.BATTLE or mode == modeCfg.DUEL) and player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true
 end
 
 local function isOwnTrack(track)
@@ -331,7 +332,7 @@ end
 -- Escuchar cambios de modo para activar/desactivar la pose en caliente.
 local modeChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameModeChanged")
 modeChanged.OnClientEvent:Connect(function(mode)
-	if mode == modeCfg.BATTLE or mode == modeCfg.DUEL then
+	if (mode == modeCfg.BATTLE or mode == modeCfg.DUEL) and player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true then
 		activateZeroG()
 	else
 		deactivateZeroG()

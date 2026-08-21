@@ -25,6 +25,7 @@ local modeCfg = Config.GameMode
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
+local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
 
 -- Estado local de movimiento
 local character, humanoid, rootPart, thrustForce, alignOrient
@@ -157,6 +158,7 @@ local function onHeartbeat(dt)
 
 	local currentMode = player:GetAttribute("GameMode") or modeCfg.LOBBY
 	zeroGActive = (currentMode == modeCfg.BATTLE or currentMode == modeCfg.DUEL)
+		and player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true
 
 	if not zeroGActive then
 		thrustForce.Force = Vector3.zero

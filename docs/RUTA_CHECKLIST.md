@@ -125,15 +125,43 @@ proximos pasos recomendados.
 - [ ] Agregar recompensas por jugar / ganar / congelar.
 - [ ] Agregar pantalla de resultados de ronda.
 - [ ] Mostrar MVP / mejor jugador / estadisticas de la ronda.
+- [ ] Hacer persistentes los cosmeticos de gancho equipados.
 
-### Fase 8 — Pulido de combate
+### Fase 8 — Formatos de batalla y arenas
+- [ ] Separar configuracion de formato de partida: `2v2`, `4v4`, `FFA`.
+- [ ] Permitir elegir formato de batalla antes de entrar a la ronda.
+- [ ] Instanciar arenas por formato en vez de depender de una sola arena fija.
+- [ ] Definir arena especifica para `2v2`.
+- [ ] Definir arena especifica para `4v4`.
+- [ ] Definir arena especifica para `FFA`.
+- [ ] Ajustar spawns y balanceo por formato.
+- [ ] Revisar flujo de matchmaking cuando solo quieren jugar `2v2`.
+- [ ] Evitar mezclar jugadores de formatos distintos en la misma partida.
+
+### Fase 9 — Gancho, energia y taller
+- [ ] Separar energia del gancho de la energia de disparo.
+- [ ] Agregar barra propia para energia/carga del gancho en HUD.
+- [ ] Hacer que usar el gancho gaste estamina.
+- [ ] Definir regeneracion, costo y cooldown del gancho por balance.
+- [ ] Agregar mejora de estamina/capacidad del gancho en el taller.
+- [ ] Agregar mejora de regeneracion del gancho en el taller.
+- [ ] Revisar balance conjunto entre disparo, boost y gancho.
+- [ ] Crear slot cosmetico para la punta del gancho.
+- [ ] Crear slot cosmetico para la cuerda del gancho.
+- [ ] Hacer que la punta del gancho use un modelo reemplazable.
+- [ ] Hacer que la cuerda del gancho use visual/material reemplazable.
+- [ ] Agregar cosmeticos de gancho al taller.
+- [ ] Permitir equipar punta y cuerda por separado.
+- [ ] Replicar a todos los clientes el cosmetico equipado del gancho.
+
+### Fase 10 — Pulido de combate
 - [ ] Revisar balance de stamina, cooldowns y recoil.
 - [ ] Mejorar feedback audiovisual de impactos.
 - [ ] Mejorar VFX/SFX del gancho.
 - [ ] Mejorar feedback de congelacion y eliminacion.
 - [ ] Revisar anti-exploit final de remotes.
 
-### Fase 9 — Contenido y variedad
+### Fase 11 — Contenido y variedad
 - [ ] Segundo modo de juego.
 - [ ] Eventos de arena o powerups.
 - [ ] Mas coberturas y layout de mapa.
@@ -144,6 +172,11 @@ proximos pasos recomendados.
 
 ## Orden recomendado de implementacion
 
+### Cierre del dia / foco acordado
+- [ ] Dejar como prioridad inmediata el sprint de persistencia.
+- [ ] Al terminar persistencia, avanzar con formatos de batalla, energia separada del gancho y cosmeticos del gancho.
+- [ ] Mantener como orden acordado los siguientes dos bloques de sprint:
+
 ### Sprint siguiente
 - [ ] 1. `DataService.server`.
 - [ ] 2. Guardado de monedas, progreso y preferencias.
@@ -152,13 +185,17 @@ proximos pasos recomendados.
 
 ### Sprint despues de persistencia
 - [ ] 1. Persistencia del taller.
-- [ ] 2. Pantalla de resultado de ronda.
-- [ ] 3. Misiones diarias simples.
+- [ ] 2. Formatos de batalla (`2v2`, `4v4`, `FFA`) con arenas instanciadas.
+- [ ] 3. Energia separada del gancho + barra propia.
+- [ ] 4. Cosmeticos de punta/cuerda del gancho en taller.
+- [ ] 5. Pantalla de resultado de ronda.
+- [ ] 6. Misiones diarias simples.
 
 ### Sprint de pulido
 - [ ] 1. Balancear combate.
-- [ ] 2. Mejorar VFX/SFX.
-- [ ] 3. Mejorar onboarding/tutorial.
+- [ ] 2. Balancear costo/regeneracion del gancho.
+- [ ] 3. Mejorar VFX/SFX.
+- [ ] 4. Mejorar onboarding/tutorial.
 
 ---
 

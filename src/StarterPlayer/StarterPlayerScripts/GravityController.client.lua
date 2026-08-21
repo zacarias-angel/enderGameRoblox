@@ -22,6 +22,32 @@ local modeCfg = Config.GameMode
 
 local player = Players.LocalPlayer
 local currentMode = modeCfg.LOBBY
+local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
+
+local function isBattleParticipant()
+	return player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true
+end
+
+local function ensureLobbyGravity(rootPart)
+	local attachment = rootPart:FindFirstChild("ZB_LobbyGravityAttachment")
+	if not attachment then
+		attachment = Instance.new("Attachment")
+		attachment.Name = "ZB_LobbyGravityAttachment"
+		attachment.Parent = rootPart
+	end
+
+	local force = rootPart:FindFirstChild("ZB_LobbyGravityForce")
+	if not force then
+		force = Instance.new("VectorForce")
+		force.Name = "ZB_LobbyGravityForce"
+		force.Attachment0 = attachment
+		force.RelativeTo = Enum.ActuatorRelativeTo.World
+		force.ApplyAtCenterOfMass = true
+		force.Parent = rootPart
+	end
+
+	return force
+end
 
 local function isZeroG(mode)
 	-- Propósito: Saber si un modo usa gravedad cero.
@@ -55,6 +81,12 @@ local function enableWalking(character)
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if rootPart then
 		rootPart.Anchored = false
+		local lobbyGravity = ensureLobbyGravity(rootPart)
+		if workspace.Gravity == 0 then
+			lobbyGravity.Force = Vector3.new(0, -modeCfg.NORMAL_GRAVITY * rootPart.AssemblyMass, 0)
+		else
+			lobbyGravity.Force = Vector3.zero
+		end
 		local force = rootPart:FindFirstChild("ZB_ThrustForce")
 		if force and force:IsA("VectorForce") then
 			force.Force = Vector3.zero
@@ -81,6 +113,10 @@ local function enableZeroG(character)
 	-- Asegurar que las físicas 0g estén presentes (ZeroGSetup las crea).
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
+	local lobbyGravity = rootPart:FindFirstChild("ZB_LobbyGravityForce")
+	if lobbyGravity and lobbyGravity:IsA("VectorForce") then
+		lobbyGravity.Force = Vector3.zero
+	end
 	if not rootPart:FindFirstChild("ZB_ThrustForce") then
 		-- ZeroGSetup no ha corrido aún; esperar y reintentar.
 		task.wait(0.3)
@@ -111,7 +147,7 @@ local function onModeChanged(mode, prevMode)
 	local character = player.Character
 	if not character then return end
 
-	if isZeroG(mode) then
+	if isZeroG(mode) and isBattleParticipant() then
 		enableZeroG(character)
 	else
 		enableWalking(character)
@@ -127,13 +163,13 @@ modeChanged.OnClientEvent:Connect(onModeChanged)
 
 -- Sincronizar con el personaje actual (ya cargado al iniciar el script).
 if player.Character then
-	if isZeroG(currentMode) then
-		enableZeroG(player.Character)
-	end
+	onModeChanged(currentMode)
 end
 player.CharacterAdded:Connect(function(char)
 	task.wait(0.2)
-	if isZeroG(currentMode) then
-		enableZeroG(char)
-	end
+	onModeChanged(currentMode)
+end)
+
+player:GetAttributeChangedSignal(PARTICIPANT_ATTRIBUTE):Connect(function()
+	onModeChanged(currentMode)
 end)

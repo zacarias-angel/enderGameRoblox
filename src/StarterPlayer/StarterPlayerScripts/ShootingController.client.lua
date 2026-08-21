@@ -22,11 +22,14 @@ local weaponCfg = Config.Weapon
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
+local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
 
 local fireWeapon = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("FireWeapon")
 local weaponFired = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("WeaponFired")
+local stateChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StateChanged")
 
 local lastFireLocal = 0
+local eliminated = false
 
 local function getWeaponCfg()
 	-- Propósito: Config del arma equipada por el jugador.
@@ -170,6 +173,8 @@ local function fire()
 	if not character then return end
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
+	if eliminated then return end
+	if player:GetAttribute(PARTICIPANT_ATTRIBUTE) ~= true then return end
 
 	local weapon = getWeaponCfg()
 
@@ -225,6 +230,11 @@ local function fire()
 		thrust.Force = thrust.Force + recoil
 	end
 end
+
+stateChanged.OnClientEvent:Connect(function(state)
+	if type(state) ~= "table" then return end
+	eliminated = state.eliminated == true
+end)
 
 weaponFired.OnClientEvent:Connect(function(payload)
 	if type(payload) ~= "table" then return end

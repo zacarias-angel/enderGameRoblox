@@ -123,6 +123,38 @@ Config.Hook = {
 	DRIFT_RETENTION = 0.88,             -- Cuánta inercia se conserva al soltar (0..1)
 }
 
+Config.HookEnergy = {
+	MAX = 100,
+	USE_COST = 25,
+	PULL_DRAIN_PER_SEC = 12,
+	REGEN_PER_SEC = 8,
+	MIN_TO_USE = 25,
+}
+
+Config.HookEnergyUpgrade = {
+	COST_PER_TIER = 60,
+	INCREASE = 20,
+	MAX_CAP = 260,
+}
+
+Config.HookRegenUpgrade = {
+	COST_PER_TIER = 70,
+	INCREASE = 4,
+	MAX_CAP = 42,
+}
+
+Config.HookTipCosmetics = {
+	{ id = "default", name = "Punta Base", cost = 0, color = Color3.fromRGB(90, 220, 255), material = Enum.Material.Neon, size = Vector3.new(0.35, 0.35, 0.9) },
+	{ id = "spike", name = "Spike", cost = 120, color = Color3.fromRGB(255, 140, 90), material = Enum.Material.Neon, size = Vector3.new(0.3, 0.3, 1.2) },
+	{ id = "heavy", name = "Heavy", cost = 220, color = Color3.fromRGB(255, 210, 60), material = Enum.Material.Metal, size = Vector3.new(0.45, 0.45, 1.0) },
+}
+
+Config.HookRopeCosmetics = {
+	{ id = "default", name = "Cable Base", cost = 0, color = Color3.fromRGB(90, 220, 255), width0 = 0.35, width1 = 0.22 },
+	{ id = "plasma", name = "Plasma", cost = 140, color = Color3.fromRGB(190, 120, 255), width0 = 0.4, width1 = 0.24 },
+	{ id = "gold", name = "Dorado", cost = 240, color = Color3.fromRGB(255, 210, 60), width0 = 0.42, width1 = 0.26 },
+}
+
 -- ===== Estados de extremidad =====
 Config.LimbState = {
 	OK = "OK",

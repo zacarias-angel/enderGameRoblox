@@ -153,6 +153,7 @@ local function onFire(shooter, origin, direction)
 
 	-- El tirador debe estar vivo.
 	if not PlayerState.isAlive(shooter) then return end
+	if shooter:GetAttribute("BattleParticipant") ~= true then return end
 
 	-- Solo se puede disparar durante una partida activa (batalla/duelo).
 	-- En LOBBY no se permite disparar.
