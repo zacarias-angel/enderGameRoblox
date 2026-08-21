@@ -4,6 +4,44 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesión 10
+
+**Objetivo:** persistencia real, recompensa diaria, misiones, gancho con energia propia y cierre del backup de codigo.
+
+### Hecho
+- `DataService.server`: perfil base, carga/guardado, autosave, `BindToClose` y modo seguro para Studio sin API Services.
+- Persistencia conectada a monedas, taller, preferencias, estamina, energia del gancho y estadisticas de ranking.
+- `DailyRewardService.server` + `DailyRewardController.client`: recompensa diaria con streak basica y UI en lobby.
+- `MissionService.server` + `MissionController.client`: misiones diarias simples para jugar partida, juntar monedas y reclamar daily.
+- `RoundResultController.client`: panel de resultado de ronda.
+- Energia del gancho separada de la estamina de disparo:
+  - `HookEnergyService.server`
+  - barra propia en HUD
+  - gasto al lanzar
+  - gasto continuo mientras arrastra
+  - regeneracion mas lenta
+- Cosmeticos del gancho:
+  - punta 3D reemplazable
+  - cuerda configurable por color/grosor
+  - compra/equipado en taller
+- `WorkshopController.client` rehacido a panel compacto por pestañas: `Base`, `Armas`, `Laser`, `Gancho`.
+- `REEMPLAZOS_STUDIO.md`: guia para reconstruir en Studio assets no versionados por git.
+- `MatchService`: Play en Studio vuelve a iniciar en lobby; no entra automaticamente a arena.
+
+### Bugs encontrados y correcciones
+- `HookController.client`: error por parche parcial (`createTipModel` ausente). Se reescribio limpio.
+- `WorkshopController.client`: errores de `refresh()` nil y cierre con `ScreenGui.InputBegan`. Se rehizo el flujo.
+- `MatchService`: deteccion de dummy demasiado amplia. Ahora solo debe contar un NPC marcado explicitamente con `IsMatchDummy = true`.
+- `FreezeService` / `GravityController`: se reforzo el reset para volver al lobby con color/material/salto normal.
+
+### Pendiente de revalidar en Studio
+- Confirmar en una partida completa que:
+  - al perder aparece ganador sin esperar al timer,
+  - al volver al lobby no queda ningun estado residual de congelado,
+  - el ranking persiste y no depende solo de jugadores conectados.
+
+---
+
 ## Sesión 9
 
 **Objetivo:** sesión de diseño (sin código). Evaluar "empujar el cuerpo",

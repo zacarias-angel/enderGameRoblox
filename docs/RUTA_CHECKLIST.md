@@ -12,6 +12,7 @@ proximos pasos recomendados.
 - [x] Configuracion central en `ReplicatedStorage/Shared/Config`.
 - [x] Movimiento 0g con `VectorForce`, drag, boost y limite de velocidad.
 - [x] HUD base con energia, mira, LED e iconos de extremidades.
+- [x] Barra separada para energia del gancho.
 - [x] Disparo con validacion en servidor.
 - [x] Congelacion de extremidades y eliminacion.
 - [x] Gancho como movilidad principal en batalla.
@@ -27,6 +28,7 @@ proximos pasos recomendados.
 - [x] Los jugadores se reparten en equipos en partes iguales.
 - [x] La partida no arranca con menos de 2 jugadores elegibles.
 - [x] Si durante la partida queda menos de 2 jugadores, termina como partida invalida.
+- [ ] Revalidar en Studio el loop completo: perder → ganador → lobby sin estado congelado residual.
 - [x] El portal ahora es solo visual.
 - [x] El HUD muestra estado de partida, contador y tiempo restante.
 - [x] Existe checkbox para no entrar a la proxima batalla.
@@ -34,6 +36,8 @@ proximos pasos recomendados.
 ### Replicacion visual ya resuelta
 - [x] Los disparos se ven para todos los jugadores.
 - [x] Los ganchos se ven para todos los jugadores.
+- [x] La punta del gancho usa un modelo 3D reemplazable.
+- [x] La cuerda del gancho usa visual configurable por cosmetico.
 
 ---
 
@@ -97,35 +101,35 @@ proximos pasos recomendados.
 ## Proximos pasos prioritarios
 
 ### Fase 5 — Persistencia real de datos
-- [ ] Crear `DataService.server`.
-- [ ] Definir `DEFAULT_PROFILE` del jugador.
-- [ ] Guardar monedas.
-- [ ] Guardar armas desbloqueadas.
-- [ ] Guardar color de laser equipado.
-- [ ] Guardar mejora de estamina.
-- [ ] Guardar estadisticas de combate.
-- [ ] Guardar preferencia `BattleOptOut`.
-- [ ] Guardado al salir del jugador.
-- [ ] Guardado periodico de seguridad.
-- [ ] Guardado en `BindToClose`.
+- [x] Crear `DataService.server`.
+- [x] Definir `DEFAULT_PROFILE` del jugador.
+- [x] Guardar monedas.
+- [x] Guardar armas desbloqueadas.
+- [x] Guardar color de laser equipado.
+- [x] Guardar mejora de estamina.
+- [x] Guardar estadisticas de combate.
+- [x] Guardar preferencia `BattleOptOut`.
+- [x] Guardado al salir del jugador.
+- [x] Guardado periodico de seguridad.
+- [x] Guardado en `BindToClose`.
 - [ ] Manejo de version de datos.
 
 ### Fase 6 — Recompensa diaria
-- [ ] Definir estructura `LastDailyClaimDay`.
-- [ ] Definir `DailyStreak`.
-- [ ] Calculo por dia UTC en servidor.
-- [ ] Remote/server action para reclamar recompensa.
-- [ ] UI para mostrar recompensa disponible.
-- [ ] Escalera de recompensas de 7 dias.
+- [x] Definir estructura `LastDailyClaimDay`.
+- [x] Definir `DailyStreak`.
+- [x] Calculo por dia UTC en servidor.
+- [x] Remote/server action para reclamar recompensa.
+- [x] UI para mostrar recompensa disponible.
+- [x] Escalera de recompensas de 7 dias.
 - [ ] Reglas de reinicio o perdida de racha.
 
 ### Fase 7 — Progresion y retencion
-- [ ] Hacer persistente el taller.
-- [ ] Agregar misiones diarias basicas.
+- [x] Hacer persistente el taller.
+- [x] Agregar misiones diarias basicas.
 - [ ] Agregar recompensas por jugar / ganar / congelar.
-- [ ] Agregar pantalla de resultados de ronda.
+- [x] Agregar pantalla de resultados de ronda.
 - [ ] Mostrar MVP / mejor jugador / estadisticas de la ronda.
-- [ ] Hacer persistentes los cosmeticos de gancho equipados.
+- [x] Hacer persistentes los cosmeticos de gancho equipados.
 
 ### Fase 8 — Formatos de batalla y arenas
 - [ ] Separar configuracion de formato de partida: `2v2`, `4v4`, `FFA`.
@@ -139,20 +143,20 @@ proximos pasos recomendados.
 - [ ] Evitar mezclar jugadores de formatos distintos en la misma partida.
 
 ### Fase 9 — Gancho, energia y taller
-- [ ] Separar energia del gancho de la energia de disparo.
-- [ ] Agregar barra propia para energia/carga del gancho en HUD.
-- [ ] Hacer que usar el gancho gaste estamina.
-- [ ] Definir regeneracion, costo y cooldown del gancho por balance.
-- [ ] Agregar mejora de estamina/capacidad del gancho en el taller.
-- [ ] Agregar mejora de regeneracion del gancho en el taller.
+- [x] Separar energia del gancho de la energia de disparo.
+- [x] Agregar barra propia para energia/carga del gancho en HUD.
+- [x] Hacer que usar el gancho gaste estamina.
+- [x] Definir regeneracion, costo y cooldown del gancho por balance.
+- [x] Agregar mejora de estamina/capacidad del gancho en el taller.
+- [x] Agregar mejora de regeneracion del gancho en el taller.
 - [ ] Revisar balance conjunto entre disparo, boost y gancho.
-- [ ] Crear slot cosmetico para la punta del gancho.
-- [ ] Crear slot cosmetico para la cuerda del gancho.
-- [ ] Hacer que la punta del gancho use un modelo reemplazable.
-- [ ] Hacer que la cuerda del gancho use visual/material reemplazable.
-- [ ] Agregar cosmeticos de gancho al taller.
-- [ ] Permitir equipar punta y cuerda por separado.
-- [ ] Replicar a todos los clientes el cosmetico equipado del gancho.
+- [x] Crear slot cosmetico para la punta del gancho.
+- [x] Crear slot cosmetico para la cuerda del gancho.
+- [x] Hacer que la punta del gancho use un modelo reemplazable.
+- [x] Hacer que la cuerda del gancho use visual/material reemplazable.
+- [x] Agregar cosmeticos de gancho al taller.
+- [x] Permitir equipar punta y cuerda por separado.
+- [x] Replicar a todos los clientes el cosmetico equipado del gancho.
 
 ### Fase 10 — Pulido de combate
 - [ ] Revisar balance de stamina, cooldowns y recoil.
@@ -173,8 +177,8 @@ proximos pasos recomendados.
 ## Orden recomendado de implementacion
 
 ### Cierre del dia / foco acordado
-- [ ] Dejar como prioridad inmediata el sprint de persistencia.
-- [ ] Al terminar persistencia, avanzar con formatos de batalla, energia separada del gancho y cosmeticos del gancho.
+- [x] Dejar como prioridad inmediata el sprint de persistencia.
+- [x] Al terminar persistencia, avanzar con formatos de batalla, energia separada del gancho y cosmeticos del gancho.
 - [ ] Mantener como orden acordado los siguientes dos bloques de sprint:
 
 ### Sprint siguiente
