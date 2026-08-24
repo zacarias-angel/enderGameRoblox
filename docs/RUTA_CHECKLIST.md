@@ -126,10 +126,25 @@ proximos pasos recomendados.
 ### Fase 7 — Progresion y retencion
 - [x] Hacer persistente el taller.
 - [x] Agregar misiones diarias basicas.
-- [ ] Agregar recompensas por jugar / ganar / congelar.
+- [x] Agregar recompensas por jugar / ganar / congelar.
 - [x] Agregar pantalla de resultados de ronda.
-- [ ] Mostrar MVP / mejor jugador / estadisticas de la ronda.
+- [x] Mostrar MVP / mejor jugador / estadisticas de la ronda.
 - [x] Hacer persistentes los cosmeticos de gancho equipados.
+- [x] Primer logro: completar todas las misiones diarias.
+
+### Recompensas activas de ronda
+- Jugar partida: `+15` monedas.
+- Ganar partida: `+30` monedas extra.
+- Congelar extremidad a un rival jugador: `+2` monedas.
+- Eliminar a un rival jugador: `+8` monedas.
+- `Partida invalida`: no entrega recompensa de ronda.
+- El dummy/NPC de prueba no entrega monedas.
+
+### Logros activos
+- `Cumpliste todas las misiones diarias`:
+  - condicion: reclamar todas las misiones del dia
+  - recompensa unica: `+120` monedas
+  - persistente en perfil del jugador
 
 ### Fase 8 — Formatos de batalla y arenas
 - [ ] Separar configuracion de formato de partida: `2v2`, `4v4`, `FFA`.
@@ -149,7 +164,7 @@ proximos pasos recomendados.
 - [x] Definir regeneracion, costo y cooldown del gancho por balance.
 - [x] Agregar mejora de estamina/capacidad del gancho en el taller.
 - [x] Agregar mejora de regeneracion del gancho en el taller.
-- [ ] Revisar balance conjunto entre disparo, boost y gancho.
+- [x] Revisar balance conjunto entre disparo, boost y gancho.
 - [x] Crear slot cosmetico para la punta del gancho.
 - [x] Crear slot cosmetico para la cuerda del gancho.
 - [x] Hacer que la punta del gancho use un modelo reemplazable.
@@ -157,6 +172,24 @@ proximos pasos recomendados.
 - [x] Agregar cosmeticos de gancho al taller.
 - [x] Permitir equipar punta y cuerda por separado.
 - [x] Replicar a todos los clientes el cosmetico equipado del gancho.
+
+### Balance actual aplicado
+- Boost:
+  - `BOOST_MULTIPLIER = 2.0`
+  - `BOOST_DRAIN_PER_SEC = 24`
+  - `REGEN_PER_SEC = 18`
+- Disparo:
+  - `Blaster.shotCost = 24`
+  - `Rifle.shotCost = 20`
+  - `Cañon.shotCost = 55`
+- Gancho:
+  - `USE_COST = 18`
+  - `PULL_DRAIN_PER_SEC = 9`
+  - `REGEN_PER_SEC = 10`
+  - `MIN_TO_USE = 18`
+- Comportamiento del gancho:
+  - al llegar al punto ya no se corta solo
+  - se mantiene mientras `Q` siga presionada
 
 ### Fase 10 — Pulido de combate
 - [ ] Revisar balance de stamina, cooldowns y recoil.

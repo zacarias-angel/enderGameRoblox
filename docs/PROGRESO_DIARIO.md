@@ -4,6 +4,68 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 13
+
+**Objetivo:** cerrar el pulido del beam continuo y documentar la correccion.
+
+### Hecho
+- `ShootingService`: el porcentaje de congelamiento se replica tras cualquier
+  impacto valido, incluidas extremidades.
+- `ShootingController.client`: restaurado el VFX completo del beam local con haz
+  exterior/interior, ondulacion, brillo y particulas de impacto.
+- `ShootingService`: al agotar la estamina envia la señal de sobrecalentamiento y
+  corta el beam; el cliente apaga el VFX y bloquea el disparo durante `0.5 s`.
+- `ShootingService`: el rayo ignora vidrio decorativo transparente sin ignorar
+  coberturas opacas.
+- `Config`: consumo del beam ajustado a `30` por segundo para que la energia
+  permita una rafaga continua utilizable.
+
+### Pendiente
+- Revalidar visualmente en una partida con dos jugadores el VFX y la barra de
+  congelamiento sobre una extremidad y sobre el torso.
+
+---
+
+## Sesion 12
+
+**Objetivo:** cerrar recompensas de combate y resultado de ronda con MVP.
+
+### Hecho
+- `MatchService`: al terminar la ronda envia `roundSummary` a cliente con ganador y resumen de participantes reales.
+- `RankService`: snapshot por ronda para calcular MVP y estadisticas de esa partida.
+- `RoundResultController.client`: ahora muestra MVP, eliminaciones, congelaciones y estadisticas locales de la ronda.
+- Recompensas activas de combate:
+  - jugar partida: `+15` monedas
+  - ganar partida: `+30` monedas extra
+  - congelar extremidad a un rival jugador: `+2` monedas
+  - eliminar a un rival jugador: `+8` monedas
+- Las recompensas no se entregan en `Partida invalida`.
+- El dummy/NPC de prueba no da monedas.
+- Primer logro implementado: `Cumpliste todas las misiones diarias`.
+  - se desbloquea al reclamar todas las misiones del dia
+  - recompensa unica: `+120` monedas
+  - persistencia en `DataService`
+  - toast visual en cliente con `AchievementController.client`
+- Ajuste de balance del core jugable:
+  - boost menos castigado (`drain 24`, regen general `18`)
+  - disparo mas usable (`Blaster 24`, `Rifle 20`, `Cañon 55` de costo)
+  - gancho mas sostenible (`use 18`, `drain 9`, regen `10`)
+  - el gancho vuelve a mantenerse mientras `Q` siga presionada y no se corta solo al llegar al punto
+- Pasada de estabilidad en Studio:
+  - `ShootingService` reescrito para resolver impacto desde el muzzle hacia el punto apuntado, con debug `[ZB Shoot]` en Studio.
+  - `HudController`: contador de countdown/partida ahora se recompone por tiempo local y no depende solo del ultimo evento recibido.
+  - `HookController`: el gancho se corta si la tecla real `Q` deja de estar presionada aunque falle `InputEnded`.
+- Cambio de sistema de disparo:
+  - agregado `Config.WeaponSystem.MODE = "beam" | "pulse"`
+  - modo activo actual: `beam`
+  - `beam`: mantener click para disparo continuo, consumo continuo de estamina, raycast periodico en servidor y beam local/remoto
+  - `pulse`: queda como backup seleccionable por config
+
+### Nota
+- El ranking historico ya quedo preparado para top 20, pero su validacion real depende de DataStore fuera de esta sesion de Studio.
+
+---
+
 ## Sesion 11
 
 **Objetivo:** cerrar regresiones del fin de ronda despues de la ultima actualizacion.

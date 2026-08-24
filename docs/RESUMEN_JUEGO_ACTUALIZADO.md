@@ -119,6 +119,16 @@ Al recibir impacto letal (pecho/cabeza):
 2. No puede moverse.
 3. Queda flotando en la arena (**no desaparece**).
 
+### Beam continuo
+- El modo activo usa un rayo continuo mientras se mantiene el click.
+- El servidor valida el raycast, atraviesa vidrio decorativo transparente y aplica
+  congelamiento inmediatamente a la zona impactada.
+- La barra/porcentaje de congelamiento se actualiza después de impactos de torso,
+  brazos, piernas y cabeza.
+- El rayo consume estamina continuamente. Al llegar a cero se corta y entra en
+  enfriamiento durante `0.5 s` antes de permitir otro disparo.
+- El VFX local y remoto usa doble haz, brillo, partículas de impacto y ondulación.
+
 ---
 
 ## 6. Escudos humanos
