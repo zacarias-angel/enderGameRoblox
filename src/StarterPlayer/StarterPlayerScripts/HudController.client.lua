@@ -26,7 +26,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local battleOptOutChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("BattleOptOutChanged")
 local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
 
--- ===== Construcción de UI =====
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ZB_HUD"
 screenGui.ResetOnSpawn = false
@@ -34,7 +33,6 @@ screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
--- LED de estado (círculo arriba-izquierda)
 local led = Instance.new("Frame")
 led.Name = "StatusLed"
 led.Size = UDim2.fromOffset(28, 28)
@@ -46,7 +44,6 @@ local ledCorner = Instance.new("UICorner")
 ledCorner.CornerRadius = UDim.new(1, 0)
 ledCorner.Parent = led
 
--- Mira central
 local crosshair = Instance.new("Frame")
 crosshair.Name = "Crosshair"
 crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -60,7 +57,6 @@ local chCorner = Instance.new("UICorner")
 chCorner.CornerRadius = UDim.new(1, 0)
 chCorner.Parent = crosshair
 
--- Anuncio de partida / cuenta regresiva (centro de pantalla)
 local matchStatus = Instance.new("TextLabel")
 matchStatus.Name = "MatchStatus"
 matchStatus.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -127,7 +123,6 @@ optOutLabel.TextSize = 13
 optOutLabel.TextXAlignment = Enum.TextXAlignment.Left
 optOutLabel.Parent = roundOptions
 
--- Barra de energía (arriba-derecha)
 local energyBack = Instance.new("Frame")
 energyBack.Name = "EnergyBar"
 energyBack.AnchorPoint = Vector2.new(1, 0)
@@ -150,7 +145,28 @@ local efCorner = Instance.new("UICorner")
 efCorner.CornerRadius = UDim.new(0, 6)
 efCorner.Parent = energyFill
 
--- Contador de monedas (arriba-derecha, visible solo en lobby)
+local hookEnergyBack = Instance.new("Frame")
+hookEnergyBack.Name = "HookEnergyBar"
+hookEnergyBack.AnchorPoint = Vector2.new(1, 0)
+hookEnergyBack.Position = UDim2.new(1, -24, 0, 48)
+hookEnergyBack.Size = UDim2.fromOffset(220, 14)
+hookEnergyBack.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+hookEnergyBack.BorderSizePixel = 0
+hookEnergyBack.Parent = screenGui
+local hebCorner = Instance.new("UICorner")
+hebCorner.CornerRadius = UDim.new(0, 6)
+hebCorner.Parent = hookEnergyBack
+
+local hookEnergyFill = Instance.new("Frame")
+hookEnergyFill.Name = "Fill"
+hookEnergyFill.Size = UDim2.fromScale(1, 1)
+hookEnergyFill.BackgroundColor3 = Color3.fromRGB(255, 170, 90)
+hookEnergyFill.BorderSizePixel = 0
+hookEnergyFill.Parent = hookEnergyBack
+local hefCorner = Instance.new("UICorner")
+hefCorner.CornerRadius = UDim.new(0, 6)
+hefCorner.Parent = hookEnergyFill
+
 local coinsLabel = Instance.new("TextLabel")
 coinsLabel.Name = "CoinsLabel"
 coinsLabel.AnchorPoint = Vector2.new(1, 0)
@@ -166,7 +182,6 @@ coinsLabel.TextXAlignment = Enum.TextXAlignment.Right
 coinsLabel.Visible = false
 coinsLabel.Parent = screenGui
 
--- Panel de extremidades (abajo-izquierda)
 local limbPanel = Instance.new("Frame")
 limbPanel.Name = "LimbPanel"
 limbPanel.AnchorPoint = Vector2.new(0, 1)
@@ -204,13 +219,7 @@ for _, info in ipairs(LIMB_ORDER) do
 	limbIcons[info.key] = icon
 end
 
--- ===== Actualización =====
 local function anyLimbFrozen(state)
-	-- Propósito: Saber si al menos una extremidad está congelada.
-	-- Precondiciones:
-	--   1. state es una tabla de estado válida.
-	-- Ubicación: StarterPlayerScripts/HudController
-	-- Retorna: boolean
 	for _, info in ipairs(LIMB_ORDER) do
 		if state[info.key] == Config.LimbState.FROZEN then
 			return true
@@ -220,14 +229,8 @@ local function anyLimbFrozen(state)
 end
 
 local function onStateChanged(state)
-	-- Propósito: Reflejar el estado del servidor en LED y panel de extremidades.
-	-- Precondiciones:
-	--   1. state es una tabla con extremidades y campo eliminated.
-	-- Ubicación: StarterPlayerScripts/HudController
-	-- Retorna: nil
 	if type(state) ~= "table" then return end
 
-	-- LED de estado.
 	if state.eliminated then
 		led.BackgroundColor3 = Config.LedColors.FROZEN
 	elseif anyLimbFrozen(state) then
@@ -236,7 +239,6 @@ local function onStateChanged(state)
 		led.BackgroundColor3 = Config.LedColors.ACTIVE
 	end
 
-	-- Iconos de extremidad.
 	for _, info in ipairs(LIMB_ORDER) do
 		local icon = limbIcons[info.key]
 		if icon then
@@ -252,16 +254,13 @@ local function onStateChanged(state)
 end
 
 local function updateHud()
-	-- Propósito: Refrescar barra de estamina (batalla) o contador de monedas (lobby).
-	-- Precondiciones: ninguna.
-	-- Ubicación: StarterPlayerScripts/HudController
-	-- Retorna: nil
 	local mode = player:GetAttribute("GameMode") or modeCfg.LOBBY
 	local inBattle = (mode == modeCfg.BATTLE or mode == modeCfg.DUEL)
 		and player:GetAttribute(PARTICIPANT_ATTRIBUTE) == true
 
 	if inBattle then
 		energyBack.Visible = true
+		hookEnergyBack.Visible = true
 		coinsLabel.Visible = false
 
 		local maxStamina = player:GetAttribute("MaxStamina") or energyCfg.MAX
@@ -274,8 +273,20 @@ local function updateHud()
 		else
 			energyFill.BackgroundColor3 = Color3.fromRGB(90, 220, 255)
 		end
+
+		local maxHookEnergy = player:GetAttribute("MaxHookEnergy") or Config.HookEnergy.MAX
+		local hookEnergy = player:GetAttribute("HookEnergy")
+		if hookEnergy == nil then hookEnergy = maxHookEnergy end
+		local hookRatio = math.clamp(hookEnergy / maxHookEnergy, 0, 1)
+		hookEnergyFill.Size = UDim2.fromScale(hookRatio, 1)
+		if hookRatio < 0.15 then
+			hookEnergyFill.BackgroundColor3 = Color3.fromRGB(255, 110, 90)
+		else
+			hookEnergyFill.BackgroundColor3 = Color3.fromRGB(255, 170, 90)
+		end
 	else
 		energyBack.Visible = false
+		hookEnergyBack.Visible = false
 		coinsLabel.Visible = true
 
 		local coins = 0
@@ -303,23 +314,14 @@ local stateChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild
 stateChanged.OnClientEvent:Connect(onStateChanged)
 RunService.RenderStepped:Connect(updateHud)
 
--- ===== Anuncio de estado de partida (cuenta regresiva / ganador) =====
 local function onMatchStateChanged(payload)
-	-- Propósito: Mostrar en pantalla la cuenta regresiva de inicio, el
-	--            anuncio del ganador y la cuenta para volver al lobby.
-	-- Precondiciones:
-	--   1. payload es una tabla con state, countdown, resetCountdown, winner.
-	-- Ubicación: StarterPlayerScripts/HudController
-	-- Retorna: nil
 	if type(payload) ~= "table" then return end
-
 	local state = payload.state
-
 	if state == matchCfg.STATE_COUNTDOWN then
 		matchStatus.Text = "La partida comienza en " .. tostring(payload.countdown or 0) .. "s"
 		matchStatus.Visible = true
 	elseif state == matchCfg.STATE_LOBBY then
-		matchStatus.Text = "Esperando jugadores: " .. tostring(payload.eligiblePlayers or 0) .. "/" .. tostring(matchCfg.MIN_PLAYERS_TO_START)
+		matchStatus.Text = "Esperando jugadores: " .. tostring(payload.eligiblePlayers or 0) .. "/" .. tostring(payload.requiredPlayers or matchCfg.MIN_PLAYERS_TO_START)
 		matchStatus.Visible = true
 	elseif state == matchCfg.STATE_ACTIVE or state == matchCfg.STATE_LOCKED then
 		local remaining = math.max(0, (payload.matchDuration or 0) - (payload.matchTimer or 0))

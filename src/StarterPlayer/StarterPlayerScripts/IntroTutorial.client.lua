@@ -1,6 +1,6 @@
 -- Tipo: LocalScript
 -- Ubicacion: StarterPlayer/StarterPlayerScripts/IntroTutorial
 -- Contexto: Cliente
--- NOTA: La UI ahora esta en StarterGui (ScreenGui ZB_Intro + ZB_IntroCloser).
--- Este script es un stub, no hace nada.
+-- NOTA: Reemplazado por ScreenGui en StarterGui + ZB_IntroCloser
+-- Este script ya no hace nada, la UI esta en StarterGui.
 return

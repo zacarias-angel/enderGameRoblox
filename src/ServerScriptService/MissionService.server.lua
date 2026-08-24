@@ -123,8 +123,7 @@ function MissionService.recordProgress(player, key, amount)
 	if not profile then return end
 	local safeAmount = math.max(0, math.floor(tonumber(amount) or 0))
 	if safeAmount <= 0 then return end
-	local dataService = waitForDataService()
-	local updated = dataService and dataService.updateProfile(player, function(nextProfile)
+	local updated = waitForDataService().updateProfile(player, function(nextProfile)
 		local entries = normalizeEntries(nextProfile.missions.entries)
 		nextProfile.missions.entries = entries
 		for _, mission in ipairs(MISSIONS) do

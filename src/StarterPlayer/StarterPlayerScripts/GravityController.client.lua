@@ -2,18 +2,6 @@
 -- Ubicación: StarterPlayer/StarterPlayerScripts/GravityController
 -- Contexto: Cliente
 
---[[
-	GravityController
-	Escucha el RemoteEvent GameModeChanged del servidor y ajusta el
-	comportamiento del cliente según el modo activo.
-	- LOBBY: permite caminar normal, desactiva propulsores 0g.
-	- BATTLE / DUEL: activa los propulsores y el movimiento en 0g.
-	El personaje se reconfigura cuando cambia el modo activo.
-	Este script NO reemplaza a ZeroGSetup: se coordina con él.
-	ZeroGSetup configura la física base; este script la activa/desactiva
-	según el modo actual.
-]]
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -50,24 +38,15 @@ local function ensureLobbyGravity(rootPart)
 end
 
 local function isZeroG(mode)
-	-- Propósito: Saber si un modo usa gravedad cero.
-	-- Precondiciones:
-	--   1. mode es un string de Config.GameMode.
-	-- Ubicación: StarterPlayerScripts/GravityController
-	-- Retorna: boolean
 	return mode == modeCfg.BATTLE or mode == modeCfg.DUEL
 end
 
 local function enableWalking(character)
-	-- Propósito: Reactivar el caminar normal para el lobby.
-	-- Precondiciones:
-	--   1. character es el modelo del personaje local.
-	-- Ubicación: StarterPlayerScripts/GravityController
-	-- Retorna: nil
 	local humanoid = character:FindFirstChild("Humanoid")
 	if not humanoid then return end
 	humanoid.WalkSpeed = 16
 	humanoid.JumpPower = 50
+	humanoid.JumpHeight = 7.2
 	humanoid.AutoRotate = true
 	humanoid.PlatformStand = false
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
@@ -77,7 +56,6 @@ local function enableWalking(character)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
 	humanoid:ChangeState(Enum.HumanoidStateType.Running)
 
-	-- Liberar el rootPart si estaba anclado.
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if rootPart then
 		rootPart.Anchored = false
@@ -91,8 +69,6 @@ local function enableWalking(character)
 		if force and force:IsA("VectorForce") then
 			force.Force = Vector3.zero
 		end
-		-- Desactivar el AlignOrientation 0g para que no pelee con el
-		-- AutoRotate del Humanoid al caminar en el lobby.
 		local align = rootPart:FindFirstChild("ZB_AlignOrientation")
 		if align and align:IsA("AlignOrientation") then
 			align.Enabled = false
@@ -101,16 +77,9 @@ local function enableWalking(character)
 end
 
 local function enableZeroG(character)
-	-- Propósito: Activar el movimiento 0g para batalla/duelo.
-	-- Precondiciones:
-	--   1. character es el modelo del personaje local.
-	--   2. ZeroGSetup ya creó los objetos de física (ZB_ThrustForce, etc.).
-	-- Ubicación: StarterPlayerScripts/GravityController
-	-- Retorna: nil
 	local humanoid = character:FindFirstChild("Humanoid")
 	if not humanoid then return end
 
-	-- Asegurar que las físicas 0g estén presentes (ZeroGSetup las crea).
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
 	if not rootPart then return end
 	local lobbyGravity = rootPart:FindFirstChild("ZB_LobbyGravityForce")
@@ -118,7 +87,6 @@ local function enableZeroG(character)
 		lobbyGravity.Force = Vector3.zero
 	end
 	if not rootPart:FindFirstChild("ZB_ThrustForce") then
-		-- ZeroGSetup no ha corrido aún; esperar y reintentar.
 		task.wait(0.3)
 		if not rootPart:FindFirstChild("ZB_ThrustForce") then return end
 	end
@@ -129,7 +97,6 @@ local function enableZeroG(character)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
 
-	-- Reactivar el AlignOrientation 0g (se desactiva al volver al lobby).
 	local align = rootPart:FindFirstChild("ZB_AlignOrientation")
 	if align and align:IsA("AlignOrientation") then
 		align.Enabled = true
@@ -137,11 +104,6 @@ local function enableZeroG(character)
 end
 
 local function onModeChanged(mode, prevMode)
-	-- Propósito: Reaccionar a un cambio de modo desde el servidor.
-	-- Precondiciones:
-	--   1. mode y prevMode son strings válidos.
-	-- Ubicación: StarterPlayerScripts/GravityController
-	-- Retorna: nil
 	currentMode = mode
 
 	local character = player.Character
@@ -153,15 +115,12 @@ local function onModeChanged(mode, prevMode)
 		enableWalking(character)
 	end
 
-	-- Actualizar atributo para que MovementController lo lea.
 	player:SetAttribute("GameMode", mode)
 end
 
--- Conexiones
 local modeChanged = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameModeChanged")
 modeChanged.OnClientEvent:Connect(onModeChanged)
 
--- Sincronizar con el personaje actual (ya cargado al iniciar el script).
 if player.Character then
 	onModeChanged(currentMode)
 end

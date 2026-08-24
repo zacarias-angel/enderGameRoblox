@@ -24,10 +24,6 @@ local DEFAULT_PROFILE = {
 		ownedColors = { 'cyan' },
 		equippedWeaponId = 'blaster',
 		equippedLaserColorId = 'cyan',
-		ownedHookTips = { 'default' },
-		ownedHookRopes = { 'default' },
-		equippedHookTipId = 'default',
-		equippedHookRopeId = 'default',
 	},
 	maxStamina = energyCfg.MAX,
 	hookEnergy = {
@@ -101,19 +97,11 @@ local function normalizeProfile(raw)
 	if type(raw.workshop) == 'table' then
 		profile.workshop.ownedWeapons = normalizeStringArray(raw.workshop.ownedWeapons, profile.workshop.ownedWeapons)
 		profile.workshop.ownedColors = normalizeStringArray(raw.workshop.ownedColors, profile.workshop.ownedColors)
-		profile.workshop.ownedHookTips = normalizeStringArray(raw.workshop.ownedHookTips, profile.workshop.ownedHookTips)
-		profile.workshop.ownedHookRopes = normalizeStringArray(raw.workshop.ownedHookRopes, profile.workshop.ownedHookRopes)
 		if type(raw.workshop.equippedWeaponId) == 'string' then
 			profile.workshop.equippedWeaponId = raw.workshop.equippedWeaponId
 		end
 		if type(raw.workshop.equippedLaserColorId) == 'string' then
 			profile.workshop.equippedLaserColorId = raw.workshop.equippedLaserColorId
-		end
-		if type(raw.workshop.equippedHookTipId) == 'string' then
-			profile.workshop.equippedHookTipId = raw.workshop.equippedHookTipId
-		end
-		if type(raw.workshop.equippedHookRopeId) == 'string' then
-			profile.workshop.equippedHookRopeId = raw.workshop.equippedHookRopeId
 		end
 	end
 
@@ -199,7 +187,7 @@ local function applyProfile(player, profile)
 	local stamina = getStaminaService()
 	local rank = getRankService()
 	local hookEnergy = getHookEnergyService()
-
+	local hookEnergy = getHookEnergyService()
 	if currency and currency.setCoins then
 		currency.setCoins(player, profile.coins)
 	end
@@ -227,7 +215,6 @@ local function captureProfile(player)
 	local workshop = getWorkshopService()
 	local stamina = getStaminaService()
 	local rank = getRankService()
-	local hookEnergy = getHookEnergyService()
 
 	if currency and currency.getCoins then
 		current.coins = currency.getCoins(player)

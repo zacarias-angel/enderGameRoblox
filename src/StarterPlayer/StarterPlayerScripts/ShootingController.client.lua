@@ -2,15 +2,6 @@
 -- Ubicación: StarterPlayer/StarterPlayerScripts/ShootingController
 -- Contexto: Cliente
 
---[[
-	ShootingController
-	Detecta el disparo (click izquierdo), hace un raycast local desde la cámara
-	para el VFX del láser y envía origin+direction al servidor por FireWeapon.
-	El láser parte del Muzzle del blaster (WeaponSetup) hacia el punto apuntado,
-	con beam neón + fade, muzzle flash y chispa de impacto.
-	NO calcula daño ni congelación: eso lo decide y valida el servidor.
-]]
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -32,10 +23,6 @@ local lastFireLocal = 0
 local eliminated = false
 
 local function getWeaponCfg()
-	-- Propósito: Config del arma equipada por el jugador.
-	-- Precondiciones: ninguna.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: table de Config.Weapons (o la primera por defecto)
 	local id = player:GetAttribute("WeaponId")
 	for _, w in ipairs(Config.Weapons) do
 		if w.id == id then return w end
@@ -44,23 +31,12 @@ local function getWeaponCfg()
 end
 
 local function getLaserColor(weapon)
-	-- Propósito: Color del láser (override del taller o el del arma).
-	-- Precondiciones: 1. weapon es una table de Config.Weapons.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: Color3
 	local override = player:GetAttribute("LaserColor")
 	if override ~= nil then return override end
 	return weapon.color
 end
 
 local function getAimRay()
-	-- Propósito: Construir el rayo desde la cámara pasando por la mira en
-	--            pantalla (centro + offset del HUD), para que el disparo vaya
-	--            exactamente adonde se ve la mira.
-	-- Precondiciones:
-	--   1. camera es la CurrentCamera.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: (Vector3 origin, Vector3 direction unitaria)
 	local viewport = camera.ViewportSize
 	local screenX = viewport.X / 2 + weaponCfg.CROSSHAIR_OFFSET_X
 	local screenY = viewport.Y / 2 + weaponCfg.CROSSHAIR_OFFSET_Y
@@ -69,11 +45,6 @@ local function getAimRay()
 end
 
 local function getMuzzle(character)
-	-- Propósito: Obtener el Attachment "Muzzle" del blaster si existe.
-	-- Precondiciones:
-	--   1. character es el personaje local.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: Attachment o nil
 	local blaster = character:FindFirstChild("ZB_Blaster")
 	if not blaster then return nil end
 	local barrel = blaster:FindFirstChild("Barrel")
@@ -81,11 +52,6 @@ local function getMuzzle(character)
 end
 
 local function drawLaser(fromPos, toPos, color, width)
-	-- Propósito: VFX del láser: beam neón con fade entre origen e impacto.
-	-- Precondiciones:
-	--   1. fromPos y toPos son Vector3; color es Color3; width es number.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: nil
 	local distance = (toPos - fromPos).Magnitude
 	if distance < 0.05 then return end
 
@@ -110,11 +76,6 @@ local function drawLaser(fromPos, toPos, color, width)
 end
 
 local function muzzleFlash(position, color)
-	-- Propósito: Destello breve en la boca del cañón.
-	-- Precondiciones:
-	--   1. position es Vector3; color es Color3.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: nil
 	local flash = Instance.new("Part")
 	flash.Anchored = true
 	flash.CanCollide = false
@@ -137,11 +98,6 @@ local function muzzleFlash(position, color)
 end
 
 local function impactSpark(position)
-	-- Propósito: Chispa/destello en el punto de impacto.
-	-- Precondiciones:
-	--   1. position es Vector3.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: nil
 	local spark = Instance.new("Part")
 	spark.Anchored = true
 	spark.CanCollide = false
@@ -164,11 +120,6 @@ local function impactSpark(position)
 end
 
 local function fire()
-	-- Propósito: Ejecutar un disparo local (VFX) + petición al servidor.
-	-- Precondiciones:
-	--   1. Personaje local existente.
-	-- Ubicación: StarterPlayerScripts/ShootingController
-	-- Retorna: nil
 	local character = player.Character
 	if not character then return end
 	local rootPart = character:FindFirstChild("HumanoidRootPart")
@@ -177,32 +128,26 @@ local function fire()
 	if player:GetAttribute(PARTICIPANT_ATTRIBUTE) ~= true then return end
 
 	local weapon = getWeaponCfg()
-
-	-- Estamina local (feedback): sin estamina no se dispara.
 	local stamina = player:GetAttribute("Stamina")
 	if stamina == nil then stamina = 0 end
 	if stamina < weapon.shotCost then
 		return
 	end
 
-	-- Cadencia local (feedback inmediato; el servidor revalida).
 	local now = os.clock()
 	if (now - lastFireLocal) < weapon.fireCooldown then
 		return
 	end
 	lastFireLocal = now
 
-	-- Dirección desde la cámara a través de la mira en pantalla.
 	local aimOrigin, direction = getAimRay()
 
-	-- Raycast desde la cámara para saber a qué se apunta.
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { character }
 	local ray = workspace:Raycast(aimOrigin, direction * weaponCfg.MAX_RANGE, params)
 	local hitPos = ray and ray.Position or (aimOrigin + direction * weaponCfg.MAX_RANGE)
 
-	-- Origen visual del láser: el muzzle del blaster si existe, si no el root.
 	local muzzle = getMuzzle(character)
 	local muzzlePos = muzzle and muzzle.WorldPosition or rootPart.Position
 
@@ -213,7 +158,6 @@ local function fire()
 		impactSpark(hitPos)
 	end
 
-	-- El servidor recibe origen del root y la dirección al objetivo real.
 	local serverDir = (hitPos - rootPart.Position)
 	if serverDir.Magnitude > 0.001 then
 		serverDir = serverDir.Unit
@@ -222,8 +166,6 @@ local function fire()
 	end
 	fireWeapon:FireServer(rootPart.Position, serverDir)
 
-	-- Retroceso (recoil): el disparo nos empuja hacia atrás en 0g.
-	-- Solo se aplica si existe el VectorForce (modo batalla/duelo).
 	local thrust = rootPart:FindFirstChild("ZB_ThrustForce")
 	if thrust and thrust:IsA("VectorForce") then
 		local recoil = -direction * weaponCfg.RECOIL_FORCE
@@ -241,7 +183,6 @@ weaponFired.OnClientEvent:Connect(function(payload)
 	if payload.shooterUserId == player.UserId then return end
 	if typeof(payload.fromPos) ~= "Vector3" or typeof(payload.toPos) ~= "Vector3" then return end
 	if typeof(payload.color) ~= "Color3" or type(payload.width) ~= "number" then return end
-
 	muzzleFlash(payload.fromPos, payload.color)
 	drawLaser(payload.fromPos, payload.toPos, payload.color, payload.width)
 	if payload.hit then

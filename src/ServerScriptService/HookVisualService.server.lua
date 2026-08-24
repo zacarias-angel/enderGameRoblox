@@ -112,6 +112,7 @@ local function spawnProjectile(player, fromPos, toPos)
 	local asset = getTipAsset(player)
 	if asset and asset:IsA("Model") and asset.PrimaryPart then
 		local clone = asset:Clone()
+		clone:PivotTo(CFrame.lookAt(fromPos, toPos) * CFrame.new(0, 0, -distance / 2))
 		for _, part in ipairs(clone:GetDescendants()) do
 			if part:IsA("BasePart") then
 				part.Anchored = true
@@ -120,7 +121,6 @@ local function spawnProjectile(player, fromPos, toPos)
 				part.CastShadow = false
 			end
 		end
-		clone:PivotTo(CFrame.lookAt(fromPos, toPos) * CFrame.new(0, 0, -distance / 2))
 		clone.Parent = workspace
 		Debris:AddItem(clone, 0.25)
 		return

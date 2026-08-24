@@ -62,6 +62,9 @@ StarterPlayer/
    `MatchService` teleporta a los jugadores a estas posiciones al iniciar la
    partida. Asegurate de que estas Parts NO sean de tipo SpawnLocation, o los
    jugadores spawnearán directo en la arena sin pasar por el lobby.
+   Si usás un dummy de prueba dentro de la arena, marcá su `Model` con el
+   atributo booleano `IsMatchDummy = true` para que el `MatchService` lo cuente
+   como participante. No se cuentan NPCs sin esa marca.
 4. **Lobby Spawn**: coloca un **SpawnLocation** en el área del lobby (fuera de
    la arena). Este es el punto donde aparecen los jugadores al unirse al
    servidor. Sin esto, Roblox puede spawnear jugadores en cualquier lado,

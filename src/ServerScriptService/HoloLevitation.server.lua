@@ -4,8 +4,8 @@
 
 --[[
 	HoloLevitation
-	Hace que los paneles holograficos en Workspace/Hologramas
-	floten suavemente hacia arriba y abajo (efecto de levitacion).
+	Hace que los paneles holograficos y placas floten suavemente.
+	Busca en Workspace/Hologramas y Workspace/placas.
 ]]
 
 local TweenService = game:GetService("TweenService")

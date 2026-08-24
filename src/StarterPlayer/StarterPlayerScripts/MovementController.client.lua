@@ -2,16 +2,6 @@
 -- Ubicación: StarterPlayer/StarterPlayerScripts/MovementController
 -- Contexto: Cliente
 
---[[
-	MovementController
-	Traduce el input del jugador en empuje sobre el VectorForce creado por
-	ZeroGSetup, produciendo movimiento con inercia en 6 direcciones + Boost.
-	Gestiona la energía de boost localmente y expone su valor para el HUD.
-	Escucha StateChanged para reducir el empuje si hay piernas congeladas.
-	El movimiento es client-owned (estándar Roblox); el gameplay real (daño,
-	congelación) lo valida el servidor.
-]]
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -27,42 +17,26 @@ local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 local PARTICIPANT_ATTRIBUTE = "BattleParticipant"
 
--- Estado local de movimiento
 local character, humanoid, rootPart, thrustForce, alignOrient
 local frozenLegs = { left = false, right = false }
 local eliminated = false
 local smoothedThrust = Vector3.zero
 local zeroGActive = false
 
--- Modo de juego compartido con otros scripts vía atributo del jugador.
 player:SetAttribute("GameMode", modeCfg.LOBBY)
 
 local function cachePhysics()
-	-- Propósito: Intentar obtener las referencias de física (ZB_ThrustForce,
-	--            ZB_AlignOrientation) si ya existen en el rootPart.
-	--            En LOBBY no existen aún; se capturan al cambiar a BATTLE/DUEL.
-	-- Precondiciones:
-	--   1. rootPart es válido.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: nil
 	if not rootPart then return end
 	thrustForce = rootPart:FindFirstChild("ZB_ThrustForce")
 	alignOrient = rootPart:FindFirstChild("ZB_AlignOrientation")
 end
 
 local function bindCharacter(char)
-	-- Propósito: Cachear referencias del personaje. No espera por ZB_ThrustForce
-	--            porque en LOBBY no existe; se captura al cambiar de modo.
-	-- Precondiciones:
-	--   1. char es el modelo del personaje local.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: nil
 	character = char
 	humanoid = char:WaitForChild("Humanoid")
 	rootPart = char:WaitForChild("HumanoidRootPart")
 	cachePhysics()
 
-	-- Escuchar cuando ZeroGSetup cree las físicas (al cambiar a BATTLE/DUEL).
 	rootPart.ChildAdded:Connect(function(child)
 		if child.Name == "ZB_ThrustForce" then
 			thrustForce = child
@@ -78,11 +52,6 @@ local function bindCharacter(char)
 end
 
 local function getInputVector()
-	-- Propósito: Calcular la dirección deseada relativa a la cámara.
-	-- Precondiciones:
-	--   1. camera existe.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: Vector3 unitario (o cero si no hay input)
 	local move = Vector3.zero
 	local look = camera.CFrame.LookVector
 	local right = camera.CFrame.RightVector
@@ -102,10 +71,6 @@ local function getInputVector()
 end
 
 local function legMultiplier()
-	-- Propósito: Reducir el empuje según piernas congeladas.
-	-- Precondiciones: ninguna.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: number multiplicador de empuje.
 	local count = 0
 	if frozenLegs.left then count += 1 end
 	if frozenLegs.right then count += 1 end
@@ -118,22 +83,14 @@ local function legMultiplier()
 end
 
 local function updateOrientation(dt)
-	-- Propósito: Orientar el cuerpo hacia la cámara e inclinarlo (banking)
-	--            según la velocidad, dando una flotación fluida y natural.
-	-- Precondiciones:
-	--   1. alignOrient y rootPart válidos.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: nil
 	if not alignOrient or not alignOrient.Parent or not rootPart then
 		return
 	end
 
 	local camCFrame = camera.CFrame
 	local lookFlat = camCFrame.LookVector
-	-- Base: mirar en la dirección horizontal de la cámara.
 	local baseCFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + lookFlat)
 
-	-- Inclinación (banking) proporcional a la velocidad lateral/vertical.
 	local velocity = rootPart.AssemblyLinearVelocity
 	local speedRatio = math.clamp(velocity.Magnitude / orientCfg.TILT_SPEED_REF, 0, 1)
 	local localVel = baseCFrame:VectorToObjectSpace(velocity)
@@ -145,13 +102,6 @@ local function updateOrientation(dt)
 end
 
 local function onHeartbeat(dt)
-	-- Propósito: Aplicar empuje con inercia, drag y clamp de velocidad.
-	--            Solo actúa si el modo actual es 0g (BATTLE/DUEL).
-	--            En LOBBY, el personaje camina normalmente.
-	-- Precondiciones:
-	--   1. Personaje y VectorForce válidos.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: nil
 	if not rootPart or not thrustForce or not thrustForce.Parent then
 		return
 	end
@@ -172,15 +122,12 @@ local function onHeartbeat(dt)
 		return
 	end
 
-	-- Mientras se está aferrado, GrabController controla posición y orientación.
 	if player:GetAttribute("Grabbing") then
 		thrustForce.Force = Vector3.zero
 		smoothedThrust = Vector3.zero
 		return
 	end
 
-	-- Si el gancho está activo, HookController controla el empuje.
-	-- No tocamos thrustForce para no pisar la fuerza del gancho.
 	if player:GetAttribute("Hooking") then
 		updateOrientation(dt)
 		smoothedThrust = Vector3.zero
@@ -190,11 +137,9 @@ local function onHeartbeat(dt)
 	updateOrientation(dt)
 
 	local boosting = UserInputService:IsKeyDown(moveCfg.BOOST_KEY)
-
 	local direction = getInputVector()
 	local velocity = rootPart.AssemblyLinearVelocity
 
-	-- Empuje objetivo (reducido drásticamente en modo batalla).
 	local battleMult = zeroGActive and moveCfg.BATTLE_THRUST_MULT or 1
 	local thrustMag = moveCfg.THRUST_FORCE * legMultiplier() * battleMult
 	if boosting then
@@ -202,16 +147,13 @@ local function onHeartbeat(dt)
 	end
 	local targetThrust = direction * thrustMag
 
-	-- Rampa de aceleración: suaviza el arranque/parada del empuje (menos rígido).
 	local alpha = math.clamp(moveCfg.ACCEL_SMOOTHING * dt, 0, 1)
 	smoothedThrust = smoothedThrust:Lerp(targetThrust, alpha)
 	local thrust = smoothedThrust
 
-	-- Drag suave (freno proporcional a la velocidad), permite conservar inercia
 	local mass = rootPart.AssemblyMass
 	local drag = -velocity * moveCfg.DRAG * mass
 
-	-- Clamp de velocidad: si supera el máximo, no seguir empujando en esa dir
 	if velocity.Magnitude > moveCfg.MAX_SPEED and direction.Magnitude > 0 then
 		if velocity.Unit:Dot(direction) > 0 then
 			thrust = Vector3.zero
@@ -222,18 +164,12 @@ local function onHeartbeat(dt)
 end
 
 local function onStateChanged(state)
-	-- Propósito: Sincronizar estado de extremidades/eliminación desde servidor.
-	-- Precondiciones:
-	--   1. state es una tabla con campos leftLeg/rightLeg/eliminated.
-	-- Ubicación: StarterPlayerScripts/MovementController
-	-- Retorna: nil
 	if type(state) ~= "table" then return end
 	frozenLegs.left = state[Config.Limb.LEFT_LEG] == Config.LimbState.FROZEN
 	frozenLegs.right = state[Config.Limb.RIGHT_LEG] == Config.LimbState.FROZEN
 	eliminated = state.eliminated == true
 end
 
--- Conexiones
 if player.Character then
 	bindCharacter(player.Character)
 end

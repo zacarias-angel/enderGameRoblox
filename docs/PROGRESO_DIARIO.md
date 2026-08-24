@@ -4,6 +4,22 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 11
+
+**Objetivo:** cerrar regresiones del fin de ronda despues de la ultima actualizacion.
+
+### Hecho
+- `MatchService`: cuando ya solo queda un equipo con vida, la ronda termina de inmediato y anuncia ganador sin esperar `FINALIZE_TIME`.
+- `MatchService`: si se agota el tiempo sin ventaja, la ronda ahora cierra como empate en vez de quedar activa indefinidamente.
+- `MatchService`: el dummy de prueba ya no debe detectarse por "cualquier NPC"; ahora solo cuenta un `Model` marcado con `IsMatchDummy = true`.
+- `ESTRUCTURA_STUDIO.md`: agregado el requisito del atributo `IsMatchDummy` para configurar el dummy correctamente en Studio.
+
+### Pendiente
+- Traer y comparar los scripts reales desde Roblox Studio para confirmar que esta correccion tambien quede aplicada en la experiencia publicada.
+- Revalidar en Studio el flujo completo: ganador, panel de resultado, retorno al lobby y reset de estados al terminar la ronda.
+
+---
+
 ## Sesión 10
 
 **Objetivo:** persistencia real, recompensa diaria, misiones, gancho con energia propia y cierre del backup de codigo.
