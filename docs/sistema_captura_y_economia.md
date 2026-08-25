@@ -89,3 +89,8 @@ La Puerta de Extracción **no** forma parte del MVP. Depende de:
 - Estado de vida por jugador (ya provisto por `PlayerStateService` del MVP).
 
 Se implementa tras validar el núcleo de movimiento + disparo + congelación.
+
+
+
+
+
