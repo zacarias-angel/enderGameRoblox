@@ -19,7 +19,7 @@ Extracción** enemiga o neutraliza por completo al rival.
 
 - **Azul**
 - **Rojo**
-- (MVP inicial: todos-contra-todos. Equipos se activan en Fase 2.)
+- El jugador elige un portal fisico: `LIBRE`, `1v1`, `2v2`, `3v3` o `4v4`.
 
 Cada jugador posee un **traje EVA inteligente** que indica su estado mediante
 luces LED:
@@ -61,6 +61,29 @@ Estructuras metálicas flotantes: **cubos, tubos, anillos, paneles,
 contenedores, restos de naves**.
 
 Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
+
+### Formatos de batalla
+
+- `LIBRE`: entrada inmediata, sin límite de tiempo ni de eliminaciones.
+- `1v1`: 2 jugadores, dos equipos de 1.
+- `2v2`: 4 jugadores, dos equipos de 2.
+- `3v3`: 6 jugadores, dos equipos de 3.
+- `4v4`: 8 jugadores, dos equipos de 4.
+- Los modos competitivos solo comienzan cuando todos sus lugares están ocupados.
+- La selección se realiza en estaciones físicas del lobby; cada estación muestra
+  jugadores dentro, fuera y plazas restantes.
+- Cada partida crea una instancia independiente de arena en
+  `Workspace.ActiveArenas`; varias partidas pueden coexistir en el mismo
+  servidor.
+- En `LIBRE`, un jugador congelado vuelve directamente al lobby y la ronda
+  continúa para los demás.
+- No se mezclan jugadores de formatos distintos dentro de una partida.
+- Cada jugador pertenece como maximo a una partida mediante un `matchId`.
+- El matchmaking multi-instancia esta definido en
+  `MATCHMAKING_MULTI_INSTANCIA.md`.
+- Para produccion, cada grupo viajara desde el `Lobby Place` a un servidor
+  reservado del `Match Place` mediante `TeleportService`. El flujo oficial esta
+  definido en `ARQUITECTURA_PLACES_TELEPORT.md`.
 
 ---
 
@@ -195,5 +218,5 @@ Núcleo jugable:
 - Congelación por zona (extremidades) y eliminación (pecho/cabeza).
 - HUD con LED de estado + barra de energía + mira.
 
-Fuera del MVP (ver roadmap): equipos, Puerta de Extracción, escudos humanos,
-roles, coberturas, condiciones de victoria completas.
+Fuera del MVP (ver roadmap): Puerta de Extracción, roles, condiciones de
+victoria completas.

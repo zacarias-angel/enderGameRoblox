@@ -3,7 +3,7 @@
 ## Reglas principales
 
 - El rayo es continuo mientras el jugador mantiene presionado el disparo.
-- Cada tick del rayo aplica `0.5%` de progreso de congelamiento.
+- Cada tick del rayo aplica el valor `freezePercentPerTick` del arma.
 - El progreso se acumula en un unico valor por enemigo, de `0%` a `100%`.
 - Todas las partes del cuerpo suman progreso: torso, brazos, piernas y accesorios que resuelvan a torso.
 - La cabeza no elimina instantaneamente. Aplica el dano base multiplicado por `3`.
@@ -18,7 +18,8 @@ Los valores viven en `ReplicatedStorage.Shared.Config`:
 
 - `Config.WeaponSystem.MODE = "beam"`
 - `Config.WeaponSystem.BEAM_TICK_RATE = 0.1`
-- `Config.WeaponSystem.BEAM_FREEZE_PER_TICK = 0.5`
+- `Config.WeaponSystem.BEAM_STAMINA_DRAIN_PER_SEC = 45`
+- `Config.WeaponSystem.BEAM_WAVE_AMPLITUDE = 3.0`
 - `Config.WeaponSystem.BEAM_HEAD_MULTIPLIER = 3`
 - `Config.FreezeProgress.MAX = 100`
 
@@ -26,19 +27,20 @@ Con `0.5%` cada `0.1` segundos, un impacto continuo al torso tarda aproximadamen
 
 ## Danos y futuras armas
 
-Cada arma puede ajustar su dano sin cambiar la regla de congelamiento. La proxima extension recomendada es agregar un campo como `freezePercentPerTick` en cada entrada de `Config.Weapons` y usarlo como valor base. El multiplicador de cabeza debe seguir siendo global o configurable por arma, pero nunca debe convertir la cabeza en una eliminacion instantanea.
+Cada arma ajusta su congelamiento mediante `freezePercentPerTick` sin cambiar la regla global. El multiplicador de cabeza debe seguir siendo global o configurable por arma, pero nunca debe convertir la cabeza en una eliminacion instantanea.
 
 Ejemplos de balance:
 
-- Blaster: `0.5%` por tick.
-- Rifle: mayor frecuencia o `0.35%` por tick.
-- Canon: menor frecuencia y `1.0%` por tick.
+- Blaster: `1%` por tick.
+- Rifle: mayor frecuencia y `0.8%` por tick.
+- Canon: menor frecuencia y `2%` por tick.
 
 ## VFX
 
 - El cliente mantiene el Beam local para el tirador.
 - `RemoteVfx.client` dibuja el Beam remoto para los demas jugadores.
 - El impacto usa luz y particulas en el punto final del rayo.
+- La ondulacion del rayo usa una amplitud compartida de `3.0`, ligeramente mayor para reforzar el efecto visual.
 - El color y ancho siguen dependiendo del arma/equipamiento.
 - El porcentaje se muestra en el Billboard del objetivo y se actualiza en cada impacto valido.
 

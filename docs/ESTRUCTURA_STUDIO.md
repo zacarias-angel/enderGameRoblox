@@ -3,6 +3,10 @@
 Crea esta jerarquía en Studio y pega cada script del proyecto (`src/`) en la
 ubicación indicada. Sigue `ReglasRoblox.md` §1.
 
+> Esta estructura describe el Place actual de desarrollo. Para produccion, la
+> separacion de partidas se hara entre `Lobby Place` y `Match Place` mediante
+> `TeleportService`; ver `ARQUITECTURA_PLACES_TELEPORT.md`.
+
 ```
 ReplicatedStorage/
 ├── Shared/
@@ -14,6 +18,7 @@ ReplicatedStorage/
     ├── StateChanged        (RemoteEvent)     <- auto-creado
     ├── GameModeChanged     (RemoteEvent)     <- auto-creado
     ├── JoinMatchRequest    (RemoteEvent)     <- auto-creado
+    ├── LeaveMatchRequest   (RemoteEvent)     <- auto-creado
     └── MatchStateChanged   (RemoteEvent)     <- auto-creado
 
 ServerScriptService/
@@ -21,10 +26,15 @@ ServerScriptService/
 ├── FreezeService           (Script)          <- src/ServerScriptService/FreezeService.server.lua
 ├── ShootingService         (Script)          <- src/ServerScriptService/ShootingService.server.lua
 ├── GameModeService         (Script)          <- src/ServerScriptService/GameModeService.server.lua
+├── MatchRegistry            (ModuleScript)   <- registro de partidas por `matchId`
 ├── MatchService            (Script)          <- src/ServerScriptService/MatchService.server.lua
 ├── RankService             (Script)          <- src/ServerScriptService/RankService.server.lua
 ├── CurrencyService         (Script)          <- src/ServerScriptService/CurrencyService.server.lua
 └── HoloLevitation          (Script)          <- src/ServerScriptService/HoloLevitation.server.lua
+
+ServerStorage/
+└── ArenaTemplates/
+    └── CompetitiveArena    (Model)           <- geometria + SpawnAzul/Rojo
 
 StarterPlayer/
 ├── StarterPlayerScripts/
@@ -42,26 +52,36 @@ StarterPlayer/
     └── WeaponSetup          (LocalScript)    <- src/StarterPlayer/StarterCharacterScripts/WeaponSetup.client.lua
 ```
 
+```
+Workspace/
+├── BattlePortals/
+│   ├── Portal_LIBRE         (Part + ProximityPrompt)
+│   ├── Portal_1v1           (Part + ProximityPrompt)
+│   ├── Portal_2v2           (Part + ProximityPrompt)
+│   ├── Portal_3v3           (Part + ProximityPrompt)
+│   └── Portal_4v4           (Part + ProximityPrompt)
+├── Arena                   (Folder con marcadores normales)
+└── ActiveArenas            (Folder, creada al ejecutar)
+```
+
 ## Pasos previos en Studio
 
-1. **Gravedad automática**: NO pongas `Gravity = 0` manualmente. El
-   `GameModeService` gestiona la gravedad según el modo. Por defecto arranca en
-   LOBBY (gravedad normal 196.2). El `MatchService` cambia a 0g al iniciar la
-   partida y vuelve a normal al terminar. Comandos de consola (servidor):
-   ```
-   _G.ZB.MatchService.forceStart()            -- Iniciar partida manualmente
-   _G.ZB.GameMode.setMode(Config.GameMode.BATTLE)   -- Solo para debug
-   _G.ZB.GameMode.setMode(Config.GameMode.LOBBY)
-   ```
-2. **Portal de batalla**: crea un `Part` en Workspace llamado `"Portal"` (puede
-   ser una esfera, arco, lo que quieras). Agrégale un **Atributo** booleano
-   `isPortal` = true. El `PortalController` crea automáticamente un
-   **ProximityPrompt** (tecla **F**) para que los jugadores entren a la partida.
-3. **Arena y spawns**: crea una carpeta `Arena` en Workspace. Dentro, pon 2
-   **Parts** (NO SpawnLocation) llamadas **SpawnAzul** y **SpawnRojo**. El
-   `MatchService` teleporta a los jugadores a estas posiciones al iniciar la
-   partida. Asegurate de que estas Parts NO sean de tipo SpawnLocation, o los
-   jugadores spawnearán directo en la arena sin pasar por el lobby.
+1. **Gravedad por jugador**: no uses `Workspace.Gravity` para cambiar entre
+   lobby y batalla, porque su valor es global y hay varias arenas simultaneas.
+   Mantenelo en gravedad normal y aplica compensacion 0g al personaje que tenga
+   un `matchId` activo. Las pruebas deben hacerse desde los portales o mediante
+   herramientas de test del servidor, no cambiando la gravedad global.
+2. **Portales de batalla**: crea de forma permanente la carpeta
+   `Workspace/BattlePortals` y los cinco Parts indicados arriba. Cada portal
+   debe tener `BattleFormat`, `isPortal = true` y un `ProximityPrompt` con tecla
+   **F**. El servidor configura la logica, pero nunca genera la geometria en
+   runtime ni agrega `BillboardGui`.
+3. **Escenas y spawns**: `Workspace.geodesica` es la escena normal usada por
+   `LIBRE`. `Workspace.Arena` conserva los marcadores normales. Para los modos
+   competitivos, `ServerStorage.ArenaTemplates.CompetitiveArena` debe contener
+   una copia de la geometria de arena y dos Parts (NO SpawnLocation) llamadas
+   **SpawnAzul** y **SpawnRojo**. Cada partida clona esa plantilla y la coloca
+   separada de las demas.
    Si usás un dummy de prueba dentro de la arena, marcá su `Model` con el
    atributo booleano `IsMatchDummy = true` para que el `MatchService` lo cuente
    como participante. No se cuentan NPCs sin esa marca.
@@ -94,10 +114,10 @@ StarterPlayer/
 0. Añade `Config` + `FreezeMap` + `GameModeService` + `MatchService` +
    `RankService` en el servidor. El juego arranca en **LOBBY** con gravedad
    normal. Los jugadores caminan normalmente.
-1. Añade `PortalController` → crea un `Part` "Portal" con atributo `isPortal`
-   en Workspace. Al acercarte y pulsar **F**, te unís a la cola de partida.
+1. Verifica los cinco objetos permanentes de `Workspace.BattlePortals`. Al
+   acercarte y pulsar **F**, entras a la cola del formato correspondiente.
 2. Añade `GravityController` + `ZeroGSetup` + `MovementController`. En lobby
-   caminas normal. Al iniciar partida (vía portal o `_G.ZB.MatchService.forceStart()`)
+   caminas normal. Al completar una cola competitiva o entrar a `LIBRE`
    → deberías **volar** con WASD/Espacio/Ctrl y **boost** con Shift.
 3. Añade `AstronautPose` + `WeaponSetup` → pose flotante de astronauta y el
    blaster soldado a la mano derecha.
@@ -110,10 +130,10 @@ StarterPlayer/
 6. Añade `HudController` → LED, energía y mira.
 7. **Placas**: carpeta `placas` → Placa1/Placa2/Placa3 con SurfaceGui +
    TextLabel "RankLabel". El `RankService` actualiza el top 3 cada 3 s.
-8. **Flujo completo**: jugador en lobby → pulsa F en el portal → cuenta
-   regresiva → asignación de equipo balanceado → teleport a la arena → 0g
-   activo → combate → 1 min de ventana para entrar → luego cerrado →
-   aniquilación o tiempo → ganador → vuelta al lobby.
+8. **Flujo completo**: jugador en lobby → pulsa F en un portal → cola propia
+   del formato → grupo completo → `matchId` y arena nueva → equipos → combate
+   aislado → ganador o tiempo → solo esa arena vuelve al lobby. `LIBRE` entra
+   inmediatamente y no tiene temporizador.
 
 > Nota: las extensiones `.client.lua` / `.server.lua` son solo convención de
 > nombre para saber el contexto. En Studio, el **tipo** de instancia

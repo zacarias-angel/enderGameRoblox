@@ -4,6 +4,287 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 20
+
+**Objetivo:** iniciar el `Match Place` de la Experience.
+
+### Hecho
+- Confirmado `MatchPlaceId = 108298899371591`.
+- Creado `ReplicatedStorage.Shared.PlaceConfig` con ambos PlaceIds.
+- Creado `ServerScriptService.MatchRuntimeService`.
+- Agregada lectura y validacion de `TeleportData`.
+- Agregados equipos `Azul` y `Rojo` en el Match Place.
+- Creada una arena base local con `SpawnAzul` y `SpawnRojo`.
+- Agregado retorno preparado mediante `ReturnToLobbyRequest`.
+- Play Solo sin `TeleportData` se rechaza de forma segura.
+
+### Pendiente
+- Migrar Config, combate, congelamiento, movimiento, HUD y resultados al Match
+  Place.
+- Crear `LobbyMatchmakingService` con `TeleportAsync` y servidores reservados.
+- Probar teleport real desde Roblox Player publicado.
+
+## Sesion 21
+
+**Objetivo:** conectar el Lobby con el Match Place.
+
+### Hecho
+- Confirmado que `Workspace.geodesica` y los spawns fueron copiados al Match
+  Place.
+- Creado `ReplicatedStorage.Shared.PlaceConfig` tambien en el Lobby.
+- Creado `ServerScriptService.LobbyTeleportService`.
+- Desactivado `ServerScriptService.MatchService.server`, que era el gestor
+  local de arenas.
+- El nuevo servicio conserva los remotos y la API esperada por los portales.
+- Las colas competitivas esperan el grupo completo antes de llamar a
+  `TeleportAsync`.
+- `LIBRE` envia al jugador individualmente a un servidor reservado.
+- Creado `StarterPlayer.StarterPlayerScripts.ReturnToLobbyController.client` en
+  el Match Place.
+- El Match Place asigna equipos, spawns y gravedad 0 al aceptar `TeleportData`.
+- Ambos Places arrancan sin errores del sistema nuevo en Play Solo.
+
+### Limitacion de prueba
+- Studio Play Solo no ejecuta un teleport real entre Places. La prueba final
+  requiere publicar la Experience y entrar desde Roblox Player.
+
+### Pendiente
+- Copiar los scripts de combate al Match Place.
+- Copiar los remotos y assets de combate que esos scripts requieren.
+- Publicar ambos Places y validar un `1v1` real.
+
+## Sesion 22
+
+**Objetivo:** dejar el Match Place con el conjunto minimo de combate.
+
+### Hecho
+- Copiados al Match Place los servicios y controladores de combate.
+- Copiados `Config`, `FreezeMap` y `HookCosmeticAssets`.
+- Eliminados del Match Place los servicios exclusivos del Lobby:
+  matchmaking local, portales, taller, misiones, recompensas, economia y
+  decoracion del Lobby.
+- Eliminado el `MatchService` antiguo del Match Place.
+- Creados los 13 `RemoteEvent` requeridos por los scripts copiados.
+- Restaurado `MatchRuntimeService` despues de que la copia masiva lo
+  sobrescribiera.
+- Verificacion de estructura: arena, runtime, scripts requeridos y remotos
+  presentes.
+
+### Pendiente
+- Reintentar Play en el Match Place; el controlador de Studio quedo con una
+  operacion de inicio pendiente despues de un timeout del MCP.
+- Probar teletransportes reales con la Experience publicada.
+
+## Sesion 23
+
+**Objetivo:** conservar `LIBRE` en el Lobby y separar solo los VS.
+
+### Hecho
+- `LIBRE` ahora activa la arena normal local `Workspace.Arena`.
+- `LIBRE` ya no llama a `TeleportAsync`.
+- Salir de `LIBRE` devuelve al jugador al spawn normal del Lobby.
+- Los formatos competitivos siguen entrando en cola para teleport reservado.
+- Play Solo verifico `LIBRE` local y cola `1v1` sin errores del sistema nuevo.
+- El `HTTP 403` observado solo corresponde al intento de teleport desde Studio.
+
+### Pendiente
+- Publicar la Experience y probar un `1v1` desde Roblox Player.
+- Verificar que el Place secundario este configurado dentro de la misma
+  Experience y que los permisos de teleport esten habilitados.
+
+## Sesion 24
+
+**Objetivo:** registrar fallos observados en produccion para continuar el
+diagnostico manana.
+
+- Creado `docs/BUGS_PRODUCCION_2026-08-26.md`.
+- Registrados problemas de carga lenta en Lobby y Match Place.
+- Registrados problemas de gravedad 0, movimiento, hook y bloques que se
+  desarman.
+- No se modifico el codigo durante esta sesion de diagnostico.
+
+---
+
+## Sesion 19
+
+**Objetivo:** cambiar la estrategia de aislamiento de arenas a Places de la
+Experience.
+
+### Decision
+- El sistema de arenas clonadas dentro de `Workspace` queda como prototipo
+  local y no como solucion de produccion.
+- La arquitectura oficial sera `Lobby Place` + `Match Place` con
+  `TeleportService` y servidores reservados.
+- El mismo `Match Place` recibira `GameMode`, `MatchId`, mapa y reglas mediante
+  `TeleportData`.
+
+### Documentacion
+- Creado `ARQUITECTURA_PLACES_TELEPORT.md`.
+- Actualizados `MATCHMAKING_MULTI_INSTANCIA.md`, `RUTA_CHECKLIST.md` y
+  `ESTRUCTURA_STUDIO.md`.
+
+### Bloqueo previo a codigo
+- Identificados `LobbyPlaceId = 125075465377023` y
+  `MatchPlaceId = 108298899371591`.
+- Falta confirmar desde Creator Dashboard que ambos Places pertenecen a la
+  misma Experience.
+- No se debe reemplazar el teleport del Lobby hasta disponer de esos IDs y
+  probar el retorno desde Roblox Player.
+
+---
+
+## Sesion 18
+
+**Objetivo:** separar la escena normal de las escenas competitivas y eliminar
+la penalizacion de peso por congelacion.
+
+### Hecho
+- `LIBRE` usa directamente `Workspace.geodesica`, la escena normal.
+- Creada `ServerStorage.ArenaTemplates.CompetitiveArena` con geometria y
+  marcadores `SpawnAzul` / `SpawnRojo`.
+- Las partidas competitivas clonan su escena y la desplazan para no solaparse
+  con `LIBRE` ni con otras partidas.
+- Se evita destruir `Workspace.geodesica` al salir de `LIBRE`.
+- `LEG_ONE_FROZEN_MULT` y `LEG_TWO_FROZEN_MULT` quedan en `1.0`; la congelacion
+  ya no agrega peso ni reduce el movimiento.
+
+### Validado
+- `LIBRE` aparece dentro de `geodesica`, con gravedad individual 0g activa.
+- Al salir, `geodesica` permanece intacta y no queda arena activa.
+- La plantilla competitiva contiene geometria y ambos spawns.
+
+### Pendiente
+- Validar con dos clientes reales que dos `1v1` creen escenas separadas y no
+  compartan jugadores, combate ni resultados.
+
+---
+
+## Sesion 17
+
+**Objetivo:** retrasar el efecto de peso/perdida de empuje de la congelacion.
+
+### Hecho
+- `Config.Movement.FREEZE_EFFECT_THRESHOLD = 90`.
+- `MovementController` conserva el estado visual y el progreso de congelacion,
+  pero no reduce el empuje por piernas hasta alcanzar el `90%`.
+- El valor puede subir a `95` si las pruebas de jugabilidad requieren una
+  penalizacion aun mas tardia.
+
+### Validado
+- El umbral `90%` carga correctamente en cliente.
+- El controlador contiene la validacion de progreso antes de aplicar la
+  reduccion de empuje.
+
+---
+
+## Sesion 16
+
+**Objetivo:** corregir la entrada a `LIBRE`, spawn y activacion del personaje.
+
+### Problemas encontrados
+- `activate()` no devolvia `true`; la arena se creaba, pero la entrada se
+  cancelaba y el jugador regresaba al lobby.
+- `MovementController` y `GravityController` sobrescribian `GameMode` en el
+  cliente con `LOBBY`.
+- `ZeroGSetup` y `AstronautPose` solo reaccionaban al modo global, no al estado
+  individual del jugador.
+
+### Hecho
+- `MatchService` ahora crea `LIBRE` en estado inicial de lobby y la activa con
+  retorno valido antes de insertar jugadores.
+- Agregados logs `[ZB Match]` para inicializacion, eventos de entrada,
+  activacion, creacion de arena, alta en `LIBRE` y salida.
+- Añadida limpieza de referencias huerfanas en `MatchRegistry`.
+- `GameMode` queda bajo autoridad del servidor por jugador.
+- `ZeroGSetup`, `AstronautPose` y `GravityController` reaccionan a
+  `BattleParticipant`.
+- La gravedad global permanece normal y la compensacion 0g se aplica por
+  personaje.
+
+### Validado
+- `LIBRE` crea `Arena_LIBRE_001` y posiciona al jugador dentro de la arena.
+- El jugador recibe `GameMode=BATTLE`, `MatchId`, `ZB_MatchGravityForce` y
+  `ZB_ThrustForce`.
+- La animacion de flotacion, blaster y controlador del gancho cargan.
+- Salir devuelve al jugador a `LOBBY` y destruye la arena vacia.
+- No quedaron errores de sintaxis en los scripts corregidos.
+
+### Pendiente
+- Probar con dos clientes reales dos partidas `1v1` simultaneas.
+
+---
+
+## Sesion 15
+
+**Objetivo:** implementar el primer corte funcional del matchmaking
+multi-instancia.
+
+### Hecho
+- Creado `ServerScriptService/MatchRegistry`.
+- Reescrito `MatchService` para usar colas por formato y partidas con `matchId`.
+- Cada partida competitiva crea su propia arena dentro de
+  `Workspace.ActiveArenas`.
+- `LIBRE` usa una instancia abierta, sin temporizador y con entrada inmediata.
+- Los eventos de estado se envian solo a los jugadores de su partida.
+- La gravedad del servidor permanece normal; cada jugador en batalla recibe su
+  propia compensacion 0g.
+- Portales y HUD dejaron de depender de un estado global unico.
+- Restaurado `BattleOptOutChanged` para evitar bloqueo del HUD.
+
+### Validado
+- `LIBRE` crea `LIBRE_001` y asigna al jugador correctamente.
+- La gravedad global permanece en `196.2` y la fuerza 0g se aplica solo al
+  personaje de batalla.
+- `1v1` deja un jugador en cola `1/2` sin crear arena prematuramente.
+- `MatchRegistry` forma dos grupos `1v1` independientes con cuatro jugadores
+  de prueba.
+- Los cinco portales persistentes cargan sin `BillboardGui` ni errores del
+  gestor nuevo.
+
+### Pendiente
+- Probar dos clientes reales en Studio para confirmar dos arenas `1v1`
+  simultaneas de extremo a extremo.
+- Verificar combate, congelamiento, resultados y recompensas aislados por
+  `matchId`.
+- Reemplazar las ultimas lecturas globales de `GameModeService` en servicios de
+  combate si alguna aparece durante la prueba multi-cliente.
+
+---
+
+## Sesion 14
+
+**Objetivo:** reemplazar el gestor global por matchmaking multi-instancia.
+
+### Diagnostico
+- El `MatchService` actual mantiene un solo `formatId`, una sola cola, una
+  sola arena y un solo temporizador para todo el servidor.
+- El segundo jugador no puede entrar a `LIBRE` porque el portal intenta cambiar
+  el formato mientras el estado global ya esta `ACTIVE`.
+- Los portales se vuelven rojos juntos porque `PortalController` recibe un
+  estado global, aunque solo haya una partida activa.
+- `1v1` no puede crear partidas simultaneas: no existe un `matchId` por partida.
+- `Workspace.Gravity` tambien es global y no puede separar lobby y varias arenas
+  simultaneas por modo.
+
+### Decision
+- Se abandona el gestor global de rondas.
+- Se adopta una cola por formato y un registro de partidas por `matchId`.
+- `LIBRE` sera una instancia abierta sin temporizador hasta quedar vacia.
+- Cada partida competitiva clonara y administrara su propia arena, equipos,
+  estado, resultados y limpieza.
+
+### Documentacion nueva
+- `MATCHMAKING_MULTI_INSTANCIA.md` contiene el modelo, contratos, seguridad,
+  gravedad y criterios de aceptacion del nuevo sistema.
+
+### Pendiente
+- Crear `MatchRegistry`.
+- Migrar `MatchService` a colas y partidas independientes.
+- Separar gravedad y movimiento por jugador, no por `Workspace.Gravity` global.
+- Probar diez partidas `1v1` simultaneas con 20 jugadores.
+
+---
+
 ## Sesion 13
 
 **Objetivo:** cerrar el pulido del beam continuo y documentar la correccion.
@@ -127,6 +408,9 @@ mira ADS y gravedad 0 por modos.
 
 ### Decisiones
 
+> Esta decision de gravedad global queda superada por la arquitectura
+> multi-instancia definida en la Sesion 14.
+
 **Escudo humano (agarre de cuerpos):**
 - **NO cancelar el giro** del cuerpo al agarrarlo: que siga girando es parte
   del feel/caos de 0g. Si resulta divertido, se queda (regla del proyecto).
@@ -148,7 +432,7 @@ mira ADS y gravedad 0 por modos.
   subir `Responsiveness` de orientación durante ADS; conflicto con la
   rotación de cámara default de Roblox (click derecho).
 
-**Gravedad 0 por modos (no por zonas):**
+**Gravedad 0 por modos (decision anterior):**
 - La gravedad 0 es del **modo batalla / modo duelo** (la arena). El lobby
   tiene gravedad normal.
 - **Interruptor del lobby (opción B — global):** un switch en el lobby pone
@@ -357,7 +641,7 @@ de astronauta.
   - `RESUMEN_JUEGO_ACTUALIZADO.md` — diseño general de ZERO BREACH.
   - `sistema_captura_y_economia.md` — Puerta de Extracción (Fase 2).
   - `UI_ASSET_SPEC.md` — HUD, LED y assets.
-  - `RUTA_CHECKLIST_DESARROLLO_PETS_Y_PVP.md` — roadmap por fases.
+   - `RUTA_CHECKLIST.md` — roadmap por fases.
 
 ### En curso
 - MVP: movimiento 0g + disparo + congelación por zona.

@@ -17,20 +17,25 @@ proximos pasos recomendados.
 - [x] Congelacion de extremidades y eliminacion.
 - [x] Gancho como movilidad principal en batalla.
 - [x] Agarre/cobertura (`GrabController`).
-- [x] Lobby y batalla separados por modo de juego.
+- [x] Lobby y multiples batallas separados por jugador/`matchId`.
 - [x] Equipos Azul/Rojo con teletransporte a la arena.
 - [x] Ranking basico y economia de monedas.
 - [x] Taller para mejoras/desbloqueos locales de la sesion.
 
 ### Flujo de partida actual
-- [x] La entrada manual por portal fue reemplazada por cuenta regresiva global.
-- [x] Todos los jugadores conectados entran al mismo tiempo.
-- [x] Los jugadores se reparten en equipos en partes iguales.
-- [x] La partida no arranca con menos de 2 jugadores elegibles.
-- [x] Si durante la partida queda menos de 2 jugadores, termina como partida invalida.
-- [ ] Revalidar en Studio el loop completo: perder → ganador → lobby sin estado congelado residual.
-- [x] El portal ahora es solo visual.
-- [x] El HUD muestra estado de partida, contador y tiempo restante.
+- [ ] Migrar el gestor actual dentro de `Workspace` a Places y Reserved Servers.
+- [x] El gestor global anterior esta reemplazado por partidas independientes.
+- [x] Existe una cola separada por formato.
+- [x] Cada partida tiene `matchId`, jugadores, equipos, arena y temporizador propios.
+- [ ] Verificar con dos clientes que varias partidas del mismo formato se ejecuten simultaneamente.
+- [x] `LIBRE` acepta jugadores en una instancia abierta sin temporizador.
+- [x] Los jugadores competitivos permanecen en lobby hasta completar su grupo.
+- [x] Cada jugador puede suscribirse a una sola cola.
+- [x] Repetir el portal quita al jugador de la cola.
+- [x] Usar otro portal cambia la suscripcion de formato.
+- [ ] Revalidar el loop completo: perder → ganador → lobby sin estado residual.
+- [ ] Los portales fisicos son persistentes en `Workspace.BattlePortals`.
+- [ ] El HUD muestra estado y tiempo solo cuando corresponde a la partida del jugador.
 - [x] Existe checkbox para no entrar a la proxima batalla.
 
 ### Replicacion visual ya resuelta
@@ -76,19 +81,19 @@ proximos pasos recomendados.
 - [x] Equipos Azul/Rojo.
 - [x] Spawns por equipo.
 - [x] Lobby con gravedad normal.
-- [x] Batalla con gravedad cero.
-- [x] MatchService con rondas automaticas.
-- [x] Cuenta regresiva global antes de cada partida.
-- [x] Reparto automatico de equipos al inicio.
-- [x] Fin de ronda por aniquilacion o tiempo.
-- [x] Reinicio al lobby.
-- [x] Partida invalida si queda una sola persona.
+- [x] Batalla con gravedad cero aislada por jugador/`matchId`.
+- [x] MatchService con registro de partidas independientes.
+- [x] Cuenta regresiva propia por partida competitiva.
+- [x] Reparto automatico de equipos por `matchId`.
+- [x] Fin de ronda por aniquilacion o tiempo, aislado por `matchId`.
+- [x] Reinicio al lobby aislado por partida.
+- [x] Cancelacion segura de una partida incompleta.
 
 ### Fase 3 — Interaccion y movilidad extendida
 - [x] Gancho funcional.
 - [x] Replicacion visual del gancho.
 - [x] Sistema de cobertura/agarre.
-- [x] Portal solo visual.
+- [x] Portales persistentes con estado independiente por formato.
 
 ### Fase 4 — Calidad de experiencia actual
 - [x] Contador de partida visible en HUD.
@@ -147,15 +152,26 @@ proximos pasos recomendados.
   - persistente en perfil del jugador
 
 ### Fase 8 — Formatos de batalla y arenas
-- [ ] Separar configuracion de formato de partida: `2v2`, `4v4`, `FFA`.
-- [ ] Permitir elegir formato de batalla antes de entrar a la ronda.
-- [ ] Instanciar arenas por formato en vez de depender de una sola arena fija.
-- [ ] Definir arena especifica para `2v2`.
-- [ ] Definir arena especifica para `4v4`.
-- [ ] Definir arena especifica para `FFA`.
-- [ ] Ajustar spawns y balanceo por formato.
-- [ ] Revisar flujo de matchmaking cuando solo quieren jugar `2v2`.
-- [ ] Evitar mezclar jugadores de formatos distintos en la misma partida.
+> Esta fase queda marcada como prototipo local. Para produccion se reemplaza
+> por la Fase 12 de Places y TeleportService.
+- [x] Separar configuracion de formato de partida: `LIBRE`, `1v1`, `2v2`, `3v3`, `4v4`.
+- [x] Permitir elegir formato de batalla antes de entrar a la ronda.
+- [x] Selector físico en el lobby mediante estaciones `LIBRE`, `1v1`, `2v2`, `3v3` y `4v4`.
+- [x] Cada portal muestra jugadores y plazas de su propia cola/partida.
+- [x] `LIBRE` transporta al jugador a una instancia abierta inmediatamente.
+- [x] Los modos competitivos esperan en lobby hasta completar grupos independientes.
+- [x] El jugador puede salir de cualquier batalla con boton, tecla `X` o portal.
+- [x] Crear una arena por `matchId` dentro de `Workspace.ActiveArenas`.
+- [x] Configurar `LIBRE`: entrada inmediata, sin limite de tiempo ni eliminaciones.
+- [x] Configurar capacidades de `1v1`, `2v2`, `3v3` y `4v4`.
+- [x] Crear multiples partidas completas cuando una cola supera una capacidad.
+- [x] Enviar al lobby al jugador congelado en `LIBRE`.
+- [x] Aplicar penalizacion de empuje por congelacion solo desde `90%` de progreso.
+- [x] Separar completamente el matchmaking por cola y por `matchId`.
+- [x] Replicar formato y `matchId` al HUD y a los jugadores correctos.
+- [x] Mantener conteos independientes por portal, cola y partida.
+- [x] Evitar duplicados de jugador en colas diferentes.
+- [x] Quitar dependencia de `Workspace.Gravity` global para lobby y arenas simultaneas.
 
 ### Fase 9 — Gancho, energia y taller
 - [x] Separar energia del gancho de la energia de disparo.
@@ -183,15 +199,16 @@ proximos pasos recomendados.
   - `Rifle.shotCost = 20`
   - `Cañon.shotCost = 55`
 - Gancho:
-  - `USE_COST = 18`
-  - `PULL_DRAIN_PER_SEC = 9`
-  - `REGEN_PER_SEC = 10`
-  - `MIN_TO_USE = 18`
+  - `USE_COST = 25`
+  - `PULL_DRAIN_PER_SEC = 24`
+  - `REGEN_PER_SEC = 5`
+  - `MIN_TO_USE = 25`
 - Comportamiento del gancho:
   - al llegar al punto ya no se corta solo
   - se mantiene mientras `Q` siga presionada
 
 ### Fase 10 — Pulido de combate
+- [ ] Diseñar beneficios de `LIBRE` por permanencia y jugadores congelados.
 - [ ] Revisar balance de stamina, cooldowns y recoil.
 - [ ] Mejorar feedback audiovisual de impactos.
 - [ ] Mejorar VFX/SFX del gancho.
@@ -204,6 +221,18 @@ proximos pasos recomendados.
 - [ ] Mas coberturas y layout de mapa.
 - [ ] Objetivos secundarios en partida.
 - [ ] Mas desbloqueos cosmeticos.
+
+### Fase 12 — Places y servidores reservados
+- [ ] Crear `Lobby Place` y `Match Place` dentro de la misma Experience.
+- [ ] Registrar `LobbyPlaceId` y `MatchPlaceId` en configuracion compartida.
+- [ ] Crear `LobbyMatchmakingService` para colas y grupos completos.
+- [ ] Crear `TeleportOptions` con `ShouldReserveServer = true`.
+- [ ] Pasar `MatchId`, formato y mapa mediante `TeleportData`.
+- [ ] Crear `MatchRuntimeService` exclusivo del `Match Place`.
+- [ ] Llevar combate, equipos, resultados y recompensas al `Match Place`.
+- [ ] Teletransportar jugadores de vuelta al Lobby al finalizar.
+- [ ] Manejar reintentos y fallos de `TeleportAsync` sin perder jugadores.
+- [ ] Probar varios servidores reservados desde Roblox Player publicado.
 
 ---
 
@@ -222,7 +251,7 @@ proximos pasos recomendados.
 
 ### Sprint despues de persistencia
 - [ ] 1. Persistencia del taller.
-- [ ] 2. Formatos de batalla (`2v2`, `4v4`, `FFA`) con arenas instanciadas.
+- [ ] 2. Places, `TeleportService` y servidores reservados para `LIBRE`, `1v1`, `2v2`, `3v3` y `4v4`.
 - [ ] 3. Energia separada del gancho + barra propia.
 - [ ] 4. Cosmeticos de punta/cuerda del gancho en taller.
 - [ ] 5. Pantalla de resultado de ronda.
