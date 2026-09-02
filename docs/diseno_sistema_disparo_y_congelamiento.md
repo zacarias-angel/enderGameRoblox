@@ -7,7 +7,8 @@
 - El progreso se acumula en un unico valor por enemigo, de `0%` a `100%`.
 - Todas las partes del cuerpo suman progreso: torso, brazos, piernas y accesorios que resuelvan a torso.
 - La cabeza no elimina instantaneamente. Aplica el dano base multiplicado por `3`.
-- Con la configuracion actual, un impacto de cabeza aplica `1.5%` por tick.
+- Con la configuracion actual, un impacto de cabeza aplica el daño base del
+  arma multiplicado por `3`.
 - El enemigo solo queda completamente congelado al alcanzar `100%`.
 - Al llegar a `100%` se detiene su movimiento, se aplica el estado de congelado y se actualiza la eliminacion del jugador.
 - Si el rayo deja de impactar, el progreso no se reinicia.
@@ -18,12 +19,13 @@ Los valores viven en `ReplicatedStorage.Shared.Config`:
 
 - `Config.WeaponSystem.MODE = "beam"`
 - `Config.WeaponSystem.BEAM_TICK_RATE = 0.1`
-- `Config.WeaponSystem.BEAM_STAMINA_DRAIN_PER_SEC = 45`
+- `Config.WeaponSystem.BEAM_STAMINA_DRAIN_PER_SEC = 67.5`
 - `Config.WeaponSystem.BEAM_WAVE_AMPLITUDE = 3.0`
 - `Config.WeaponSystem.BEAM_HEAD_MULTIPLIER = 3`
 - `Config.FreezeProgress.MAX = 100`
 
-Con `0.5%` cada `0.1` segundos, un impacto continuo al torso tarda aproximadamente `20` segundos en llegar al 100%. La cabeza reduce ese tiempo porque aplica `1.5%` por tick.
+El balance actual por tick es Blaster `4.5%`, Rifle `3.6%` y Cañón `9%`. La
+cabeza aplica tres veces el valor base.
 
 ## Danos y futuras armas
 
@@ -31,9 +33,9 @@ Cada arma ajusta su congelamiento mediante `freezePercentPerTick` sin cambiar la
 
 Ejemplos de balance:
 
-- Blaster: `1%` por tick.
-- Rifle: mayor frecuencia y `0.8%` por tick.
-- Canon: menor frecuencia y `2%` por tick.
+- Blaster: `4.5%` por tick.
+- Rifle: `3.6%` por tick.
+- Cañón: `9%` por tick.
 
 ## VFX
 

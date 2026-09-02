@@ -3,6 +3,7 @@
 > Estado: **superado para produccion**. Este documento describe la alternativa
 > de arenas clonadas dentro del mismo servidor. La arquitectura oficial ahora
 > usa Places y servidores reservados; ver `ARQUITECTURA_PLACES_TELEPORT.md`.
+> `LIBRE` es la excepcion: permanece en la arena local del Lobby Place.
 
 Documento tecnico para reemplazar el gestor global de partidas.
 

@@ -102,16 +102,26 @@ No se crea un Reserved Server para cada jugador; se crea uno por grupo completo.
 
 ## Formatos
 
-- `LIBRE`: puede usar un servidor reservado de Match por grupo abierto o una
-  politica separada de servidor publico, pendiente de decidir.
+- `LIBRE`: se juega localmente en la arena del Lobby; no usa `TeleportAsync`.
 - `1v1`: 2 jugadores por servidor reservado.
 - `2v2`: 4 jugadores por servidor reservado.
 - `3v3`: 6 jugadores por servidor reservado.
 - `4v4`: 8 jugadores por servidor reservado.
 
-La primera implementacion recomendada usa servidor reservado tambien para
-`LIBRE`, con limite de jugadores definido por configuracion. Asi se mantiene
-el aislamiento y se evita mezclar jugadores con partidas competitivas.
+Los formatos competitivos usan el Match Place. `LIBRE` conserva la arena
+normal del Lobby y su propio flujo de eliminacion.
+
+## Resultado y eliminaciones
+
+- En `LIBRE`, el eliminado vuelve de inmediato al spawn del Lobby y el atacante
+  recibe una eliminacion en sus estadisticas.
+- En `1v1`, la eliminacion del unico rival declara ganador al equipo opuesto.
+  Solo el equipo ganador recibe el estado `ENDING` y ve la pantalla de victoria.
+  Tras tres segundos, los ganadores regresan al Lobby.
+- En `2v2`, `3v3` y `4v4`, cada eliminado vuelve inmediatamente al Lobby y deja
+  una copia congelada, flotante, colisionable y agarrable de su avatar en la
+  arena. La victoria se anuncia solo al equipo que conserva supervivientes
+  cuando el equipo rival queda vacio.
 
 ## Seguridad y fallos
 
@@ -122,6 +132,9 @@ el aislamiento y se evita mezclar jugadores con partidas competitivas.
 - El Match Place valida que `GameMode` y cantidad de jugadores coincidan.
 - Al cerrar un servidor reservado sin resultado, los jugadores regresan al
   Lobby.
+- El retorno incluye `MatchId`; al llegar al Lobby, ese identificador permite
+  registrar el progreso de la mision diaria `Jugar 1 partida` sin depender de
+  servicios de misiones dentro del Match Place.
 - El sistema no debe confiar en atributos enviados por el cliente.
 
 ## Pruebas obligatorias
@@ -132,8 +145,10 @@ probar desde Roblox Player:
 1. Dos jugadores forman un `1v1` y llegan al mismo servidor Match.
 2. Otros dos jugadores forman otro `1v1` y no se ven entre si.
 3. Un jugador en `LIBRE` no aparece en el servidor del `1v1`.
-4. El resultado vuelve a ambos jugadores al Lobby correcto.
-5. Un fallo de teleport no deja jugadores bloqueados en estado `Teleporting`.
+4. En un `1v1`, el ganador ve el resultado y ambos jugadores regresan al Lobby.
+5. En equipos, el eliminado vuelve al Lobby y su copia queda en la arena.
+6. Un fallo de teleport no deja jugadores bloqueados en estado `Teleporting`.
+7. El regreso desde un Match Place avanza una vez la mision `Jugar 1 partida`.
 
 ## Migracion
 

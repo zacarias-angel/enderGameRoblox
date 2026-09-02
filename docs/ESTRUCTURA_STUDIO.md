@@ -7,6 +7,10 @@ ubicación indicada. Sigue `ReglasRoblox.md` §1.
 > separacion de partidas se hara entre `Lobby Place` y `Match Place` mediante
 > `TeleportService`; ver `ARQUITECTURA_PLACES_TELEPORT.md`.
 
+> Produccion actual: `LIBRE` usa el Lobby Place. Los formatos VS usan el Match
+> Place, donde `MatchRuntimeService`, `MatchModeBootstrap` y
+> `MatchArenaPhysics` controlan resultado, gravedad 0 y coberturas.
+
 ```
 ReplicatedStorage/
 ├── Shared/
@@ -96,6 +100,9 @@ Workspace/
    - `placas3` = **MONEDAS** (más monedas recolectadas)
 6. **Monedas**: el `CurrencyService` spawnea monedas doradas (Neon) en el lobby
    y la arena (~100/hora). Tocar una moneda suma al leaderstat "Monedas".
+   Se crean sin colision (`CanCollide = false`) y con toque habilitado
+   (`CanTouch = true`), por lo que no deben bloquear al personaje. El limite de
+   monedas activas se calcula recorriendo el diccionario interno de monedas.
    Las monedas servirán para comprar/mejorar items.
 6. **Hologramas de controles**: crea una carpeta `Hologramas` en Workspace.
    Paneles Neon flotantes con SurfaceGui (Face = Right) mostrando los controles.
@@ -138,3 +145,13 @@ Workspace/
 > Nota: las extensiones `.client.lua` / `.server.lua` son solo convención de
 > nombre para saber el contexto. En Studio, el **tipo** de instancia
 > (LocalScript / Script / ModuleScript) es lo que importa.
+
+## Flujo de eliminacion en produccion
+
+- `LobbyTeleportService` maneja la eliminacion de `LIBRE` y devuelve al jugador
+  al spawn del Lobby.
+- `MatchRuntimeService` maneja eliminaciones competitivas, clona un avatar
+  físico con atributo `cubrirce = true` y retorna al eliminado mediante
+  `TeleportService`.
+- El estado `ENDING` se envia exclusivamente a los jugadores vivos del equipo
+  ganador. En `1v1`, los ganadores vuelven tres segundos despues del resultado.

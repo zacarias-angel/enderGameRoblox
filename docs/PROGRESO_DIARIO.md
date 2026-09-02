@@ -4,6 +4,67 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 27
+
+**Objetivo:** corregir el avance de misiones diarias y la recoleccion de
+monedas.
+
+### Hecho
+- `LobbyTeleportService` registra `playMatches` al entrar a `LIBRE`.
+- `MatchRuntimeService` incluye `MatchId` al devolver un jugador desde el
+  Match Place.
+- Al regresar al Lobby desde una partida competitiva identificada, se registra
+  una vez el progreso de la mision `Jugar 1 partida`.
+- `CurrencyService` crea monedas con `CanCollide = false` y `CanTouch = true`:
+  no bloquean al personaje y se recogen al contacto.
+- Corregido el limite de monedas simultaneas: `activeCoins` es un diccionario,
+  por lo que ahora se cuenta con `pairs` en vez de usar el operador `#`.
+- Verificado en Play del Lobby: 42 monedas activas, ninguna colisionable y todas
+  con toque habilitado.
+
+### Pendiente
+- Publicar ambos Places y comprobar en Roblox Player que el retorno de una
+  partida VS avanza la mision diaria.
+- Probar la recoleccion de monedas con un jugador publicado, incluida la
+  actualizacion inmediata del HUD y de la mision `Recolectar 25 monedas`.
+
+---
+
+## Sesion 26
+
+**Objetivo:** corregir cierre de duelo, retorno de eliminados y balance del
+rayo.
+
+### Hecho
+- Corregido el calculo de ganador de `1v1`: se comprueba el equipo del
+  eliminado, no el equipo rival.
+- En una eliminacion decisiva, solo los integrantes vivos del equipo ganador
+  reciben `ENDING` y el cartel de victoria.
+- El eliminado retorna de inmediato al Lobby, incluso si decide la partida.
+- Los ganadores retornan despues de tres segundos.
+- Agregados hasta tres intentos de retorno con logs `RETURN_START` y
+  `RETURN_ERROR`.
+- La copia congelada del avatar se mantiene en la arena de VS.
+- La copia congelada ahora es física, flotante, colisionable y agarrable como
+  cobertura mediante el atributo `cubrirce`.
+- Corregido `LIBRE`: eliminar a otro jugador no expulsa al superviviente de
+  `BATTLE`; conserva gravedad 0 hasta salir voluntariamente.
+- Agregado atributo persistente `Eliminations` para el total de bajas.
+- Agregado guardia `syncFreeMode` para mantener 0g, `BATTLE` y físicas del
+  superviviente mientras exista al menos un jugador en `LIBRE`.
+- Triplicado el daño de congelamiento actual en Lobby y Match:
+  Blaster `4.5`, Rifle `3.6`, Cañón `9` por tick.
+- Conservado el drenaje del beam en `67.5/s`.
+- Actualizados documentos de arquitectura, estructura, resumen, balance,
+  checklist y bugs.
+
+### Pendiente
+- Verificar en produccion el retorno del perdedor de un `1v1`.
+- Verificar que solamente el ganador vea el resultado.
+- Verificar un cierre completo de `2v2`.
+
+---
+
 ## Sesion 20
 
 **Objetivo:** iniciar el `Match Place` de la Experience.
@@ -102,6 +163,20 @@ diagnostico manana.
 - Registrados problemas de gravedad 0, movimiento, hook y bloques que se
   desarman.
 - No se modifico el codigo durante esta sesion de diagnostico.
+
+## Sesion 25
+
+**Objetivo:** reparar la caida y la desincronizacion de gravedad en `LIBRE`.
+
+- Confirmado que Lobby y Match Place estan conectados en Studio.
+- Corregido `workspace.Gravity` persistido del Lobby a `196.2`.
+- Sincronizado `LobbyTeleportService` con `GameModeService` al entrar y salir
+  de `LIBRE`.
+- Verificado movimiento con teclado en `LIBRE`.
+- Verificado que el Lobby vuelve a gravedad normal y sin fuerzas de batalla al
+  salir de `LIBRE`.
+- Verificado que el Match Place inicia con gravedad 0 y remotos del hook.
+- Documentado el diagnostico y las correcciones en el documento de bugs.
 
 ---
 

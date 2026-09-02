@@ -72,18 +72,23 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
 - Los modos competitivos solo comienzan cuando todos sus lugares están ocupados.
 - La selección se realiza en estaciones físicas del lobby; cada estación muestra
   jugadores dentro, fuera y plazas restantes.
-- Cada partida crea una instancia independiente de arena en
-  `Workspace.ActiveArenas`; varias partidas pueden coexistir en el mismo
-  servidor.
+- Cada formato competitivo usa un servidor reservado del `Match Place`; las
+  partidas no se mezclan entre si.
 - En `LIBRE`, un jugador congelado vuelve directamente al lobby y la ronda
   continúa para los demás.
+- El último superviviente de `LIBRE` conserva gravedad 0 y puede seguir jugando
+  o salir cuando quiera.
 - No se mezclan jugadores de formatos distintos dentro de una partida.
 - Cada jugador pertenece como maximo a una partida mediante un `matchId`.
 - El matchmaking multi-instancia esta definido en
   `MATCHMAKING_MULTI_INSTANCIA.md`.
 - Para produccion, cada grupo viajara desde el `Lobby Place` a un servidor
   reservado del `Match Place` mediante `TeleportService`. El flujo oficial esta
-  definido en `ARQUITECTURA_PLACES_TELEPORT.md`.
+   definido en `ARQUITECTURA_PLACES_TELEPORT.md`.
+- Al eliminar a un jugador en `LIBRE`, vuelve al Lobby y el atacante recibe la
+  eliminacion. En VS, queda una copia congelada, flotante, colisionable y
+  agarrable del avatar en la arena mientras el jugador vuelve al Lobby.
+- Cada jugador conserva el total persistente en el atributo `Eliminations`.
 
 ---
 
@@ -137,10 +142,12 @@ del cuerpo impactada tiene un comportamiento distinto.
 - **Dos piernas congeladas** → solo se desplaza lentamente con propulsores.
 
 ### Jugador congelado (eliminación)
-Al recibir impacto letal (pecho/cabeza):
-1. Traje bloqueado.
-2. No puede moverse.
-3. Queda flotando en la arena (**no desaparece**).
+Al recibir congelamiento total:
+1. El jugador eliminado vuelve al Lobby.
+2. En VS queda una copia congelada de su avatar flotando en la arena. Es una
+   cobertura física que se puede empujar y agarrar con `E`.
+3. En `1v1`, la eliminacion del rival muestra victoria solo al equipo ganador y
+   ambos jugadores regresan al Lobby tras tres segundos.
 
 ### Beam continuo
 - El modo activo usa un rayo continuo mientras se mantiene el click.
@@ -150,6 +157,8 @@ Al recibir impacto letal (pecho/cabeza):
   brazos, piernas y cabeza.
 - El rayo consume estamina continuamente. Al llegar a cero se corta y entra en
   enfriamiento durante `0.5 s` antes de permitir otro disparo.
+- Balance actual del beam: Blaster `4.5%`, Rifle `3.6%` y Cañón `9%` de
+  congelamiento por tick; drenaje de estamina `67.5/s`.
 - El VFX local y remoto usa doble haz, brillo, partículas de impacto y ondulación.
 
 ---

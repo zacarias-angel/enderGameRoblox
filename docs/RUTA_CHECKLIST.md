@@ -23,7 +23,7 @@ proximos pasos recomendados.
 - [x] Taller para mejoras/desbloqueos locales de la sesion.
 
 ### Flujo de partida actual
-- [ ] Migrar el gestor actual dentro de `Workspace` a Places y Reserved Servers.
+- [x] Migrado el flujo competitivo a Places y Reserved Servers.
 - [x] El gestor global anterior esta reemplazado por partidas independientes.
 - [x] Existe una cola separada por formato.
 - [x] Cada partida tiene `matchId`, jugadores, equipos, arena y temporizador propios.
@@ -33,7 +33,7 @@ proximos pasos recomendados.
 - [x] Cada jugador puede suscribirse a una sola cola.
 - [x] Repetir el portal quita al jugador de la cola.
 - [x] Usar otro portal cambia la suscripcion de formato.
-- [ ] Revalidar el loop completo: perder → ganador → lobby sin estado residual.
+- [ ] Revalidar en produccion el loop completo: perder → ganador → lobby sin estado residual.
 - [ ] Los portales fisicos son persistentes en `Workspace.BattlePortals`.
 - [ ] El HUD muestra estado y tiempo solo cuando corresponde a la partida del jugador.
 - [x] Existe checkbox para no entrar a la proxima batalla.
@@ -166,6 +166,8 @@ proximos pasos recomendados.
 - [x] Configurar capacidades de `1v1`, `2v2`, `3v3` y `4v4`.
 - [x] Crear multiples partidas completas cuando una cola supera una capacidad.
 - [x] Enviar al lobby al jugador congelado en `LIBRE`.
+- [x] Mantener al último superviviente de `LIBRE` en gravedad 0 hasta que salga.
+- [x] Replicar el total persistente de eliminaciones mediante el atributo `Eliminations`.
 - [x] Aplicar penalizacion de empuje por congelacion solo desde `90%` de progreso.
 - [x] Separar completamente el matchmaking por cola y por `matchId`.
 - [x] Replicar formato y `matchId` al HUD y a los jugadores correctos.
@@ -223,15 +225,17 @@ proximos pasos recomendados.
 - [ ] Mas desbloqueos cosmeticos.
 
 ### Fase 12 — Places y servidores reservados
-- [ ] Crear `Lobby Place` y `Match Place` dentro de la misma Experience.
-- [ ] Registrar `LobbyPlaceId` y `MatchPlaceId` en configuracion compartida.
-- [ ] Crear `LobbyMatchmakingService` para colas y grupos completos.
-- [ ] Crear `TeleportOptions` con `ShouldReserveServer = true`.
-- [ ] Pasar `MatchId`, formato y mapa mediante `TeleportData`.
-- [ ] Crear `MatchRuntimeService` exclusivo del `Match Place`.
-- [ ] Llevar combate, equipos, resultados y recompensas al `Match Place`.
-- [ ] Teletransportar jugadores de vuelta al Lobby al finalizar.
-- [ ] Manejar reintentos y fallos de `TeleportAsync` sin perder jugadores.
+- [x] Crear `Lobby Place` y `Match Place` dentro de la misma Experience.
+- [x] Registrar `LobbyPlaceId` y `MatchPlaceId` en configuracion compartida.
+- [x] Crear `LobbyTeleportService` para colas y grupos completos.
+- [x] Crear `TeleportOptions` con `ShouldReserveServer = true`.
+- [x] Pasar `MatchId` y formato mediante `TeleportData`.
+- [x] Crear `MatchRuntimeService` exclusivo del `Match Place`.
+- [x] Llevar combate, equipos y resultados al `Match Place`.
+- [x] Teletransportar jugadores de vuelta al Lobby al finalizar o ser eliminados.
+- [x] Reintentar el retorno al Lobby hasta tres veces ante fallo de `TeleportAsync`.
+- [x] Registrar la mision `Jugar 1 partida` al entrar a `LIBRE` o retornar de un VS.
+- [ ] Validar en produccion resultado de `1v1`, retorno de ambos y avatar flotante.
 - [ ] Probar varios servidores reservados desde Roblox Player publicado.
 
 ---
