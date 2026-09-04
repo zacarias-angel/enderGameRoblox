@@ -4,6 +4,60 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 28
+
+**Objetivo:** endurecer el flujo Lobby -> cola -> Match, pulir combate y
+estabilidad de entrada.
+
+### Hecho
+- Reemplazada la entrada por portales con los cinco stands fisicos:
+  `standbasev1` a `standbasev4` para `1v1` a `4v4` y `standbase5` para
+  `LIBRE`.
+- Cada `frente` usa un prompt para confirmar entrada o salir. Al entrar en un
+  formato competitivo el jugador queda dentro del stand; al salir se mueve 45
+  studs fuera de la estructura para evitar una reincorporacion inmediata.
+- Las colas competitivas esperan el cupo completo, inician una cuenta de 10
+  segundos y no permiten cancelar durante el ultimo segundo.
+- `LIBRE` conserva arena local y entrada inmediata; no usa teleport.
+- El Match Place cancela una partida y devuelve a los jugadores restantes si
+  una salida voluntaria deja el formato por debajo del minimo requerido.
+- Desactivado el `MatchService.server` antiguo del Lobby: competia con
+  `LobbyTeleportService` por los mismos remotos y podia dejar jugadores con
+  atributos de cola/batalla inconsistentes.
+- Agregado loop de disparo local rapido en ambos Places:
+  `rbxassetid://100617431689640`.
+- El Match Place aplica inmediatamente `WeaponId`, `LaserColorId` y
+  `LaserColor` desde el perfil aunque no tenga `WorkshopService`.
+- Aumentada la ondulacion del beam a `BEAM_WAVE_AMPLITUDE = 4.0` y mejoradas
+  las salpicaduras de impacto.
+- La punta de gancho ahora usa el rumbo horizontal de la camara, independiente
+  de la trayectoria, con `Config.Hook.TIP_YAW_OFFSET = 0`.
+- Agregado marcador temporal de modo libre sobre el hombro derecho: `❄ 0`.
+  Suma una vez por congelacion total aplicada y resta una vez al ser congelado;
+  el valor se conserva al reaparecer en libre y se limpia al salir manualmente.
+- Distribuido el escaneo inicial de `GrabController` en bloques de 100
+  descendientes y desactivados sus logs de depuracion para evitar tirones al
+  entrar.
+- Aclarada la iluminacion de Lobby y Match ajustando luz ambiente, exposicion
+  y atmosfera.
+
+### Verificado
+- Ambos Places cargan sin errores nuevos de scripts en Studio.
+- El marcador libre crea correctamente el `BillboardGui` y muestra `❄ 3` en
+  una prueba de atributos.
+- Los mensajes de `Assistant` y las desconexiones `127.0.0.1` provienen del
+  plugin MCP/Roblox Assistant, no del juego.
+
+### Pendiente
+- Publicar ambos Places y probar con dos jugadores reales el flujo completo:
+  stands, cuenta regresiva, teleport, cancelacion por salida y regreso.
+- Confirmar visualmente con dos jugadores que el marcador `❄` cambia una sola
+  vez por congelacion total y conserva la penalizacion al reingresar a libre.
+- Ajustar iluminacion desde Roblox Player en caso de que la exposicion se vea
+  distinta a Studio.
+
+---
+
 ## Sesion 27
 
 **Objetivo:** corregir el avance de misiones diarias y la recoleccion de
