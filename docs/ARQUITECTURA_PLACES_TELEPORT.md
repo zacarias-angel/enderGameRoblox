@@ -52,7 +52,8 @@ Responsabilidades:
 - Pasar datos no sensibles del match mediante `SetTeleportData`.
 - Manejar fallos de teleport y devolver el grupo a la cola o al lobby.
 
-El Lobby no ejecuta combate ni crea arenas de batalla.
+El Lobby ejecuta solamente el combate local de `LIBRE`. Los formatos VS no
+combaten en el Lobby y se envian al Match Place.
 
 ## Match Place
 
@@ -110,6 +111,20 @@ No se crea un Reserved Server para cada jugador; se crea uno por grupo completo.
 
 Los formatos competitivos usan el Match Place. `LIBRE` conserva la arena
 normal del Lobby y su propio flujo de eliminacion.
+
+## Gravedad y power-ups
+
+- El Lobby conserva `Workspace.Gravity = 196.2` porque jugadores de lobby y
+  participantes de `LIBRE` comparten servidor.
+- Cada participante de `LIBRE` recibe una fuerza individual
+  `ZB_MatchGravityForce` que compensa la gravedad. Al salir o ser eliminado se
+  destruye la fuerza sin afectar a otros jugadores.
+- El Match Place puede usar gravedad global 0 porque todos sus jugadores
+  aceptados pertenecen a la misma partida.
+- Lobby y Match Place contienen `PowerUpService`, `PowerUpEffects` y una carpeta
+  `Workspace.puntosderefe` con 15 marcadores anclados.
+- Los servidores deciden spawn, efecto, cooldown y proteccion; el cliente solo
+  aplica inmediatamente el impulso sobre su personaje con network ownership.
 
 ## Resultado y eliminaciones
 

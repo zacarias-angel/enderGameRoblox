@@ -501,6 +501,10 @@ endingBeforeReturn=true
 
 - Solo se restaura `LOBBY` cuando ya no queda ningun jugador en `LIBRE`.
 
+> Estado historico: este enfoque de gravedad global fue reemplazado el
+> 2026-09-07. El Lobby ahora permanece en `196.2` y cada participante de
+> `LIBRE` recibe compensacion 0g individual.
+
 ### Verificacion sostenida en Studio
 
 ```text
@@ -545,3 +549,40 @@ coins=42 collidable=0 touchDisabled=0
 
 - Confirmar desde Roblox Player que una partida VS retornada avanza la mision.
 - Confirmar la recoleccion inmediata y el progreso de `Recolectar 25 monedas`.
+
+## Correcciones de UI, gravedad y power-ups 2026-09-07
+
+### Incidentes
+
+- El cobro de una mision completa no daba feedback al click.
+- `FreeFreezeScore` podia quedar en `-1` si congelaban a un jugador con cero.
+- Activar `LIBRE` cambiaba la gravedad global y podia impedir saltar a quienes
+  permanecian en el Lobby.
+- Al volver congelado desde `LIBRE` podian persistir velocidad o fuerzas 0g.
+- Los power-ups parecian reaparecer siempre en el mismo lugar y finalmente
+  registraban `NO_AVAILABLE_POINTS`.
+
+### Causas
+
+- El contador restaba sin `math.max(0, value)`.
+- Se intentaba mezclar gravedad global de batalla y lobby en el mismo Place.
+- El impulso 0g se aplicaba solo desde servidor pese al network ownership del
+  cliente.
+- Trece referencias de `puntosderefe` no estaban ancladas: caian y Roblox las
+  eliminaba, dejando solo dos puntos disponibles.
+- El selector dependia de atributos temporales de ID en vez de las instancias
+  reales de los marcadores.
+
+### Correcciones verificadas
+
+- Cobro de mision con feedback `Cobrando...`, log `CLAIM_REQUEST` y
+  `CLAIM_SUCCESS`; prueba real de `+40` monedas.
+- Puntaje Libre limitado a cero.
+- Gravedad normal global en Lobby y compensacion 0g individual para Libre.
+- Retorno inmediato al spawn con Humanoid restaurado, velocidad cero y fuerza
+  de batalla eliminada.
+- `Punto1` a `Punto15` anclados y sincronizados en ambos Places.
+- Selector por referencia directa, exclusion de los dos ultimos puntos,
+  exclusion de puntos ocupados y fallback seguro.
+- Los power-ups se mantienen ocultos hasta completar su posicion inicial, por
+  lo que no aparecen superpuestos durante el arranque.

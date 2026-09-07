@@ -90,6 +90,20 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
   agarrable del avatar en la arena mientras el jugador vuelve al Lobby.
 - Cada jugador conserva el total persistente en el atributo `Eliminations`.
 
+### Power-ups de arena
+
+Los tres power-ups estan disponibles en `LIBRE` y en `1v1` a `4v4`:
+
+| Color | Efecto |
+|---|---|
+| Amarillo | Impulso rapido en la direccion de movimiento |
+| Azul | Escudo visible e inmunidad a congelacion durante 5 segundos |
+| Rojo | Congelacion total al atravesarlo |
+
+Se generan en uno de los 15 Parts de `Workspace.puntosderefe`, nunca comparten
+el mismo punto y cada tipo evita sus dos ubicaciones anteriores. Tras recogerse
+reaparecen en 6 segundos.
+
 ---
 
 ## 4. Movimiento
@@ -101,6 +115,10 @@ Cada jugador tiene **propulsores** y se mueve en seis direcciones:
 - Arriba / Abajo
 
 Además existe un **Boost** que consume energía.
+
+El power-up amarillo es independiente del Boost de teclado: aplica un impulso
+instantaneo de velocidad `180` validado por servidor y replicado al cliente que
+posee la fisica del personaje.
 
 ### Feel físico (clave)
 - Movimiento basado en **empuje con inercia** (VectorForce), no velocidad fija.

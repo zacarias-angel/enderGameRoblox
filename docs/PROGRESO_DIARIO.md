@@ -4,6 +4,53 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 29 - 2026-09-07
+
+**Objetivo:** pulir UI del Lobby, corregir estados de combate compartidos e
+incorporar power-ups en `LIBRE` y todos los formatos VS.
+
+### Hecho
+- Eliminados del HUD visible los indicadores de extremidades `BI`, `BD`, `PI`
+  y `PD` en ambos Places.
+- Recompensa y misiones diarias se agruparon en `DailyActivities`, accesible
+  desde un icono de calendario. El icono muestra `!` si hay algo para cobrar y
+  el panel se puede cerrar.
+- El cobro de misiones usa botones identificados por mision, muestra
+  `Cobrando...` y recibe confirmacion del servidor. Se verifico un cobro real
+  de `claim_daily` por `+40` monedas.
+- El mensaje global `Esperando jugadores` permanece oculto fuera de los stands.
+  Dentro de una cola VS muestra ocupacion y cuenta regresiva; al salir se
+  oculta y no queda detenido en `0`.
+- Las monedas se ocultan localmente al contacto mientras el servidor conserva
+  la autoridad para validar y entregar la recompensa.
+- El contador `FreeFreezeScore` nunca baja de `0`.
+- `LIBRE` mantiene `Workspace.Gravity = 196.2` en el Lobby. Solo cada
+  participante recibe `ZB_MatchGravityForce`, por lo que los jugadores fuera de
+  la arena conservan caminar y salto normales.
+- El eliminado de `LIBRE` vuelve inmediatamente al spawn, recupera Humanoid y
+  elimina fuerzas 0g residuales.
+- Agregados tres power-ups a Lobby y Match Place: impulso amarillo de velocidad
+  `180`, escudo azul de `5 s` y congelacion total roja.
+- Los power-ups reaparecen tras `6 s` y evitan sus dos ubicaciones anteriores.
+- `Workspace.puntosderefe` contiene `Punto1` a `Punto15` en ambos Places. Todos
+  estan anclados, invisibles y sin colision, toque ni query.
+- El selector usa referencias directas a los Parts, impide que dos power-ups
+  ocupen el mismo punto y tiene fallback para no dejar uno oculto sin spawn.
+
+### Causa corregida en puntos de referencia
+- Trece marcadores no estaban anclados y caian al iniciar Play. Roblox terminaba
+  eliminandolos y solo quedaban dos referencias, causando
+  `NO_AVAILABLE_POINTS` y reapariciones repetidas.
+- Verificado que los 15 puntos permanecen durante Play y que los tres
+  power-ups comienzan en ubicaciones distintas en ambos Places.
+
+### Pendiente de produccion
+- Publicar ambos Places y repetir con dos jugadores: salto fuera de `LIBRE`,
+  salida de cola durante countdown, escudo contra disparos y rotacion de
+  power-ups en una partida VS reservada.
+
+---
+
 ## Sesion 28
 
 **Objetivo:** endurecer el flujo Lobby -> cola -> Match, pulir combate y

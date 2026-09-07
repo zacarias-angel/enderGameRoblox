@@ -16,8 +16,7 @@ Especificación del HUD y assets visuales. Toda la UI vive en
 |                       + (mira)                   |
 |                                                  |
 |                                                  |
-|  EXTREMIDADES                                    |
-|  [BrazoI][BrazoD][PiernaI][PiernaD]              |
+| [CALENDARIO !]                                   |
 +--------------------------------------------------+
 ```
 
@@ -28,7 +27,20 @@ Especificación del HUD y assets visuales. Toda la UI vive en
 | LED de estado | `Frame` circular | 🟢 activo / 🟡 dañado / 🔴 congelado |
 | Barra de energía | `Frame` + `Frame` relleno | Energía de boost (0–100) |
 | Mira | `ImageLabel`/`Frame` centro | Cruz simple |
-| Panel extremidades | 4 iconos | BrazoI, BrazoD, PiernaI, PiernaD; gris=ok, azul-hielo=congelado |
+| Calendario diario | `TextButton` | Abre recompensas y misiones; muestra `!` si hay cobros pendientes |
+| Estado de cola VS | `TextLabel` | Visible solo mientras `QueueInArena = true`; muestra jugadores y countdown |
+
+El estado de extremidades sigue existiendo en datos y en el color del LED, pero
+los iconos de texto `BI`, `BD`, `PI` y `PD` no se muestran en el HUD actual.
+
+### Actividades diarias
+
+- `DailyActivities` reemplaza los paneles separados de recompensa y misiones.
+- El panel se abre con el calendario y se cierra con `X`.
+- Los botones de mision solo se habilitan si `complete = true` y
+  `claimed = false`.
+- Al cobrar muestran `Cobrando...` hasta recibir el nuevo `MissionState`.
+- El servidor sigue siendo la autoridad de progreso, cobro y monedas.
 
 ---
 
@@ -82,5 +94,6 @@ Estos colores se centralizan en `Shared/Config` (`Config.LedColors`).
 
 ## 6. Estado MVP
 
-Incluido en MVP: LED de estado, barra de energía, mira, panel de extremidades,
-VFX básico de pulso. UI de captura de puerta y marcador de equipos → Fase 2.
+Incluido en MVP: LED de estado, barras de energia, mira, calendario diario,
+estado contextual de cola y VFX del beam. UI de captura de puerta y marcador de
+equipos -> Fase 2.
