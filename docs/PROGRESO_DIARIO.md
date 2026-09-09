@@ -4,6 +4,47 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 30 - 2026-09-09
+
+**Objetivo:** corregir cupos y retorno de VS, e incorporar rondas y HUD de
+combate.
+
+### Hecho
+- El Lobby valida el cupo antes de insertar: una cola `1v1` con dos jugadores
+  rechaza al tercero y no lo mueve dentro del stand.
+- El contrato de teleport incluye `PlayerUserIds`; el Match Place valida lista,
+  formato, cantidad exacta, duplicados y capacidad antes de admitir.
+- Los VS se juegan al mejor de tres: gana el primero en sumar dos rondas.
+- Antes de cada ronda hay cuenta regresiva de cinco segundos. El servidor
+  bloquea movimiento y combate hasta `ACTIVE`.
+- Los eliminados permanecen en el Match Place entre rondas y se restauran al
+  iniciar la siguiente.
+- El retorno final usa una sola llamada grupal hacia un servidor reservado del
+  Lobby, evitando separar a los participantes.
+- Agregado `VersusHud`: fotos de ambos equipos, marcador `N VS N`, ronda actual,
+  countdown y feedback con avatar para atacante y congelado.
+- Solo el ganador recibe la pantalla `VICTORIA`; el rival recibe `DERROTA`.
+
+### Verificado
+- `LobbyTeleportService`, `MatchRuntimeService` y `VersusHud` compilan.
+- Ambos Places arrancan sin errores nuevos en Play aislado.
+- El Match sin `TeleportData` se rechaza y mantiene combate desactivado.
+- El HUD se verifico en cliente con payload simulado de `1v1` y countdown `5`.
+
+### Pendiente de produccion
+- Publicar ambos Places y probar con dos jugadores reales las tres rondas y el
+  retorno grupal.
+- Intentar entrar con un tercer jugador durante el cupo completo de `1v1`.
+
+### Estado al cierre
+- Documentacion funcional, arquitectura, estructura de Studio, UI y checklist
+  sincronizados con la implementacion actual.
+- Ambos Places quedaron detenidos en modo Edit y sin errores nuevos de arranque.
+- Proxima sesion: publicar, ejecutar la matriz de pruebas obligatorias y ajustar
+  tiempos o UI solo a partir del resultado con jugadores reales.
+
+---
+
 ## Sesion 29 - 2026-09-07
 
 **Objetivo:** pulir UI del Lobby, corregir estados de combate compartidos e

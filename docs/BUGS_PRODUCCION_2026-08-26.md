@@ -586,3 +586,27 @@ coins=42 collidable=0 touchDisabled=0
   exclusion de puntos ocupados y fallback seguro.
 - Los power-ups se mantienen ocultos hasta completar su posicion inicial, por
   lo que no aparecen superpuestos durante el arranque.
+
+## Correccion de cupo, rondas y retorno grupal 2026-09-09
+
+### Incidentes
+- Una tercera persona podia entrar al stand de `1v1` mientras sus dos plazas ya
+  estaban ocupadas.
+- Al terminar, cada jugador regresaba con un teleport individual y Roblox podia
+  distribuirlos entre servidores distintos del Lobby.
+
+### Correcciones aplicadas
+- `LobbyTeleportService` valida `maxPlayers` antes de insertar y registra
+  `QUEUE_FULL_DENY` cuando no hay lugar.
+- El teleport al Match incluye `PlayerUserIds`; `MatchRuntimeService` comprueba
+  lista, duplicados, formato, cantidad y capacidad.
+- Todos los VS usan mejor de tres con countdown de cinco segundos por ronda.
+- Los eliminados permanecen en el servidor y se restauran entre rondas.
+- El cierre usa una unica llamada grupal a un servidor reservado del Lobby.
+- `VersusHud` muestra equipos, victorias de ronda y feedback de congelamiento.
+
+### Verificacion y pendiente
+- Los scripts modificados compilan y ambos Places arrancan sin errores nuevos en
+  Studio.
+- Pendiente publicar y repetir el flujo con dos jugadores, ademas del intento de
+  entrada de un tercero con el `1v1` completo.

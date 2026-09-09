@@ -145,12 +145,14 @@ Workspace/
    **mantené E** para aferrarte, mirá con la cámara y **soltá E** para
    impulsarte hacia donde mirás.
 6. Añade `HudController` → LED, energía y mira.
+   En el Match Place, `VersusHud` agrega avatares de ambos equipos, marcador de
+   rondas, countdown y feedback de congelamiento.
 7. **Placas**: carpeta `placas` → Placa1/Placa2/Placa3 con SurfaceGui +
    TextLabel "RankLabel". El `RankService` actualiza el top 3 cada 3 s.
 8. **Flujo completo**: jugador en lobby -> confirma un stand -> cola propia
-   del formato → grupo completo → `matchId` y arena nueva → equipos → combate
-   aislado → ganador o tiempo → solo esa arena vuelve al lobby. `LIBRE` entra
-   inmediatamente y no tiene temporizador.
+   del formato → cupo exacto → `matchId` y lista autorizada → servidor Match →
+   countdown de 5 s → mejor de 3 → retorno grupal al mismo servidor reservado
+   del Lobby. `LIBRE` entra inmediatamente y no tiene temporizador.
 
 > Nota: las extensiones `.client.lua` / `.server.lua` son solo convención de
 > nombre para saber el contexto. En Studio, el **tipo** de instancia
@@ -161,7 +163,9 @@ Workspace/
 - `LobbyTeleportService` maneja la eliminacion de `LIBRE` y devuelve al jugador
   al spawn del Lobby.
 - `MatchRuntimeService` maneja eliminaciones competitivas, clona un avatar
-  físico con atributo `cubrirce = true` y retorna al eliminado mediante
-  `TeleportService`.
+  físico con atributo `cubrirce = true` y conserva al eliminado en el servidor
+  hasta reiniciar la ronda.
 - El estado `ENDING` se envia exclusivamente a los jugadores vivos del equipo
-  ganador. En `1v1`, los ganadores vuelven tres segundos despues del resultado.
+  ganador; el rival recibe `DEFEAT`.
+- La primera escuadra que gana dos rondas cierra el match. Tres segundos despues
+  del resultado, todos regresan juntos al Lobby mediante teleport grupal.

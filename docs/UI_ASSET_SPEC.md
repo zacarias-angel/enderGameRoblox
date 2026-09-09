@@ -29,6 +29,9 @@ Especificación del HUD y assets visuales. Toda la UI vive en
 | Mira | `ImageLabel`/`Frame` centro | Cruz simple |
 | Calendario diario | `TextButton` | Abre recompensas y misiones; muestra `!` si hay cobros pendientes |
 | Estado de cola VS | `TextLabel` | Visible solo mientras `QueueInArena = true`; muestra jugadores y countdown |
+| Marcador VS | Avatares + texto | Arriba centrado: fotos del equipo Azul, victorias `N VS N` y fotos del equipo Rojo |
+| Cuenta regresiva | `TextLabel` | Numero central durante los cinco segundos previos a cada ronda |
+| Feedback de congelamiento | Tarjeta + avatar | `CONGELASTE A` para el atacante y `TE CONGELO` para la victima |
 
 El estado de extremidades sigue existiendo en datos y en el color del LED, pero
 los iconos de texto `BI`, `BD`, `PI` y `PD` no se muestran en el HUD actual.

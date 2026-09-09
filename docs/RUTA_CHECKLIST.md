@@ -230,12 +230,17 @@ proximos pasos recomendados.
 - [x] Crear `LobbyTeleportService` para colas y grupos completos.
 - [x] Crear `TeleportOptions` con `ShouldReserveServer = true`.
 - [x] Pasar `MatchId` y formato mediante `TeleportData`.
+- [x] Pasar el cupo exacto mediante `PlayerUserIds` y rechazar jugadores no autorizados.
 - [x] Crear `MatchRuntimeService` exclusivo del `Match Place`.
 - [x] Llevar combate, equipos y resultados al `Match Place`.
-- [x] Teletransportar jugadores de vuelta al Lobby al finalizar o ser eliminados.
+- [x] Mantener eliminados en el Match Place entre rondas.
+- [x] Implementar todos los VS al mejor de tres, primero en ganar dos rondas.
+- [x] Bloquear movimiento y combate durante un countdown de cinco segundos por ronda.
+- [x] Teletransportar al grupo completo al mismo servidor reservado del Lobby al finalizar.
+- [x] Agregar HUD VS con avatares, marcador y feedback de congelamiento.
 - [x] Reintentar el retorno al Lobby hasta tres veces ante fallo de `TeleportAsync`.
 - [x] Registrar la mision `Jugar 1 partida` al entrar a `LIBRE` o retornar de un VS.
-- [ ] Validar en produccion resultado de `1v1`, retorno de ambos y avatar flotante.
+- [ ] Validar en produccion tres rondas de `1v1`, retorno grupal y avatar flotante.
 - [ ] Probar varios servidores reservados desde Roblox Player publicado.
 
 ---

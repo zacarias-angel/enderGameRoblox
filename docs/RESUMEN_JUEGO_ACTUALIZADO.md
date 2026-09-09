@@ -70,6 +70,8 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
 - `3v3`: 6 jugadores, dos equipos de 3.
 - `4v4`: 8 jugadores, dos equipos de 4.
 - Los modos competitivos solo comienzan cuando todos sus lugares están ocupados.
+- Las estaciones competitivas validan su capacidad antes de admitir: si el
+  formato esta completo, la entrada se rechaza sin mover al jugador al stand.
 - La selección se realiza en estaciones físicas del lobby; cada estación muestra
   jugadores dentro, fuera y plazas restantes.
 - Cada formato competitivo usa un servidor reservado del `Match Place`; las
@@ -79,6 +81,8 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
 - El último superviviente de `LIBRE` conserva gravedad 0 y puede seguir jugando
   o salir cuando quiera.
 - No se mezclan jugadores de formatos distintos dentro de una partida.
+- El Match Place admite exclusivamente los `UserId` incluidos por el Lobby en
+  `PlayerUserIds` y comprueba que la cantidad sea exacta para el formato.
 - Cada jugador pertenece como maximo a una partida mediante un `matchId`.
 - El matchmaking multi-instancia esta definido en
   `MATCHMAKING_MULTI_INSTANCIA.md`.
@@ -87,7 +91,12 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
    definido en `ARQUITECTURA_PLACES_TELEPORT.md`.
 - Al eliminar a un jugador en `LIBRE`, vuelve al Lobby y el atacante recibe la
   eliminacion. En VS, queda una copia congelada, flotante, colisionable y
-  agarrable del avatar en la arena mientras el jugador vuelve al Lobby.
+  agarrable durante la ronda; el jugador permanece en el Match Place para la
+  ronda siguiente.
+- Todos los VS se juegan al mejor de tres. Antes de cada ronda hay una cuenta
+  regresiva de cinco segundos con movimiento y disparo bloqueados.
+- Al finalizar el match, todos los participantes regresan juntos a un servidor
+  reservado del Lobby mediante una sola llamada grupal de teleport.
 - Cada jugador conserva el total persistente en el atributo `Eliminations`.
 
 ### Power-ups de arena
@@ -151,8 +160,8 @@ del cuerpo impactada tiene un comportamiento distinto.
 | Brazo derecho | Congela el brazo |
 | Pierna izquierda | Congela la pierna |
 | Pierna derecha | Congela la pierna |
-| Pecho | Eliminación inmediata |
-| Cabeza | Eliminación inmediata |
+| Pecho | Suma progreso de congelamiento |
+| Cabeza | Suma progreso con multiplicador `x3` |
 
 ### Congelación parcial
 - **Brazo congelado** → no puede sostener armas pesadas.
@@ -161,11 +170,15 @@ del cuerpo impactada tiene un comportamiento distinto.
 
 ### Jugador congelado (eliminación)
 Al recibir congelamiento total:
-1. El jugador eliminado vuelve al Lobby.
-2. En VS queda una copia congelada de su avatar flotando en la arena. Es una
+1. En `LIBRE`, el jugador eliminado vuelve al Lobby.
+2. En VS, el jugador queda fuera por el resto de la ronda y permanece en el
+   servidor para participar en la siguiente.
+3. En VS queda una copia congelada de su avatar flotando en la arena. Es una
    cobertura física que se puede empujar y agarrar con `E`.
-3. En `1v1`, la eliminacion del rival muestra victoria solo al equipo ganador y
-   ambos jugadores regresan al Lobby tras tres segundos.
+4. La ronda suma una victoria al equipo superviviente. El match termina cuando
+   un equipo gana dos rondas.
+5. El atacante ve `CONGELASTE A` y la victima ve `TE CONGELO`, ambos con el
+   avatar del otro jugador.
 
 ### Beam continuo
 - El modo activo usa un rayo continuo mientras se mantiene el click.
