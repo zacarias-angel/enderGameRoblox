@@ -4,6 +4,106 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 32 - 2026-09-11
+
+**Objetivo:** completar el feedback de eliminacion, reducir la latencia del
+gancho para el segundo jugador y acelerar el cobro de actividades diarias.
+
+### Eliminacion y feedback
+- El Match Place vuelve a registrar `LastAttackerUserId` antes de aplicar la
+  congelacion, permitiendo resolver al atacante real en VS.
+- `FreezeFeedback` informa a ambos participantes: `CONGELASTE A` para el
+  atacante y `TE CONGELO` para la victima, con nombre y avatar del otro jugador.
+- La carga del avatar usa `rbxthumb` como respuesta inmediata y reintenta
+  `GetUserThumbnailAsync` hasta que la miniatura este preparada.
+- `VersusHud` usa `DisplayOrder = 120` para que la tarjeta de la victima no
+  quede detras del resultado u otras interfaces.
+- En `LIBRE`, el eliminado permanece congelado durante tres segundos antes de
+  restaurarse y volver al spawn del Lobby. El superviviente conserva su estado
+  0g durante ese intervalo.
+- En VS, la tarjeta permanece tres segundos y el flujo de rondas/retorno grupal
+  existente conserva ese mismo tiempo.
+
+### Gancho multijugador
+- Causa del retraso confirmada en `HookController.client`: el inicio esperaba
+  `HookTryConsume:InvokeServer()` y otros `50 ms` antes de activar el gancho.
+- El gancho ahora calcula el impacto, muestra el proyectil y comienza a tirar
+  localmente en el mismo frame.
+- La autoridad de energia sigue en servidor. La validacion de uso se ejecuta en
+  segundo plano y cancela el gancho si el servidor la rechaza.
+- `HookDrainTick:InvokeServer()` ya no bloquea `Heartbeat`; solo se permite una
+  solicitud de drenaje pendiente para evitar acumulacion de llamadas.
+- El ajuste fue aplicado tanto en Lobby como en Match Place.
+
+### Actividades diarias
+- `MissionService.server` y `DailyRewardService.server` envian primero el nuevo
+  estado confirmado al cliente y realizan el `DataStore:SetAsync` en segundo
+  plano.
+- Agregado bloqueo por jugador para impedir cobros duplicados mientras se
+  procesa una solicitud.
+- Los botones muestran `Cobrando...` o `Reclamando...` hasta recibir el estado
+  actualizado.
+
+### Verificado
+- Ambos Places arrancan sin errores nuevos de scripts.
+- La tarjeta de eliminacion de `LIBRE` se comprobo visualmente con nombre y
+  avatar.
+- En `LIBRE`, el gancho se activo, creo su visual y consumio energia sin errores.
+- El Match Place abierto directamente sin `TeleportData` se rechaza como esta
+  previsto; ese arranque aislado no sustituye una prueba VS real.
+
+### Pendiente de produccion
+- Repetir el `1v1` con dos jugadores y confirmar que la victima ahora ve nombre
+  y foto del atacante durante los tres segundos.
+- Confirmar que el segundo jugador siente el gancho inmediato bajo latencia
+  real y que el drenaje continuo no produce cortes.
+- Reprobar el cobro de una mision y del calendario diario midiendo el tiempo
+  hasta la confirmacion visual.
+
+### Estado al cierre
+- Lobby Place `125075465377023` y Match Place `108298899371591` quedaron
+  detenidos en modo Edit.
+- No se publico desde esta sesion; las correcciones deben publicarse antes de la
+  siguiente prueba con jugadores reales.
+
+---
+
+## Sesion 31 - 2026-09-11
+
+**Objetivo:** reparar la entrada de un segundo jugador a `LIBRE` cuando el
+cliente quedaba en la puerta y sin controles.
+
+### Causa
+- `GameModeService` conserva un modo global en el Lobby. El primer jugador que
+  entra a `LIBRE` cambia ese modo a `BATTLE`, pero la entrada del segundo vuelve
+  a pedir el mismo valor y `setMode` no emite otro `GameModeChanged`.
+- La posicion se escribia solo desde servidor sobre un personaje cuya fisica
+  pertenece al cliente. Faltaba una confirmacion local de la transicion.
+
+### Correccion
+- `LobbyTeleportService` envia `GameModeChanged` directamente a cada jugador al
+  entrar o salir, sin depender de que cambie el modo global.
+- Agregado el remoto `BattleTransition` y el LocalScript
+  `BattleTransitionController`.
+- Servidor y cliente limpian velocidad, liberan `HumanoidRootPart`, aplican la
+  misma posicion y restauran `CameraSubject` durante la transicion.
+- La salida de `LIBRE` usa la misma sincronizacion para evitar controles o
+  fuerzas residuales.
+
+### Verificado en Studio
+- Entrada mediante `E`: servidor y cliente llegan a `Arena.SpawnAzul`.
+- Estado dentro de `LIBRE`: `GameMode=BATTLE`, `BattleParticipant=true`, root
+  sin anclar, `ZB_ThrustForce` y `ZB_AlignOrientation` activos.
+- Movimiento con `W` cambia la posicion y replica la misma ubicacion al servidor.
+- Salida: `GameMode=LOBBY`, caminar restaurado, fuerza de `LIBRE` eliminada y
+  retorno correcto al `SpawnLocation`.
+- Sin errores nuevos en Output.
+
+### Pendiente de produccion
+- Publicar el Lobby y repetir la entrada simultanea con dos jugadores reales.
+
+---
+
 ## Sesion 30 - 2026-09-09
 
 **Objetivo:** corregir cupos y retorno de VS, e incorporar rondas y HUD de

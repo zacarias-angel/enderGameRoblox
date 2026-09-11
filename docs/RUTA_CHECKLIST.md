@@ -43,6 +43,9 @@ proximos pasos recomendados.
 - [x] Los ganchos se ven para todos los jugadores.
 - [x] La punta del gancho usa un modelo 3D reemplazable.
 - [x] La cuerda del gancho usa visual configurable por cosmetico.
+- [x] Atacante y victima reciben feedback de eliminacion con nombre y avatar.
+- [ ] Revalidar con dos jugadores que la tarjeta de la victima quede visible en
+  VS durante los tres segundos completos.
 
 ---
 
@@ -208,13 +211,17 @@ proximos pasos recomendados.
 - Comportamiento del gancho:
   - al llegar al punto ya no se corta solo
   - se mantiene mientras `Q` siga presionada
+  - inicia localmente sin bloquearse por `InvokeServer`
+  - valida consumo y drenaje de energia en servidor sin bloquear `Heartbeat`
 
 ### Fase 10 — Pulido de combate
 - [ ] Diseñar beneficios de `LIBRE` por permanencia y jugadores congelados.
 - [ ] Revisar balance de stamina, cooldowns y recoil.
 - [ ] Mejorar feedback audiovisual de impactos.
 - [ ] Mejorar VFX/SFX del gancho.
-- [ ] Mejorar feedback de congelacion y eliminacion.
+- [x] Mejorar feedback de congelacion y eliminacion con nombre, avatar y espera
+  de tres segundos.
+- [ ] Revalidar ese feedback en un VS publicado con dos jugadores.
 - [ ] Revisar anti-exploit final de remotes.
 
 ### Fase 11 — Contenido y variedad

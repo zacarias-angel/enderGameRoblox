@@ -610,3 +610,57 @@ coins=42 collidable=0 touchDisabled=0
   Studio.
 - Pendiente publicar y repetir el flujo con dos jugadores, ademas del intento de
   entrada de un tercero con el `1v1` completo.
+
+## Correccion de segundo jugador en LIBRE 2026-09-11
+
+### Incidente
+- Al activar el stand con `E`, el servidor registraba `FREE_LOCAL` y los demas
+  podian ver al jugador en la arena, pero su propio cliente permanecia en la
+  puerta y los controles 0g no respondian.
+
+### Causa y correccion
+- La entrada dependia de un `GameModeChanged` global que no se repetia cuando
+  `BATTLE` ya estaba activo por otro jugador.
+- Cada participante ahora recibe un cambio de modo dirigido mediante
+  `FireClient`.
+- `BattleTransitionController` confirma localmente el `CFrame`, libera el root,
+  limpia velocidades y restaura la camara. Esto evita que el dueño de red del
+  personaje conserve una posicion anterior.
+
+### Verificacion
+- Entrada, movimiento y salida de `LIBRE` funcionan en Studio sin estados ni
+  fuerzas residuales.
+- Pendiente validar con dos clientes en la version publicada.
+
+## Seguimiento multijugador: gancho y feedback - 2026-09-11
+
+### Incidentes observados
+- En una prueba con dos jugadores, el segundo jugador sentia retraso al lanzar
+  el gancho.
+- El atacante veia `CONGELASTE A`, pero la victima no alcanzaba a ver quien la
+  habia congelado.
+
+### Causas y correcciones
+- `HookController.client` esperaba de forma sincrona
+  `HookTryConsume:InvokeServer()` antes de iniciar y agregaba `task.wait(0.05)`.
+  Esa latencia de ida y vuelta era visible especialmente en el segundo cliente.
+- El inicio del gancho ahora es local e inmediato. El servidor sigue validando
+  energia de forma asincrona y puede cancelar una solicitud rechazada.
+- El drenaje periodico tambien se valida en segundo plano y limita a una la
+  solicitud pendiente, evitando bloquear `Heartbeat` cada `0.2 s`.
+- `VersusHud` ahora tiene `DisplayOrder = 120`, por encima de HUD y resultados.
+- El nombre mostrado usa `DisplayName` y recurre a `Name` si aquel esta vacio.
+- `LastAttackerUserId` se establece antes de aplicar congelamiento en el Match
+  Place, por lo que la victima puede resolver nombre y avatar del atacante.
+
+### Verificacion local
+- Lobby y Match Place arrancan sin errores nuevos.
+- El gancho se activo en `LIBRE`, genero visual y consumio energia.
+- El feedback del Lobby se verifico visualmente con avatar.
+
+### Pendiente obligatorio
+- Publicar ambos Places y repetir con dos jugadores el mismo escenario que
+  fallo.
+- Confirmar en la pantalla de la victima el texto, nombre y avatar durante tres
+  segundos.
+- Comparar la respuesta del gancho de ambos clientes bajo la misma conexion.

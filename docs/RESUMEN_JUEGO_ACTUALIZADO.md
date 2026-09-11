@@ -76,8 +76,9 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
   jugadores dentro, fuera y plazas restantes.
 - Cada formato competitivo usa un servidor reservado del `Match Place`; las
   partidas no se mezclan entre si.
-- En `LIBRE`, un jugador congelado vuelve directamente al lobby y la ronda
-  continúa para los demás.
+- En `LIBRE`, un jugador congelado ve durante tres segundos quien lo congelo;
+  despues se restaura y vuelve al lobby mientras la ronda continua para los
+  demas.
 - El último superviviente de `LIBRE` conserva gravedad 0 y puede seguir jugando
   o salir cuando quiera.
 - No se mezclan jugadores de formatos distintos dentro de una partida.
@@ -89,8 +90,9 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
 - Para produccion, cada grupo viajara desde el `Lobby Place` a un servidor
   reservado del `Match Place` mediante `TeleportService`. El flujo oficial esta
    definido en `ARQUITECTURA_PLACES_TELEPORT.md`.
-- Al eliminar a un jugador en `LIBRE`, vuelve al Lobby y el atacante recibe la
-  eliminacion. En VS, queda una copia congelada, flotante, colisionable y
+- Al eliminar a un jugador en `LIBRE`, atacante y victima ven una tarjeta con
+  nombre y avatar durante tres segundos; despues la victima vuelve al Lobby y
+  el atacante recibe la eliminacion. En VS, queda una copia congelada, flotante, colisionable y
   agarrable durante la ronda; el jugador permanece en el Match Place para la
   ronda siguiente.
 - Todos los VS se juegan al mejor de tres. Antes de cada ronda hay una cuenta
@@ -135,6 +137,9 @@ posee la fisica del personaje.
 - Clamp de velocidad máxima + drag suave para mantener control.
 - **En modo batalla el WASD está reducido al 4%**. El movimiento real se logra
   con el gancho (Q), el retroceso del disparo y el agarre/impulso (E).
+- El gancho inicia visual y fisicamente en el cliente sin esperar un viaje de
+  red. El servidor conserva la autoridad sobre su energia y puede cancelarlo si
+  la solicitud no es valida.
 
 ### Controles (MVP, teclado)
 | Acción | Tecla |
@@ -170,15 +175,16 @@ del cuerpo impactada tiene un comportamiento distinto.
 
 ### Jugador congelado (eliminación)
 Al recibir congelamiento total:
-1. En `LIBRE`, el jugador eliminado vuelve al Lobby.
+1. En `LIBRE`, el jugador eliminado permanece congelado tres segundos viendo
+   quien lo congelo y despues vuelve al Lobby.
 2. En VS, el jugador queda fuera por el resto de la ronda y permanece en el
    servidor para participar en la siguiente.
 3. En VS queda una copia congelada de su avatar flotando en la arena. Es una
    cobertura física que se puede empujar y agarrar con `E`.
 4. La ronda suma una victoria al equipo superviviente. El match termina cuando
    un equipo gana dos rondas.
-5. El atacante ve `CONGELASTE A` y la victima ve `TE CONGELO`, ambos con el
-   avatar del otro jugador.
+5. El atacante ve `CONGELASTE A` y la victima ve `TE CONGELO`, ambos durante
+   tres segundos y con el avatar del otro jugador.
 
 ### Beam continuo
 - El modo activo usa un rayo continuo mientras se mantiene el click.

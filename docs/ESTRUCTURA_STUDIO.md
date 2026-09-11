@@ -50,6 +50,7 @@ StarterPlayer/
 │   ├── HudController        (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HudController.client.lua
 │   ├── GravityController    (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/GravityController.client.lua
 │   ├── PortalController     (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/PortalController.client.lua
+│   ├── BattleTransitionController (LocalScript) <- confirma entrada/salida local de LIBRE
 │   ├── HookController       (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HookController.client.lua
 │   ├── DailyActivities      (LocalScript)    <- calendario, daily y misiones (Lobby)
 │   ├── CoinPickupVisuals    (LocalScript)    <- ocultacion local inmediata (Lobby)
