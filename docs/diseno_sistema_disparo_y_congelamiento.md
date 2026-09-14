@@ -20,11 +20,11 @@ Los valores viven en `ReplicatedStorage.Shared.Config`:
 - `Config.WeaponSystem.MODE = "beam"`
 - `Config.WeaponSystem.BEAM_TICK_RATE = 0.1`
 - `Config.WeaponSystem.BEAM_STAMINA_DRAIN_PER_SEC = 67.5`
-- `Config.WeaponSystem.BEAM_WAVE_AMPLITUDE = 3.0`
+- `Config.WeaponSystem.BEAM_WAVE_AMPLITUDE = 4.0`
 - `Config.WeaponSystem.BEAM_HEAD_MULTIPLIER = 3`
 - `Config.FreezeProgress.MAX = 100`
 
-El balance actual por tick es Blaster `4.5%`, Rifle `3.6%` y Cañón `9%`. La
+El balance actual por tick es Blaster `18%`, Rifle `14.4%` y Cañón `36%`. La
 cabeza aplica tres veces el valor base.
 
 ## Danos y futuras armas
@@ -33,16 +33,16 @@ Cada arma ajusta su congelamiento mediante `freezePercentPerTick` sin cambiar la
 
 Ejemplos de balance:
 
-- Blaster: `4.5%` por tick.
-- Rifle: `3.6%` por tick.
-- Cañón: `9%` por tick.
+- Blaster: `18%` por tick.
+- Rifle: `14.4%` por tick.
+- Cañón: `36%` por tick.
 
 ## VFX
 
 - El cliente mantiene el Beam local para el tirador.
 - `RemoteVfx.client` dibuja el Beam remoto para los demas jugadores.
 - El impacto usa luz y particulas en el punto final del rayo.
-- La ondulacion del rayo usa una amplitud compartida de `3.0`, ligeramente mayor para reforzar el efecto visual.
+- La ondulacion del rayo usa una amplitud compartida de `4.0` para reforzar el efecto visual.
 - El color y ancho siguen dependiendo del arma/equipamiento.
 - El porcentaje se muestra en el Billboard del objetivo y se actualiza en cada impacto valido.
 
@@ -51,6 +51,10 @@ Ejemplos de balance:
 `ShootingController.client` inicializa `beamBlockedUntil = 0`. Cuando la stamina llega a cero, el servidor envia el evento de sobrecalentamiento y el cliente ya puede ejecutar `math.max` sin recibir `nil`.
 
 `FreezeService.server` ya no congela brazos o piernas de forma binaria. Todos los impactos pasan por `addFreezeProgress`; por eso un rayo que sigue apuntando a un brazo continua acumulando dano y no se queda sin efecto por un estado de extremidad.
+
+`ShootingService.server` calcula si el impacto cruzó el umbral de `100%` antes
+y después de aplicarlo. Solo ese cruce acredita un `fullFreeze` a
+`RankService`; Match y Lobby usan el mismo criterio.
 
 ## Pruebas manuales
 

@@ -4,6 +4,321 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 44 - 2026-09-14
+
+**Objetivo:** sincronizar la documentación viva con el estado actual del juego.
+
+### Documentación actualizada
+- `RESUMEN_JUEGO_ACTUALIZADO.md`: agarre al soltar `E`, balance x4 del rayo y
+  persistencia del taller/ranking.
+- `diseno_sistema_disparo_y_congelamiento.md`: valores reales de beam, VFX y
+  criterio de acreditación `fullFreeze`.
+- `ESTRUCTURA_STUDIO.md`: procedimiento de agarre y placas de ranking reactivas.
+- `RUTA_CHECKLIST.md`: balance vigente, persistencia de cosméticos de gancho y
+  validación pendiente con dos cuentas publicadas.
+- `REEMPLAZOS_STUDIO.md`: contrato de persistencia y regla de compra del taller.
+
+---
+
+## Sesion 43 - 2026-09-14
+
+**Objetivo:** reparar compras de cosméticos del gancho y persistencia de
+`CONGELADOS` reportadas con dos jugadores en producción.
+
+### Causas y correcciones
+- `DataService` guardaba las armas y colores del taller, pero descartaba
+  `ownedHookTips`, `ownedHookRopes` y sus cosméticos equipados al normalizar el
+  perfil. Ahora los conserva en Lobby y Match y repara perfiles existentes
+  incluyendo el cosmético equipado en su lista de propiedad.
+- `WorkshopService` validaba el modo global del servidor. Un jugador podía
+  impedir el taller de otros al cambiar el modo global. Ahora valida el atributo
+  `GameMode` del jugador que realiza la compra.
+- En Match, `ShootingService` no calculaba `completedFreeze`; por ello nunca
+  acreditaba `fullFreeze` al ranking. Ahora compara el progreso antes y después
+  de aplicar congelamiento.
+- `RankService` de Match mostraba solo su caché persistente, que podía contener
+  ceros. Ahora mezcla las estadísticas en vivo de jugadores conectados con la
+  caché histórica.
+
+### Verificado en Studio
+- Lobby y Match iniciaron sin errores de scripts de ZERO BREACH.
+- Las rutas reparadas de perfil, taller, acreditación y ranking quedaron
+  presentes en ambos Places.
+
+### Pendiente de producción
+- Entrar con dos cuentas, comprar/equipar un gancho distinto en cada una,
+  reconectar ambas y confirmar que sus selecciones persisten.
+- Completar un congelamiento en una partida publicada y confirmar el incremento
+  inmediato de `CONGELADOS`, seguido de la persistencia tras reconectar.
+
+---
+
+## Sesion 42 - 2026-09-14
+
+**Objetivo:** invertir el lanzamiento del agarre y aumentar la efectividad del
+rayo continuo.
+
+### Cambios aplicados en Lobby y Match Place
+- El agarre con `E` conserva la sujeción al objeto mientras se mantiene la
+  tecla. Al soltarla, el jugador se impulsa en dirección opuesta a la cámara.
+- Al soltar el agarre, el objeto agarrable recibe el impulso en la dirección
+  exacta de la cámara.
+  En Lobby se actualizó `FloatingRobloxBlocks`; en Match se añadió
+  `GrabLaunchService` para crear y validar el remoto de impulso sobre objetos
+  agarrables no anclados.
+- El congelamiento del rayo se multiplicó por cuatro: fallback de haz `1 -> 4`,
+  Blaster `4.5 -> 18`, Rifle `3.6 -> 14.4` y Cañón `9 -> 36` por tick.
+
+### Verificado en Studio
+- Lobby y Match inician sin errores de scripts.
+- Ambos clientes cargan la nueva lógica de impulso inverso y ambos servidores
+  cargan los valores de congelamiento multiplicados.
+
+### Pendiente de produccion
+- Confirmar con un jugador que el impulso opuesto y el empuje del bloque tienen
+  la intensidad deseada; ajustar `LAUNCH_SPEED` y `OBJECT_PUSH_SPEED` si hace
+  falta.
+
+---
+
+## Sesion 41 - 2026-09-14
+
+**Objetivo:** conservar la migración de armas para iteración posterior sin
+reemplazar todavía el combate estable.
+
+### Estado aplicado en Lobby y Match Place
+- Restaurado `ShootingController.client`, por lo que el sistema previo de rayos
+  vuelve a ser el único sistema de combate activo.
+- `ProjectileWeaponService` y `ProjectileShotReplication` quedaron
+  deshabilitados.
+- `Blaster` y `AutoBlaster` se movieron de `StarterPack` a
+  `ServerStorage.DisabledProjectileWeapons`; no se entregan ni ejecutan para
+  jugadores.
+- El Package, runtime y dependencias de proyectiles permanecen conservados para
+  una prueba posterior. `ZeroBreachProjectileWeapons.Enabled=false` identifica
+  explícitamente ese estado.
+
+### Verificado en Studio
+- Lobby y Match arrancan sin errores del Package desactivado.
+- El Match conserva solo los mensajes esperados de Play Solo sin `TeleportData`.
+
+---
+
+## Sesion 40 - 2026-09-14
+
+**Objetivo:** migrar las armas de proyectiles de `Place1` sin incorporar su
+TDM, daño de vida, equipos ni sistema de rondas.
+
+### Migracion aplicada en Lobby y Match Place
+- Insertado el Package `ZERO BREACH Projectile Weapons` (`82859396390305`) en
+  ambos Places como `ReplicatedStorage.ZeroBreachProjectileWeapons`.
+- Instaladas las herramientas `Blaster` y `AutoBlaster` en `StarterPack`, con
+  su controlador original de cliente, cargadores, recarga, recoil, modelos,
+  VFX y audio.
+- Materializado el runtime compartido de las armas en
+  `ReplicatedStorage.Blaster` y agregadas las utilidades requeridas por los
+  controladores (`disconnectAndClear`, `bindToInstanceDestroyed` y `lerp`).
+- Creado `ProjectileWeaponService` en ambos servidores. Recalcula la dispersión
+  y los spherecasts en servidor, limita cadencia/origen/munición y rechaza todo
+  disparo fuera de `BattleParticipant` y `CombatActive`.
+- Los impactos no usan `Humanoid:TakeDamage`. Se traducen mediante `FreezeMap`
+  a `FreezeService.apply`, actualizan `LastAttackerUserId`, el feedback de
+  progreso y el ranking `fullFreeze` al llegar a 100%.
+- Deshabilitado `ShootingController.client`, el controlador previo de rayos,
+  para evitar disparos y visuales duplicados. `ProjectileShotReplication`
+  conserva VFX remotos y el porcentaje de congelamiento del objetivo.
+- Añadidos buses de audio `World` y `UI` mínimos en `SoundService.Audio` para
+  que los controladores del Package reproduzcan sonido de disparo y recarga.
+- Deshabilitados los scripts de ejemplo incluidos dentro del Package; no se
+  ejecuta `Blasterservis` ni sus eventos de TDM desde `ReplicatedStorage`.
+
+### Verificado en Studio
+- Lobby y Match arrancan sin errores nuevos de scripts del Package.
+- Ambos jugadores reciben `Blaster` y `AutoBlaster` en la mochila.
+- El Match mantiene los rechazos esperados al abrir Play Solo sin
+  `TeleportData`; no son errores de la migracion.
+
+### Pendiente de produccion
+- Probar con dos jugadores publicados: impacto validado, VFX remoto, recarga,
+  congelamiento completo, feedback, ranking y transicion de ronda.
+- Ajustar los atributos `freezeAmount` de ambas herramientas si el balance de
+  congelamiento requiere cambios tras la prueba real.
+
+---
+
+## Sesion 39 - 2026-09-14
+
+**Objetivo:** igualar el comportamiento de combate y feedback entre `LIBRE` y
+VS.
+
+### Correcciones aplicadas
+- Confirmado que `HookController`, `HookEnergyService` y `HookVisualService`
+  son idénticos en Lobby y Match Place.
+- `MatchRuntimeService` ahora reenvía explícitamente `GameModeChanged` al
+  aceptar o reaparecer un jugador. Así los controladores locales activan el
+  mismo estado 0g que en `LIBRE`, sin depender solo de atributos replicados.
+- El rayo continuo del Match Place registra `LastAttackerUserId` antes de
+  congelar. Al completar un enemigo, `MatchRuntimeService` puede enviar
+  `CONGELASTE A` al atacante y `TE CONGELO` a la víctima.
+
+### Verificado en Studio
+- El Match Place arranca sin errores nuevos; el rechazo sin `TeleportData`
+  sigue siendo esperado en Play Solo.
+
+---
+
+## Sesion 38 - 2026-09-14
+
+**Objetivo:** reemplazar el refresco periódico de placas por actualización
+reactiva.
+
+### Arquitectura de ranking aplicada
+- `RankService` programa un refresco de solo la categoría afectada mediante un
+  debounce de `0.2 s`. Eventos próximos se agrupan sin sondear el estado.
+- Monedas refrescan `coins`; congelamientos completos refrescan
+  `limbsFrozen`; eliminaciones y partidas hacen lo mismo con sus categorías.
+- El refresco de `OrderedDataStore` permanece cada 20 segundos, en segundo
+  plano, exclusivamente para el ranking histórico/global y jugadores fuera del
+  servidor actual.
+- Las placas visibles ya no usan el loop periódico como fuente principal de
+  actualización.
+
+### Verificado en Studio
+- El Lobby arranca sin errores nuevos tras el cambio.
+
+---
+
+## Sesion 37 - 2026-09-14
+
+**Objetivo:** recuperar cobros, logro diario y ranking de congelamientos.
+
+### Correcciones aplicadas
+- El rayo continuo y el disparo puntual acreditan un `fullFreeze` solo cuando
+  completan el 100% de congelamiento. La tabla deja de depender de una lectura
+  indirecta del objetivo y no suma impactos parciales.
+- El desbloqueo de completar todas las misiones diarias notifica al cliente
+  antes del guardado; además su estado vuelve a normalizarse al cargar perfil.
+- El botón de misión recupera su estado tras cinco segundos si se pierde una
+  respuesta remota, en lugar de permanecer bloqueado en `Cobrando...`.
+
+### Verificado en Studio
+- Lobby y Match Place arrancan sin errores nuevos.
+- El Match mantiene el rechazo esperado cuando se abre sin `TeleportData`.
+
+---
+
+## Sesion 36 - 2026-09-14
+
+**Objetivo:** validar en producción los arreglos críticos de respuesta y VS.
+
+### Validado en producción
+- `LIBRE` vuelve a mostrar el feedback de congelamiento correctamente para
+  atacante y víctima, sin el bloqueo prolongado previo.
+- El flujo competitivo recuperó respuesta de movimiento, gravedad cero y
+  transiciones de ronda estables durante la prueba publicada.
+- Los cambios de las sesiones 33 a 35 se consideran fundamentales para la
+  estabilidad jugable y quedan como base antes de continuar contenido nuevo.
+
+### Optimización de arranque aplicada
+- `DataService` ya no espera secuencialmente hasta diez segundos por cada
+  servicio durante `PlayerAdded`. Aplica los atributos disponibles al instante
+  y reintenta los servicios que aún estén iniciando en segundo plano.
+- El Lobby arrancó en Studio sin errores nuevos tras este cambio.
+
+---
+
+## Sesion 35 - 2026-09-14
+
+**Objetivo:** eliminar demoras de feedback en congelamientos y estabilizar el
+VS reportado desde producción.
+
+### Correcciones aplicadas
+- Las escrituras de `OrderedDataStore` de ranking ya no bloquean el flujo de
+  congelamiento. Se ejecutan en segundo plano, por lo que el feedback y el
+  retorno de `LIBRE` no esperan una respuesta externa.
+- El Match Place ya no ancla el `HumanoidRootPart` al bloquear una ronda. El
+  personaje conserva física 0g client-owned; `CombatActive` bloquea disparo,
+  gancho y empuje durante countdown y entre rondas.
+- `MovementController` y `HookController` respetan `CombatActive` en ambos
+  Places, evitando fuerzas de gancho o movimiento durante estados no activos.
+
+### Verificado en Studio
+- Lobby y Match arrancan sin errores nuevos.
+- El Match sigue rechazando Play Solo sin datos de teleport, que es el
+  comportamiento esperado.
+
+### Pendiente de producción
+- Repetir un `1v1` publicado con dos jugadores: spawn, countdown, gancho,
+  eliminación y transición de ronda.
+- Confirmar que el feedback de atacante y víctima aparece inmediatamente al
+  congelamiento completo en `LIBRE`.
+
+---
+
+## Sesion 34 - 2026-09-14
+
+**Objetivo:** corregir estados competitivos, el ranking y el visual duplicado
+del gancho.
+
+### Correcciones aplicadas
+- `CombatActive` separa ahora el permiso de combate de `BattleParticipant`.
+  Durante cola, teletransporte y countdown el servidor rechaza disparos; en
+  `LIBRE` permanece habilitado.
+- `MatchRuntimeService` conserva `BattleParticipant` entre rondas. La gravedad
+  cero y la pose de astronauta no se desactivan durante countdown ni al esperar
+  la ronda siguiente; solo se bloquean movimiento y combate.
+- La tabla `CONGELADOS` ahora cuenta solo congelamientos completos acreditados
+  al atacante, no cada tick de daño del rayo. Los valores de jugadores conectados
+  se mezclan con la caché persistente para que monedas y rankings se reflejen en
+  la placa sin esperar hasta 20 segundos.
+- Eliminado el proyectil local de salida del gancho; queda únicamente el visual
+  replicado por `HookVisualService`, evitando el duplicado.
+
+### Verificado en Studio
+- Lobby y Match Place inician sin errores nuevos.
+- El rechazo y los reintentos de retorno del Match sin `TeleportData` continúan
+  siendo los esperados en Play Solo.
+
+### Pendiente de produccion
+- Confirmar con dos jugadores que no existe daño durante stand, teleport ni
+  countdown, y que 0g se mantiene entre rondas.
+- Recoger una moneda y cobrar una misión en Roblox Player para validar la placa
+  de monedas frente a la caché de OrderedDataStore publicada.
+
+---
+
+## Sesion 33 - 2026-09-14
+
+**Objetivo:** eliminar bloqueos de red y trabajo por frame que degradaban los
+controles en produccion.
+
+### Correcciones aplicadas en Lobby y Match Place
+- `HookController.client` ya no usa `RemoteFunction:InvokeServer()` al iniciar
+  ni mientras mantiene el gancho. Ahora envía `HookEnergyRequest` asincrónico y
+  recibe `HookEnergyResult`; el servidor conserva la autoridad para cobrar o
+  cancelar un intento inválido.
+- `HookEnergyService.server` valida las solicitudes mediante `RemoteEvent` y
+  responde solo al jugador solicitante. El input y el `Heartbeat` del cliente
+  no esperan ida y vuelta de red.
+- `HudController.client` cachea el stand de la cola por formato. Antes recorría
+  todo `Workspace:GetDescendants()` en cada `RenderStepped` mientras el jugador
+  esperaba una partida.
+
+### Verificado en Studio
+- Ambos Places inician sin errores nuevos de scripts.
+- El Lobby inicia `LobbyTeleportService` y los power-ups normalmente.
+- El Match inicia `MatchRuntimeService`; su rechazo sin `TeleportData` y los
+  fallos de retorno son los esperados en Play Solo.
+- No quedan llamadas a `InvokeServer` en los scripts de ambos Places.
+
+### Pendiente de produccion
+- Publicar ambos Places y comparar el gancho con dos jugadores bajo la misma
+  conexión.
+- Medir FPS y respuesta de cola/calendario en Roblox Player, especialmente en
+  dispositivos de gama baja.
+
+---
+
 ## Sesion 32 - 2026-09-11
 
 **Objetivo:** completar el feedback de eliminacion, reducir la latencia del

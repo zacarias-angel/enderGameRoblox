@@ -40,6 +40,9 @@
 - El objeto físico del taller debe ser un `BasePart`.
 - Debe tener atributo:
   - `isTaller = true`
+- Las compras de punta y cuerda se guardan por jugador. El perfil conserva las
+  listas `ownedHookTips` y `ownedHookRopes`, además de la selección equipada.
+- El taller solo acepta compras del jugador cuyo `GameMode` sea `LOBBY`.
 
 ## UI 2D
 

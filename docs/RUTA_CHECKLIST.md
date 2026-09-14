@@ -117,6 +117,7 @@ proximos pasos recomendados.
 - [x] Guardar mejora de estamina.
 - [x] Guardar estadisticas de combate.
 - [x] Guardar preferencia `BattleOptOut`.
+- [x] Guardar propiedad y selección de punta/cuerda del gancho.
 - [x] Guardado al salir del jugador.
 - [x] Guardado periodico de seguridad.
 - [x] Guardado en `BindToClose`.
@@ -138,6 +139,8 @@ proximos pasos recomendados.
 - [x] Agregar pantalla de resultados de ronda.
 - [x] Mostrar MVP / mejor jugador / estadisticas de la ronda.
 - [x] Hacer persistentes los cosmeticos de gancho equipados.
+- [ ] Validar en producción con dos cuentas que cada una compra, equipa y
+  recupera sus cosméticos de gancho tras reconectar.
 - [x] Primer logro: completar todas las misiones diarias.
 
 ### Recompensas activas de ronda
@@ -193,6 +196,7 @@ proximos pasos recomendados.
 - [x] Agregar cosmeticos de gancho al taller.
 - [x] Permitir equipar punta y cuerda por separado.
 - [x] Replicar a todos los clientes el cosmetico equipado del gancho.
+- [x] Validar compras según el `GameMode` del comprador, no un estado global.
 
 ### Balance actual aplicado
 - Boost:
@@ -200,19 +204,23 @@ proximos pasos recomendados.
   - `BOOST_DRAIN_PER_SEC = 24`
   - `REGEN_PER_SEC = 18`
 - Disparo:
-  - `Blaster.shotCost = 24`
-  - `Rifle.shotCost = 20`
-  - `Cañon.shotCost = 55`
+  - `Blaster.shotCost = 36`, congelamiento `18%` por tick
+  - `Rifle.shotCost = 30`, congelamiento `14.4%` por tick
+  - `Cañon.shotCost = 82.5`, congelamiento `36%` por tick
+  - `BEAM_STAMINA_DRAIN_PER_SEC = 67.5`
 - Gancho:
-  - `USE_COST = 25`
-  - `PULL_DRAIN_PER_SEC = 24`
-  - `REGEN_PER_SEC = 5`
+  - `USE_COST = 10`
+  - `PULL_DRAIN_PER_SEC = 18`
+  - `REGEN_PER_SEC = 10`
   - `MIN_TO_USE = 25`
 - Comportamiento del gancho:
   - al llegar al punto ya no se corta solo
   - se mantiene mientras `Q` siga presionada
   - inicia localmente sin bloquearse por `InvokeServer`
   - valida consumo y drenaje de energia en servidor sin bloquear `Heartbeat`
+- Agarre de coberturas:
+  - mantiene `E` para fijarse al objeto
+  - al soltar `E`, impulsa al jugador hacia atrás y al objeto hacia delante
 
 ### Fase 10 — Pulido de combate
 - [ ] Diseñar beneficios de `LIBRE` por permanencia y jugadores congelados.

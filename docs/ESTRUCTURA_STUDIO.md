@@ -143,13 +143,14 @@ Workspace/
    dispara: láser desde el cañón + destello + impacto, congelación/eliminación.
    Los puntos se suman al ranking (placas). En LOBBY no se puede disparar.
 5. Añade `GrabController` + un cubo con atributo `cubrirce` → acercate y
-   **mantené E** para aferrarte, mirá con la cámara y **soltá E** para
-   impulsarte hacia donde mirás.
+    **mantené E** para aferrarte; al **soltar E**, el jugador se impulsa en la
+    dirección opuesta a la cámara y el objeto sale hacia donde mira la cámara.
 6. Añade `HudController` → LED, energía y mira.
    En el Match Place, `VersusHud` agrega avatares de ambos equipos, marcador de
    rondas, countdown y feedback de congelamiento.
 7. **Placas**: carpeta `placas` → Placa1/Placa2/Placa3 con SurfaceGui +
-   TextLabel "RankLabel". El `RankService` actualiza el top 3 cada 3 s.
+    TextLabel "RankLabel". El `RankService` actualiza por evento la categoría
+    afectada y mezcla jugadores conectados con los datos históricos.
 8. **Flujo completo**: jugador en lobby -> confirma un stand -> cola propia
    del formato → cupo exacto → `matchId` y lista autorizada → servidor Match →
    countdown de 5 s → mejor de 3 → retorno grupal al mismo servidor reservado

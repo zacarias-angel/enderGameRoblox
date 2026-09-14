@@ -148,7 +148,7 @@ posee la fisica del personaje.
 | Subir / Bajar (deriva) | Espacio / Ctrl |
 | Boost | Shift |
 | **Gancho** (agarrarse a superficies) | **Q** (mantener) |
-| **Agarre / Impulso** (coberturas) | **E** (mantener, soltar impulsa) |
+| **Agarre / Impulso** (coberturas) | **E** (mantener; al soltar, jugador atrás y cobertura adelante) |
 | Disparar | Click izquierdo |
 | Portal (unirse a partida) | F |
 
@@ -194,9 +194,17 @@ Al recibir congelamiento total:
   brazos, piernas y cabeza.
 - El rayo consume estamina continuamente. Al llegar a cero se corta y entra en
   enfriamiento durante `0.5 s` antes de permitir otro disparo.
-- Balance actual del beam: Blaster `4.5%`, Rifle `3.6%` y Cañón `9%` de
+- Balance actual del beam: Blaster `18%`, Rifle `14.4%` y Cañón `36%` de
   congelamiento por tick; drenaje de estamina `67.5/s`.
 - El VFX local y remoto usa doble haz, brillo, partículas de impacto y ondulación.
+
+### Persistencia de taller y ranking
+- Las puntas y cuerdas de gancho adquiridas, junto con su selección equipada,
+  se guardan por jugador en el perfil.
+- El taller valida el `GameMode` del jugador que compra; la partida o estado de
+  otro jugador no puede bloquearlo.
+- `CONGELADOS` registra únicamente congelamientos completos, mezcla estadísticas
+  en vivo con el ranking histórico y persiste el total por jugador.
 
 ---
 
