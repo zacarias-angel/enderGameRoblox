@@ -4,6 +4,75 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 45 - 2026-09-16
+
+**Objetivo:** incorporar una mochila para los desbloqueos persistentes y limitar
+la insignia de mega testing.
+
+### Cambios aplicados en Lobby Place
+- Creado `InventoryService`: expone los remotos `InventoryRequest`,
+  `InventoryState` e `InventoryEquip`. El servidor obtiene la propiedad desde
+  `WorkshopService` y valida que el item exista en el inventario del jugador
+  antes de equiparlo. No permite equipar dentro de batalla.
+- Creado `InventoryController`: boton `MOCHILA [B]` y panel que organiza armas,
+  colores de laser, puntas y cuerdas de gancho. La mochila solo equipa objetos
+  ya obtenidos; las compras siguen en el taller.
+- Creado `QABadgeService` con insignia `1747288132288007`. Un `DataStore`
+  global reserva atomicamente hasta 10 `UserId` distintos. Un jugador ya
+  registrado no puede consumir un segundo cupo ni recibir otra entrega.
+- En Studio, la entrega de insignias queda en `STUDIO_DISABLED`: las pruebas
+  locales no consultan ni escriben DataStore y no consumen los cupos reales.
+
+### Verificado en Studio
+- Lobby iniciado sin errores nuevos de scripts.
+- Los tres remotos de inventario se crearon correctamente.
+- El panel de mochila abre con `B` y carga sus cuatro categorias.
+- `QABadgeStatus=STUDIO_DISABLED` en Play local, sin warnings de DataStore.
+
+### Pendiente de produccion
+- Publicar el Lobby y habilitar API Services.
+- Probar con cuentas distintas que solo las primeras 10 reciben la insignia.
+
+---
+
+## Ajuste de UI - 2026-09-16
+
+### Mochila y tienda
+- La mochila se rediseño como dashboard personal: navegacion lateral, resumen de
+  recursos y tarjetas para armas, laser y gancho. Se abre con `B`.
+- El anterior `TALLER` visual se reemplazo por `TIENDA`, con la misma estructura
+  de dashboard y categorias de mejoras, armas, laser y gancho.
+- Se conservaron `WorkshopService` y sus validaciones en servidor. La interfaz
+  solo invoca sus compras existentes; la mochila continua equipando solo items
+  que el servidor confirma como propios.
+- Los controladores visuales antiguos quedaron deshabilitados para evitar UI y
+  prompts duplicados.
+
+### Verificado en Studio
+- Mochila dashboard: abre y renderiza sus tarjetas de resumen.
+- Tienda dashboard: abre y renderiza las ofertas de mejoras.
+- Inicio de Lobby sin errores de scripts nuevos.
+
+### Ajuste de flujo
+- La tienda ya no tiene boton en el HUD. Solo se abre junto al taller mediante
+  su `ProximityPrompt` con la tecla `E`.
+- La mochila permite equipar puntas y cuerdas de gancho dentro de una partida,
+  porque son cosmeticos. Armas y colores de laser permanecen bloqueados fuera
+  del lobby para no modificar combate en curso.
+
+### Gancho
+- Aumentados `PULL_FORCE` de `720` a `1000` y `MAX_PULL_SPEED` de `40` a `70`.
+- La retencion de deriva al soltar sube de `0.88` a `0.98`.
+- El limite de velocidad ahora reduce suavemente solo el tiron hacia el ancla y
+  amortigua la velocidad lateral. Ya no aplica frenado total al relanzar el
+  gancho durante una deriva rapida.
+- Agregado `HookSpeedCamera`: ensancha suavemente el FOV hasta 11 grados
+  mientras el gancho atrae al jugador y lo restaura al soltar.
+- El paquete completo de gancho se aplico y verifico en Lobby Place y Match
+  Place: configuracion, limite suave de velocidad e `HookSpeedCamera`.
+
+---
+
 ## Sesion 44 - 2026-09-14
 
 **Objetivo:** sincronizar la documentación viva con el estado actual del juego.

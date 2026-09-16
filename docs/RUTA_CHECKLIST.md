@@ -142,6 +142,8 @@ proximos pasos recomendados.
 - [ ] Validar en producción con dos cuentas que cada una compra, equipa y
   recupera sus cosméticos de gancho tras reconectar.
 - [x] Primer logro: completar todas las misiones diarias.
+- [x] Mochila UI para gestionar armas, colores de laser y cosmeticos de gancho obtenidos.
+- [x] Insignia de mega testing limitada a 10 destinatarios unicos globales.
 
 ### Recompensas activas de ronda
 - Jugar partida: `+15` monedas.

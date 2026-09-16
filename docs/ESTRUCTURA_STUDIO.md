@@ -36,6 +36,8 @@ ServerScriptService/
 ├── RankService             (Script)          <- src/ServerScriptService/RankService.server.lua
 ├── CurrencyService         (Script)          <- src/ServerScriptService/CurrencyService.server.lua
 ├── PowerUpService          (Script)          <- presente en Lobby y Match Place
+├── InventoryService        (Script)          <- estado y equipado seguro de mochila
+├── QABadgeService          (Script)          <- insignia QA para 10 UserId unicos
 └── HoloLevitation          (Script)          <- src/ServerScriptService/HoloLevitation.server.lua
 
 ServerStorage/
@@ -52,9 +54,12 @@ StarterPlayer/
 │   ├── PortalController     (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/PortalController.client.lua
 │   ├── BattleTransitionController (LocalScript) <- confirma entrada/salida local de LIBRE
 │   ├── HookController       (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/HookController.client.lua
+│   ├── HookSpeedCamera      (LocalScript)    <- FOV durante arrastre de gancho
 │   ├── DailyActivities      (LocalScript)    <- calendario, daily y misiones (Lobby)
 │   ├── CoinPickupVisuals    (LocalScript)    <- ocultacion local inmediata (Lobby)
 │   ├── PowerUpEffects       (LocalScript)    <- impulso 0g confirmado por servidor
+│   ├── InventoryDashboard   (LocalScript)    <- mochila tipo dashboard (Lobby)
+│   ├── StoreDashboard       (LocalScript)    <- tienda tipo dashboard (Lobby)
 │   └── IntroTutorial        (LocalScript)    <- src/StarterPlayer/StarterPlayerScripts/IntroTutorial.client.lua
 └── StarterCharacterScripts/
     ├── ZeroGSetup           (LocalScript)    <- src/StarterPlayer/StarterCharacterScripts/ZeroGSetup.client.lua
