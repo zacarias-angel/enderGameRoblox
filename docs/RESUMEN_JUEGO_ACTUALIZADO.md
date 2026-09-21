@@ -76,11 +76,10 @@ Sirven para: cubrir disparos · impulsarse · esconderse · cambiar dirección.
   jugadores dentro, fuera y plazas restantes.
 - Cada formato competitivo usa un servidor reservado del `Match Place`; las
   partidas no se mezclan entre si.
-- En `LIBRE`, un jugador congelado ve durante tres segundos quien lo congelo;
-  despues se restaura y vuelve al lobby mientras la ronda continua para los
-  demas.
-- El último superviviente de `LIBRE` conserva gravedad 0 y puede seguir jugando
-  o salir cuando quiera.
+- En `LIBRE`, un jugador congelado ve durante tres segundos quien lo congelo y
+  despues reaparece protegido dentro de la arena para seguir jugando.
+- Los participantes de `LIBRE` conservan gravedad 0 y solo salen de la arena
+  voluntariamente con `X`.
 - No se mezclan jugadores de formatos distintos dentro de una partida.
 - El Match Place admite exclusivamente los `UserId` incluidos por el Lobby en
   `PlayerUserIds` y comprueba que la cantidad sea exacta para el formato.
@@ -140,6 +139,8 @@ posee la fisica del personaje.
 - El gancho inicia visual y fisicamente en el cliente sin esperar un viaje de
   red. El servidor conserva la autoridad sobre su energia y puede cancelarlo si
   la solicitud no es valida.
+- Al entrar o reaparecer en `LIBRE`, el jugador recibe un escudo de cinco
+  segundos contra congelamiento.
 
 ### Controles (MVP, teclado)
 | Acción | Tecla |
@@ -197,6 +198,8 @@ Al recibir congelamiento total:
 - Balance actual del beam: Blaster `18%`, Rifle `14.4%` y Cañón `36%` de
   congelamiento por tick; drenaje de estamina `67.5/s`.
 - El VFX local y remoto usa doble haz, brillo, partículas de impacto y ondulación.
+- El beam visual y el raycast local alcanzan `300` studs; el servidor valida
+  impactos hasta `500` studs.
 
 ### Persistencia de taller y ranking
 - Las puntas y cuerdas de gancho adquiridas, junto con su selección equipada,

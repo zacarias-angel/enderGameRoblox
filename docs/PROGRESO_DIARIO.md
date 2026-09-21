@@ -4,6 +4,54 @@ Bitácora de avance por sesión. Entrada más reciente arriba.
 
 ---
 
+## Sesion 46 - 2026-09-21
+
+**Objetivo:** dar pose de apuntado al brazo derecho durante el disparo continuo.
+
+### Cambios aplicados en Lobby y Match Place
+- `ShootingController.client` crea un `IKControl` local R15 desde
+  `RightUpperArm` hasta `RightHand` cuando comienza el beam.
+- El destino IK se actualiza hacia la direccion de la mira para extender el
+  brazo derecho y mantenerlo alineado al disparo.
+- La pose se desactiva al soltar el click, sobrecalentarse, quedar eliminado o
+  reaparecer; en rigs no R15 no modifica el personaje.
+
+### Verificado en Studio
+- Lobby y Match Place iniciaron sin errores nuevos de scripts.
+- En Lobby, el `IKControl` y su destino se crearon al iniciar el beam y el
+  control quedo desactivado al soltar el click.
+
+### Ajuste de LIBRE
+- La congelacion completa ya no expulsa al jugador al Lobby. Tras los tres
+  segundos de feedback, se restablece y reaparece dentro de
+  `Arena.SpawnAzul`; permanece en `LIBRE` hasta salir voluntariamente con `X`.
+- El respawn restablece `FreezeService` y `PlayerState`, por lo que vuelven a
+  habilitarse disparo, gancho y movimiento 0g.
+- Al entrar a `LIBRE` y tras cada respawn se aplica un `ForceField` visible y
+  una proteccion de servidor de cinco segundos contra congelamiento.
+- El cambio se limito a `LobbyTeleportService`; los VS y el Match Place no se
+  modificaron.
+
+### Verificado en Studio
+- Lobby inicio sin errores nuevos con el flujo actualizado y el script conserva
+  los estados `BattleParticipant`, `CombatActive` y `GameMode=BATTLE` tras el
+  respawn.
+
+### Cierre de sesion
+- Las estaciones VS del Lobby actualizan sus atributos fisicos desde el estado
+  autoritativo de cola, por lo que el prompt muestra la ocupacion real, por
+  ejemplo `1/2`, antes de iniciar el countdown.
+- El Match Place incorpora `InventoryService` e `InventoryController`; la
+  mochila abre con `B` y permite ver/equipar armas, colores de laser y
+  cosmeticos de gancho. Armas y laser se bloquean al iniciar combate; punta y
+  cuerda siguen siendo modificables durante la ronda.
+- La mira se elevo de `-80` a `-110` pixels en ambos Places. Disparo y gancho
+  usan la misma referencia visual.
+- El alcance local y visual del beam se duplico de `150` a `300` studs en
+  Lobby y Match; el limite autoritativo de servidor permanece en `500` studs.
+
+---
+
 ## Sesion 45 - 2026-09-16
 
 **Objetivo:** incorporar una mochila para los desbloqueos persistentes y limitar
