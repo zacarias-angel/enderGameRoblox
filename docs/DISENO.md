@@ -128,6 +128,19 @@ y cadenas de impulso forman parte del diseño táctico.
 
 ## 2. Movimiento, cámara y controles
 
+### Retorno de Libre y apuntado del brazo — Lobby, 2026-10-07
+
+- La salida local busca `Player.RespawnLocation` o un SpawnLocation anidado en
+  Workspace; el actual está dentro de `The Spawn Point Light`. Ya no depende de
+  que el spawn esté en la raíz. Nuevo evento `LobbyReturnTransition` y controlador
+  `LobbyReturnController` confirman el traslado y recuperan locomoción/cámara/cursor.
+- El avatar inspeccionado usa AnimationConstraint, no Motor6D. El disparo agrega
+  IK analítico en hombro/codo/muñeca derechos después de Animator (PreSimulation),
+  sin editar RigAttachments ni parar swim; al soltar restaura la pose animada.
+  Rigs legacy conservan IKControl; su objetivo se actualiza en PreAnimation.
+- Implementado en Lobby. Prueba de retorno con X y medición de pose moderna en
+  Play Solo; sincronización al Match y disparo multijugador pendientes.
+
 Movimiento con `VectorForce`, empuje e inercia, drag suave y clamp de velocidad;
 no velocidad fija. El Config inspeccionado usa `BATTLE_THRUST_MULT=0.008` (0.8%
 del empuje); las notas anteriores de 4% eran un balance anterior. Gancho, retroceso y
@@ -398,6 +411,24 @@ InventoryRequest / InventoryState / InventoryEquip
 - Pose de agarre documentada: `133886935716379`.
 
 ## 5. Arquitectura Multi-Place y estructura
+
+### Referencia de edición 3D del Lobby — 2026-10-07
+
+- Escena del Lobby trasladada tomando la superficie central de `piso` como origen:
+  antes `(151.171005, 113.937920, -63.318596)`, ahora `(0, 0, 0)`.
+- Rotación global de `-7.663°` sobre Y para alinear la estructura principal;
+  piso enderezado adicionalmente a Orientation `(0, 0, 0)`. El resto de piezas
+  conserva su disposición relativa bajo la transformación global.
+- 58 modelos no pertenecientes a personajes con pivotes centrados y ejes mundiales.
+  La normalización de pivotes no endereza individualmente la geometría decorativa.
+- `ServerStorage.Editor3D`: normalizar pivotes, colocar selección por punto de
+  apoyo y enderezar importaciones mediante una pieza de referencia. Uso en REGLAS.
+- `Arena.BlockSpawnRegion` sustituye límites mundiales fijos en
+  `ServerScriptService.FloatingRobloxBlocks.server`, incluidos slots de fallback.
+- Estado anterior de CFrames/PivotOffsets registrado por referencias en
+  `ServerStorage.Editor3D_AlignmentBackup`; no es una segunda escena activa.
+- Implementado y comprobado en Studio solo en Lobby; sin publicación ni cambio
+  de coordenadas del Match.
 
 | Place | ID | Responsabilidad |
 |---|---|---|

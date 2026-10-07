@@ -85,6 +85,41 @@ end
 - Evitar escanear todo Workspace en cada frame; cachear y reaccionar a eventos.
 - Si un exploit puede abusar de la operación, la implementación está incompleta.
 
+## Edición 3D — Lobby, 2026-10-07
+
+- Referencia de edición: superficie central de `Workspace.piso` en `(0, 0, 0)`;
+  arriba `+Y`, ejes horizontales `X/Z`. Piso y estructura principal alineados a
+  los ejes mundiales. No poner Orientation=0 a cada pieza de una construcción:
+  cilindros, techos, textos y decoraciones pueden necesitar giros propios.
+- Pivotes de modelos estáticos centrados en la caja mundial de sus piezas y
+  orientados a los ejes de Studio. Conservar los pivotes de personajes/Humanoid.
+- Herramienta de edición: `ServerStorage.Editor3D`, con Play detenido. Seleccionar
+  el objeto en Workspace y ejecutar desde **Command Bar**:
+
+  ```lua
+  require(game.ServerStorage.Editor3D).NormalizeSelection()
+  ```
+
+  Centra/alinea el pivote sin mover las piezas. Para colocar la selección con su
+  base apoyada en el centro del piso:
+
+  ```lua
+  require(game.ServerStorage.Editor3D).PlaceSelection(Vector3.new(0, 0, 0))
+  ```
+
+  El Vector3 indica el punto de apoyo, no el centro del objeto. Segundo argumento
+  opcional: giro relativo en grados, por ejemplo `PlaceSelection(Vector3.new(20, 0, 10), 90)`.
+  Selecciones múltiples se mueven como conjunto, conservando sus distancias.
+  No se aplica automáticamente al insertar desde Toolbox.
+- Para enderezar geometría importada, seleccionar el modelo y usar
+  `AlignSelection(piezaDeReferencia)`, con una BasePart perteneciente a la selección
+  cuyos ejes representen la orientación buscada. El pivote por sí solo no permite
+  deducir el frente visual de una malla importada.
+- `Workspace.Arena.BlockSpawnRegion` es la región invisible editable de aparición
+  de bloques. `FloatingRobloxBlocks.server` consulta su CFrame/Size; mover el mapa
+  junto con esta región evita depender de coordenadas absolutas antiguas.
+- Alcance aplicado: Lobby `125075465377023`. El Match no se realineó en esta tarea.
+
 ## Referencia práctica de GUI
 
 | Contenedor | Uso |

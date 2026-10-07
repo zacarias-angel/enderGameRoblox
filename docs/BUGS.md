@@ -24,6 +24,51 @@ Las verificaciones locales posteriores no cierran automáticamente estos pendien
 
 ## 2. Registro de causas y correcciones
 
+### Libre: salida sin traslado y brazo sin apuntado — 2026-10-07
+
+- **Retorno reproducido:** `FREE_LOCAL_EXIT` dejaba GameMode=LOBBY y
+  BattleParticipant=false, pero el personaje seguía en la arena. El servidor
+  buscaba `workspace:FindFirstChild('SpawnLocation')`; el spawn real está dentro
+  de `Workspace.The Spawn Point Light`.
+- **Corrección Lobby:** `LobbyTeleportService.returnToLobby` usa RespawnLocation
+  o busca SpawnLocation recursivamente, endereza al personaje, limpia velocidades
+  y restaura locomoción. `LobbyReturnTransition` y `LobbyReturnController`
+  confirman el CFrame en el cliente dueño de red y restauran cámara/cursor.
+  Reafirmaciones acotadas se descartan si cambia personaje, serial o participación.
+- **IK reproducido:** avatar actual con 15 `AnimationConstraint` y sin Motor6D;
+  el IKControl anterior no resolvía el objetivo sobre esa cadena en la prueba.
+- **Corrección Lobby:** `ShootingController.client` conserva IKControl para rigs
+  legacy y agrega IK analítico de dos segmentos para el brazo derecho moderno.
+  Compone Transform de hombro/codo/muñeca en PreSimulation, restaura la capa antes
+  de evaluar Animator y al dejar de disparar; no cambia RigAttachments ni detiene
+  la pista de flotación para apuntar.
+- **Verificación:** salida con X al spawn anidado, cámara Custom/cursor Default,
+  caminar 16, AutoRotate=true y PlatformStand=false. IK moderno: 37 muestras
+  después de calentamiento, dot mínimo arma/dirección `0.9999974`; swim activo con
+  peso 1 en las 37. Medición con funciones exactas mediante LocalScript temporal,
+  eliminado después; no es validación multijugador del disparo.
+- **Pendientes:** sincronizar el apuntado compartido al Match tras confirmar ese
+  alcance; probar rigs legacy, ragdoll moderno y apuntado remoto en producción.
+  La espera de `AtlasUIController` por `ZB_Intro` sigue apareciendo, independiente.
+
+### Edición 3D desalineada y pivotes desplazados — 2026-10-07
+
+- **Reproducido en Lobby:** estructura principal con Y=`7.663°`, piso con
+  Y=`8.965°`, modelos importados con pivotes alejados de su caja. Agregar piezas
+  alineadas a Studio requería giro y centrado manual adicionales.
+- **Corrección:** transformación global del Lobby, origen en superficie central
+  del piso y alineación de estructura principal; ajuste adicional del piso.
+  Pivotes de 58 modelos estáticos centrados y alineados sin mover sus piezas.
+- **Dependencia corregida:** límites/slots absolutos de `FloatingRobloxBlocks.server`
+  reemplazados por una región física editable `Arena.BlockSpawnRegion`.
+- **Prevención:** herramientas `ServerStorage.Editor3D`, documentadas en REGLAS,
+  con registro de Undo para operaciones de edición. No es un automatismo Toolbox.
+- **Verificado:** posiciones de 628 piezas, pivotes de 58 modelos, fixture de
+  colocación eliminado y Play Solo con 16 bloques flotantes/spawn trasladado.
+  Alcance Lobby; Match y producción no validados.
+- **Observación independiente en Play:** aviso de espera indefinida de
+  `AtlasUIController` por `PlayerGui.ZB_Intro` (línea 242), pendiente de investigar.
+
 ### UI estirada, recortes y manual duplicado — 2026-10-06
 
 **Revisión posterior solicitada por el usuario:** editar IDs en un ModuleScript

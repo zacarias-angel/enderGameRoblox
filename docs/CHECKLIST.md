@@ -1,9 +1,52 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-06. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-07. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### Libre: retorno al Lobby y apuntado — 2026-10-07
+
+- [x] Reproducir salida sin traslado: spawn anidado no encontrado por búsqueda directa.
+- [x] Corregir `LobbyTeleportService`; añadir transición dirigida y
+  `StarterPlayerScripts.LobbyReturnController` para sincronizar el dueño de red.
+- [x] Probar X en Play Solo: LOBBY, participante=false, root a 3.881 studs sobre
+  spawn, caminar 16, AutoRotate=true, PlatformStand=false, cámara Custom,
+  MouseBehavior.Default y fuerza local de empuje retirada.
+- [x] Detectar avatar con AnimationConstraint en lugar de Motor6D; adaptar
+  `ShootingController.client` con IK de dos segmentos para hombro/codo/muñeca.
+- [x] Comprobar capa moderna con funciones exactas en LocalScript de QA temporal:
+  37 muestras, dot mínimo arma/dirección 0.9999974 y pista swim con peso 1.
+  Las pruebas de mouse posteriores fueron bloqueadas por foco CoreGui; esta
+  medición valida la pose, no un click de disparo de extremo a extremo.
+- [x] Segunda salida mediante LeaveMatchRequest real del cliente: traslado y
+  locomoción correctos; fixture y atributos de medición eliminados con la prueba.
+- [x] Compilar los tres scripts modificados/creados; terminar Lobby en Edit.
+- [ ] Repetir disparo manual con mouse enfocado, respawn/ragdoll, rigs Motor6D y
+  dos clientes; aplicar apuntado al Match cuando se confirme ese alcance.
+- [ ] Resolver espera independiente de ZB_Intro; sigue registrada en Output.
+- Cambios aplicados solo en Lobby; no publicados.
+
+### Orientación, centrado y colocación 3D — 2026-10-07
+
+- [x] Confirmar con el usuario alcance: Gravedad CERO/Lobby, existentes y nuevos.
+- [x] Realinear estructura principal a ejes mundiales; origen en superficie central
+  del piso `(0, 0, 0)`, `piso.Position=(0, -0.5, 0)` y Orientation cero.
+- [x] Normalizar pivotes de 58 modelos no pertenecientes a personajes.
+- [x] Comparar posiciones de 628 piezas con la transformación global esperada:
+  error máximo `0.0000211` studs. Piso enderezado adicionalmente; Terrain excluido.
+- [x] Crear `Arena.BlockSpawnRegion` y adaptar límites/slots del servidor de bloques.
+- [x] Crear `ServerStorage.Editor3D` y verificar normalización sin desplazamiento,
+  enderezado por referencia y colocación con base en Y=0 sobre un fixture temporal.
+  Fixture eliminado tras comprobar; 58 pivotes de modelos verificados en ejes mundiales.
+- [x] Play Solo Lobby: personaje aparece en spawn trasladado, 16 bloques con
+  PrimaryPart y fuerza de flotación; power-ups aparecen en puntos trasladados.
+  Script de bloques compila. Captura posterior de la escena; Studio termina en Edit.
+- [x] Documentar uso en Command Bar y respaldo `ServerStorage.Editor3D_AlignmentBackup`.
+- [ ] Validar manualmente recorridos, colas y Libre tras realineación; no se probó
+  una partida completa ni teleport. Match no realineado; no se publicó.
+- [ ] Revisar aviso observado en Play: `AtlasUIController`, línea 242, espera
+  `PlayerGui.ZB_Intro` con `Infinite yield possible`. No corregido en esta tarea 3D.
 
 ### Revisión: edición visual y sugerencias — 2026-10-06
 
