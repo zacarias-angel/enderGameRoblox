@@ -5,6 +5,192 @@ Actualizado: 2026-10-07. Diseño en [DISENO](DISENO.md), normas en
 
 ## 1. Estado y prioridad inmediata
 
+### Controles táctiles y UI móvil — 2026-10-09
+
+- [x] `ReplicatedStorage.Shared.LocalCombatInput`: bus de intención local con
+  soporte de múltiples dedos por acción; no concede autoridad de daño/energía.
+- [x] `StarterGui.ZB_MobileControls` en ambos Places: botones redondos
+  DISPARAR (mantener), GANCHO (mantener), SUBIR y BAJAR. Iconos de UIAssets,
+  UICorner redondo y UIStroke; atributo `MobileControls=true`.
+- [x] `StarterPlayer.StarterPlayerScripts.MobileControls`: solo visible con
+  `TouchEnabled` y landscape; asocia cada dedo al botón, suelta al perder foco,
+  abrir teclado, abrir menú o cambiar de estado, sin reactivarse al cerrar UI.
+- [x] HookController y ShootingController consumen el bus: mismo disparo/energía
+  (beam), gancho y cooldown que teclado/mouse; mira centrada en táctil.
+- [x] MovementController: lee el joystick nativo (`GetMoveVector`) en 0g y usa
+  SUBIR/BAJAR como R/Ctrl; conserva teclado y preserva caminata del Lobby.
+- [x] `MobileHudLayout`: accesos redondos redistribuidos (mochila, diario, ayuda,
+  tabla, salir), librería de recursos, monedas, LED y encabezado VS adaptados.
+  Insets `DeviceSafeInsets`; rota bien en teléfono pequeño y con roster 4v4.
+- [x] Guardas en AtlasUIController para no reestilar los accesos redondos
+  (`MobileControls`/`ZB_MobileRound`).
+- [x] QA controlada con funciones exactas (sin dedos reales): disparo sostenido,
+  dos pulsaciones simultáneas no se interrumpen, liberación limpia, bloqueo al
+  abrir mochila, gancho táctil, SUBIR/BAJAR y dirección del joystick. Capturas
+  en iPhone 17 Pro y iPhone 7; portrait oculta acciones. Paridad de las seis
+  fuentes (mismos bytes/hash) y sin fixtures.
+- [ ] Touch real en teléfono: pulsación simultánea disparo+gancho+joystick,
+  multitáctil físico, primera persona y desempeño (FPS/carga).
+- [ ] Validar `StarterGui.ScreenOrientation`: sigue en `Sensor`; el juego exige
+  landscape (`OrientationLock.client`). Confirmar política final en móvil.
+- Sin publicación. Respaldo `ServerStorage.ZB_MobileBackup_20261009` por Place.
+
+### B13–B16 — correcciones del reporte publicado, 2026-10-09
+
+- [x] Respaldar fuentes en `ServerStorage.ZB_ProductionFixBackup_20261009` por Place.
+- [x] Agarre: invalidación antes de restaurar, cancelación sin impulso, epoch,
+  limpieza de prompts y guardas de combate; caso de arma/pieza anidada verificado.
+- [x] Pasos: Running=0 en Libre/Match, positivo en Lobby y restauración al salir.
+- [x] Retorno: Job de origen en contrato, anulación incluye solicitante en el grupo,
+  destino alternativo único y reintentos asíncronos con afinidad.
+- [x] QA de Runtime con transporte simulado: final/anulación de dos jugadores,
+  tercero representado por Job de origen, reintento de uno y fallback compartido.
+- [x] VICTORIAS VS por encuentro ganado; partida completa para ambos, deduplicación
+  por MatchId y misión al finalizar. Cancelación no entrega esos resultados.
+- [x] CONGELADOS MODO LIBRE solo acredita nuevas bajas Libre válidas; Tab VS conserva
+  su conteo de batalla. Rótulos correctos y sin recorte en inspección del cliente.
+- [x] QA en memoria: resultado ganador/perdedor/duplicado, pagos configurados,
+  progreso, recursos sin refill, logro persistido en perfil y snapshot tras limpiar caché.
+- [x] Guardado antes de viajes y escrituras serializadas; no enviar grupo si falla
+  guardado. Compilar, retirar fixtures y finalizar ambos Places en Edit.
+- [ ] Publicar ambos Places y entrar a **un servidor nuevo de Lobby** para usar
+  el contrato de origen actualizado; los servidores viejos no reciben el código nuevo.
+- [ ] Tres cuentas: A/B juegan y C permanece; A/B vuelven al mismo Job donde está C.
+- [ ] Repetir abandono tras primera eliminación: partida anulada y retorno de A/B
+  al origen común, sin victoria/partida completa/premio de final.
+- [ ] A se sujeta a B congelado: comprobar liberación antes de restauración/respawn,
+  sin impulso ni traslado del portador; etiqueta ausente después de reset/X/retorno.
+- [ ] Escuchar pasos en flotación y primera persona; caminar en Lobby conserva audio.
+- [ ] Final VS: ganador +1 victoria, ambos +1 partida, misión una vez; anotar saldo
+  antes/después. Reconectar y comprobar conservación; probar fallos reales de guardado/teleport.
+
+Los arreglos nuevos están verificados en Studio, no publicados desde esta sesión.
+No reconstruir ganadores históricos a partir del viejo contador de partidas.
+
+### Prueba publicada reportada por el usuario — 2026-10-09
+
+Evidencia: reporte del usuario, no una nueva observación del asistente. Versión,
+UserIds, dispositivos y capturas/F9 no proporcionados. Juan/Pedro/Roberto son
+nombres de ejemplo para describir el retorno, no cuentas QA identificadas.
+
+- [x] Calendario: fecha UTC, navegación, volver a hoy, futuro sin cobro,
+  daily/misión y pulsaciones repetidas; cerrar/reabrir conserva estado y saldo.
+- [x] SDR-Mk2 visible para el otro jugador, montaje, brazo/Beam y daño/congelamiento.
+- [x] Libre: feedback, respawn protegido, salida X al spawn/cámara, superviviente
+  conserva 0g y reentrada sin duplicados.
+- [x] VS 1v1: mismo Match, countdown bloquea acciones, apuntado observado por ambos,
+  ronda/reset/resultado y mejor de tres correctos.
+- [x] Abandono después de la primera eliminación produce partida anulada.
+- [ ] Retorno normal: grupo llega a otro Lobby, dejando separado al tercero que
+  permaneció en el servidor de origen.
+- [ ] Retorno de partida anulada: participantes llegan a servidores distintos.
+- [ ] Agarre de cuerpo congelado: sigue sujeto cuando el objetivo reaparece;
+  etiqueta de agarre puede persistir al regresar.
+- [ ] Pasos audibles durante flotación/primera persona.
+- [ ] Contadores VS/partidas no avanzan. Decisión delegada al asistente:
+  ranking VICTORIAS VS y CONGELADOS MODO LIBRE; resultados completos sin rondas/cancelaciones.
+- [ ] Reconexión, fallos de guardado, medianoche real, móvil/touch y rigs alternativos
+  no quedan validados por este reporte.
+
+### Calendario mensual editable y B12 de apuntado Match — 2026-10-09
+
+- [x] Crear `StarterGui.ZB_DailyActivities` en Lobby: plantilla completa editable,
+  backdrop, navegación mensual, 42 fechas, detalles, tres filas de misión y cobros.
+- [x] Migrar DailyActivities de constructor a controlador de plantilla; protegerla
+  del antiguo layout/estilizado del tema. Guardas compartidas en ambos AtlasUIController.
+- [x] Fechas gregorianas reales, lunes–domingo, hoy UTC, selección y último cobro
+  confirmado. Otras fechas no reutilizan progreso de hoy ni habilitan cobros.
+- [x] Navegación mediante clicks: octubre→noviembre, selección 4/11 y volver a hoy.
+  Febrero de 2028=29 días; febrero de 2026=28; octubre=31.
+- [x] Click diario +50 y misión asociada +40: saldo 500→590, RECLAMADA/HECHA y ✓
+  en hoy. Reinicio controlado al 10/10: progreso cero, daily +75, saldo 590;
+  seleccionar 9/10 muestra cobro confirmado +50 y ausencia de historial de misiones.
+- [x] Capturas desktop e iPhone 17 Pro horizontal/vertical. Portrait con UIScale 1,
+  scroll y detalles accesibles; sin textos truncados detectados. Ajustar leyenda
+  para no superponer botón de hoy. Apertura/scroll móviles inspeccionados mediante
+  propiedades del cliente: no equivalen a input touch real.
+- [x] Respawn: un calendario, 42 slots y arma SDR-Mk2 conservada.
+- [x] B12 reproducido en Match moderno: 15 AnimationConstraint, dot mínimo 0.351407
+  con el apuntado anterior (35 muestras).
+- [x] Sincronizar solución moderna de Lobby: restauración PreAnimation, IK analítico
+  PreSimulation y limpieza. QA posterior: 105 muestras/3 direcciones, dot mínimo
+  0.9999065; guardia ragdoll no escribe Transform. Fuentes ShootingController
+  iguales: 22375 bytes / hash 2798386865 en ambos Places.
+- [x] Retirar fixtures/mediciones; ambos Places en Edit, simulador default.
+- [ ] B12 en Player: apuntado/disparo de extremo a extremo, observador remoto,
+  rigs Motor6D y eliminación/ragdoll/respawn en VS real.
+- [ ] Calendario publicado, persistencia del cobro por reconexión y touch real.
+- Respaldos: Lobby `ServerStorage.ZB_CalendarBackup_20261009`; Match
+  `ServerStorage.ZB_CalendarAndAimBackup_20261009`. Sin publicación.
+
+### B11 — renovación diaria en sesión abierta — 2026-10-09
+
+- [x] Reproducir con reloj controlado: el nuevo día dejaba UI con datos anteriores.
+- [x] Respaldar MissionService, DailyRewardService, DailyActivities y DataService
+  Lobby; DataService Match en `ServerStorage.ZB_DailyRolloverBackup_20261009`.
+- [x] Centralizar reloj de servidor en DailyClock: reinicio a 00:00 UTC.
+- [x] Renovar y comunicar misiones/daily en un máximo de 2 s, sin exigir acción/reentrada.
+- [x] Recuperar snapshots al iniciar/abrir y mostrar cuenta atrás UTC a 1 Hz.
+- [x] Separar actualización de actividades de reaplicación de recursos; API de
+  metadatos en ambos Places, sin recargas (30→30 en QA de Lobby y Match).
+- [x] Panel abierto: progreso reiniciado y daily +75; cerrado/salto de dos días:
+  progreso cero y daily +50 según regla de racha existente. Respawn: una GUI.
+- [x] Solicitudes repetidas en sesión no duplican daily; cobro de misión anterior
+  rechazado. Saldo 500→630→705, sin pagos por la renovación sola.
+- [x] Compilar fuentes; retirar fixtures y probar arranque con reloj real, 3 filas
+  y cuenta atrás. Ambos Places terminan en Edit, sin publicar.
+- [ ] Publicar/validar medianoche UTC, reconexión y teleport con datos reales.
+- [ ] Cerrar persistencia/idempotencia ante fallo de guardado y cómputo de ranking.
+- B11 **cerrado en Studio**. No equivale a cerrar el bloque completo de misiones
+  del PLAN_10_DIAS. Las pruebas de cobro usaron el bypass DataStore de Studio.
+
+### SDR-Mk2 como arma base y fix de Muzzle — 2026-10-09
+
+- [x] Confirmar prototipo local: arma en cliente pero ausente del servidor.
+- [x] Respaldar modelo original del Lobby y Config/WeaponSetup de ambos Places.
+- [x] Adaptar SDR-Mk2 a `ReplicatedStorage.WeaponAssets.Templates.blaster` en ambos:
+  Handle/Grip, Barrel/Muzzle, pivote y montaje; 18 piezas, 14 mallas.
+- [x] Crear WeaponVisualService replicado; deshabilitar constructor procedural;
+  nombre visible SDR-Mk2, ID blaster y balance conservados.
+- [x] Compilar servicio y Config; fuentes del servicio idénticas (4532 bytes,
+  hash 946261481) y mismos 14 MeshIds en ambas plantillas.
+- [x] Play Solo: arma/Muzzle presentes en servidor y cliente; montaje capturado
+  visualmente en ambos Places, sin piezas ancladas, colisión ni masa adicional.
+- [x] Libre mediante JoinMatchRequest real: disparo con mouse, Beam desde Muzzle,
+  36 muestras de apuntado con dot mínimo 0.999809; salida X con una arma.
+- [x] Respawn real en ambos Places mantiene una sola arma.
+- [x] QA controlado WeaponId rifle→original: una arma; energía 30→31.8 por
+  regeneración normal, sin refill. apply/reset de ragdoll conserva WeaponMount.
+- [x] Retirar fixture/atributos de QA; ambos Places en Edit, plantilla seleccionada.
+- [ ] Probar con dos cuentas en Player, mallas/permisos, VS y rigs adicionales.
+- [x] Sincronizar IK moderno de Match en tarea posterior del 09/10; QA de pose B12
+  arriba. Disparo multicuenta/rigs adicionales siguen pendientes.
+- Aviso ZB_Intro no reproducido en este arranque; sigue pendiente, sin cambios.
+- Sin publicación. Contrato de reemplazo y reversión en DISENO.
+
+### Iluminación global y postprocesado — 2026-10-09
+
+- [x] Leer documentación completa, priorizando PLAN_10_DIAS y luces.md actualizado.
+- [x] Auditar Lighting, efectos, luces locales, materiales y posibles escritores
+  de iluminación en ambos Places; diagnóstico y valores en [luces.md](luces.md).
+- [x] Respaldar originales en `ServerStorage.ZB_LightingBackup_20261009` por Place.
+- [x] Aplicar LightingStyle Realistic, ambiente frío, noche y Bloom moderado;
+  agregar una corrección de color por Place, sin scripts runtime nuevos.
+- [x] Capturar antes/después; corregir oscuridad excesiva inicial del piso Lobby.
+- [x] Revisión posterior del usuario: la variante nocturna seguía demasiado oscura.
+  Recuperar luz diurna y elevar ambiente/exposición en ambos Places; nuevas capturas
+  en Edit muestran más detalle en piso y maquinaria. Valores vigentes en luces.md.
+- [x] Play Solo: efectos únicos, Lobby con Continue y desplazamiento W (~16 studs),
+  gravedad Lobby 196.2 / Match 0. Match aislado conserva rechazo de TeleportData.
+- [x] Comprobar firma de Workspace sin cambios de geometría, materiales, colisiones
+  ni propiedades de prompts incluidas; ambos Places finalizan en Edit.
+- [ ] Validar combate publicado, legibilidad de jugadores/equipos, FPS y móvil.
+- [ ] Confirmar aceptación visual del ajuste más luminoso con el usuario.
+- [ ] Etapas locales/materiales y perfiles HIGH/MEDIUM/LOW siguen pendientes.
+- Próximo bloque del plan: reproducir misiones/ranking, acordar cómputo de partidas
+  y corregir renovación/cobro/persistencia. No cerrados por esta mejora visual.
+- Sin publicación. Reversión y configuración exacta documentadas en luces.md.
+
 ### Libre: retorno al Lobby y apuntado — 2026-10-07
 
 - [x] Reproducir salida sin traslado: spawn anidado no encontrado por búsqueda directa.
@@ -306,6 +492,29 @@ auditoría del código ni a validación publicada de todas las características.
   desde esa sesión. Persistencia en memoria no demuestra reconexión/teleport.
 
 ## 4. Matriz de aceptación pendiente
+
+### Próxima sesión — prueba publicada con dos jugadores
+
+**Preparada, no ejecutada.** Cuentas A/B en Roblox Player; entrar al Lobby
+`125075465377023` y confirmar que comparten servidor. Match `108298899371591`
+se alcanza mediante la cola, no por entrada directa. Registrar versiones y
+publicar ambos Places antes de comenzar, conservando versiones anteriores.
+
+| Caso | Pasos con A/B | Resultado / evidencia |
+|---|---|---|
+| P01 Calendario | Abrir calendario; navegar mes/fecha futura; volver a hoy | Fecha UTC correcta; otras fechas sin cobro; captura de cada cuenta |
+| P02 Cobro | Registrar saldo/estado antes; reclamar daily y misión disponible; volver a pulsar | Una entrega; ✓/RECLAMADA/HECHA; registrar si la cuenta ya había cobrado |
+| P03 Persistencia | A sale y reconecta mientras B permanece | Mismo saldo y cobro conservado; no confundir Studio en memoria con esta prueba |
+| P04 Libre | Ambos entran; disparar alternando atacante/víctima; usar gancho y eliminar/reaparecer | SDR-Mk2 visible desde la otra cuenta, brazo/muzzle/beam alineados, feedback y 0g correctos |
+| P05 Salida | A sale con X mientras B sigue en Libre; A reentra | A vuelve al spawn/cámara; B conserva 0g; sin duplicados de arma ni UI |
+| P06 VS 1v1 | Salir de Libre y completar cola juntos; mejor de tres | Mismo reservado, countdown sin combate, apuntado de ambos, reset por ronda y resultado correcto |
+| P07 Retorno | Finalizar VS y volver al Lobby | Retorno conjunto; saldos/equipado/cobros conservados; una arma por avatar |
+| P08 Estadísticas | Anotar partidas/victorias/eliminaciones antes y después de P06/P07 | Comparar misión y ranking; registrar desvíos. Contadores/ranking aún no cerrados por B11/B12 |
+
+Registrar por caso: cuentas, fecha UTC, dispositivo, Place/versión, pasos,
+esperado/observado, captura y primer error de Output/F9. Si hay un fallo, anotar
+la reproducción y repetir ese caso después del arreglo. Móvil real requiere
+además apertura/cierre, navegación y scroll con touch.
 
 ### A. Feedback de cámara y daño — pendiente de validación
 

@@ -65,6 +65,8 @@ para conseguir cuentas/dispositivos de prueba.
 ### Misiones y ranking
 
 - [ ] Misiones se renuevan al cambiar el día sin exigir cerrar el juego; definir zona horaria y mostrar próximo reinicio.
+  **B11: corregido y verificado en Studio el 09/10**, con reinicio 00:00 UTC y
+  cuenta atrás visible; falta validación publicada para cerrar esta aceptación.
 - [ ] Progreso coincide con acciones reales y con la definición de partida acordada.
 - [ ] Pulsaciones repetidas, reconexión y fallo de guardado no duplican recompensas.
 - [ ] VS cuenta una partida completa, no cada ronda; abandono/empate/cancelación siguen la regla acordada.
@@ -117,7 +119,41 @@ Al terminar cada día registrar: responsable, terminado, prueba realizada, bloqu
 siguiente acción y Place/version afectados. Marcar listo solo después de probar.
 Preparar copias/versiones de Lobby y Match antes de cambios críticos y publicación.
 
+### Registro previo al sprint — 2026-10-09
+
+- Responsable: asistente mediante MCP. Leída la documentación completa y aplicada
+  la primera etapa solicitada por [luces.md](luces.md), en Lobby y Match.
+- Terminado en Studio: auditoría, respaldo de Lighting, iluminación global y
+  postprocesado moderado; capturas antes/después y smoke test de arranque.
+- Prueba: efectos únicos en ambos clientes; Continue y W en Lobby; gravedad
+  conservada; firma de Workspace coincide. Ambos Places quedan en Edit, sin publicar.
+- Pendiente externo/QA: imagen de referencia no adjunta; FPS, móvil y combate
+  publicado todavía sin validar. Esto no cierra las pruebas obligatorias del sprint.
+- Siguiente acción de código: reproducir renovación/cobro de misiones y contador
+  de ranking; acordar cómputo VS/Libre antes de cambiar sus recompensas.
+- Valores originales, finales y reversión: luces.md y
+  `ServerStorage.ZB_LightingBackup_20261009` de cada Place. No se registró versión publicada.
+
 ## Decisiones que el equipo debe confirmar al iniciar
+
+**Reporte publicado y revisión posterior 09/10:** usuario valida calendario,
+arma/apuntado remoto, Libre y flujo principal de VS. Reporta agarre/etiqueta,
+pasos en 0g, retorno que separa del origen y contadores VS. Se implementaron B13–B16
+en ambos Places, con QA Studio y respaldo; publicar/repetir con tres cuentas sigue
+pendiente. Métrica elegida con decisión delegada: **VICTORIAS VS** por encuentro
+completo; tabla **CONGELADOS MODO LIBRE**. No contabilizar rondas ni anulaciones
+como encuentros completos. Detalle y límites de persistencia/histórico en BUGS.
+
+**Avance adicional 09/10:** calendario mensual real y editable en Lobby, conectado
+a cobros/misiones y renovación B11; B12 de apuntado moderno sincronizado a Match
+y verificado con funciones exactas en Studio. Prueba publicada con dos cuentas
+preparada en CHECKLIST (P01..P08), todavía no ejecutada. Ambos Places en Edit y
+sin publicar; contador de partidas/ranking y persistencia real continúan abiertos.
+
+**Controles táctiles 09/10:** botones redondos DISPARAR/GANCHO/SUBIR/BAJAR,
+joystick nativo en 0g y accesos de UI redondeados en Lobby y Match. Cubre parte
+del punto «Móvil real» del día 7; **falta touch físico en teléfono, multitáctil
+y FPS**. Detalle en CHECKLIST/DISENO; sin publicar.
 
 - [ ] Confirmar mes/año de entrega y disponibilidad para trabajar los diez días naturales.
 - [ ] Asignar responsables de código, arte/video, Dashboard y pruebas; confirmar capacidad de trabajo paralelo.

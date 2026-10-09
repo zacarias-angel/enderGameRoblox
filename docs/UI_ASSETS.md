@@ -6,6 +6,78 @@ Aplica a Lobby `125075465377023` y Match `108298899371591`.
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
 para cambiar una imagen, un texto del manual o sus esquinas.**
 
+## 0. Calendario real editable — agregado 2026-10-09
+
+**Lobby solamente:** seleccionar `StarterGui.ZB_DailyActivities`. El controlador
+ya no construye esta pantalla. Su atributo `EditableCalendar=true` impide aplicar
+el layout anterior del tema. Play detenido para modificarla; al iniciar se copia
+una vez a PlayerGui y persiste al respawn.
+
+```text
+StarterGui.ZB_DailyActivities
+├─ Backdrop
+├─ CalendarButton
+│  ├─ Icon
+│  └─ PendingMarker
+└─ ActivitiesPanel
+   ├─ Title / Subtitle / CloseButton / ResetInfo / ResponsiveScale
+   └─ Content (ScrollingFrame)
+      ├─ Calendar
+      │  ├─ PreviousMonth / MonthTitle / NextMonth / TodayButton / Legend
+      │  ├─ Weekdays.Day1..Day7
+      │  └─ Grid.Slot01..Slot42 (TextButtons con Number, Status y UIStroke)
+      └─ Details
+         ├─ SelectedDate / MissionsTitle / DateInfo
+         ├─ RewardSection.Title / RewardInfo / ClaimDailyButton
+         └─ MissionList.Row01..Row03 (Label, Progress, Claim)
+```
+
+| Cambio visual | Seleccionar | Propiedad |
+|---|---|---|
+| Título del calendario | ActivitiesPanel.Title | Text / FontFace / TextColor3 |
+| Fondo de la ventana | ActivitiesPanel | BackgroundColor3 / UICorner |
+| Fondo del mes | ActivitiesPanel.Content.Calendar | BackgroundColor3 |
+| Textos de días de semana | Calendar.Weekdays.Day1..Day7 | Text / FontFace |
+| Texto estático de recompensa | Details.RewardSection.Title | Text / TextColor3 |
+| Icono de acceso | CalendarButton.Icon o UIAssets.Icons.calendar | Image |
+
+Fechas, MonthTitle, SelectedDate, ResetInfo, saldo, progreso, precio y estado de
+cobro son dinámicos: el servidor/controlador los actualiza. Colores de selección,
+hoy y botones también representan estado. No renombrar hijos del contrato.
+El layout adapta posiciones/tamaños; vertical usa scroll, desktop dos columnas.
+La plantilla está protegida de la reconstrucción/estilizado antiguo de AtlasUIController.
+
+Solo el último cobro diario está confirmado por los datos existentes; no hay
+historial completo de misiones. Fechas anteriores sin registro y futuras tienen
+su explicación; seleccionar una fecha no autoriza cobrarla. Pruebas en CHECKLIST.
+
+## 0.1 Controles táctiles — agregado 2026-10-09
+
+**Lobby y Match:** `StarterGui.ZB_MobileControls`, atributo `MobileControls=true`
+(no lo reestiliza AtlasUIController). Contiene `Actions` con botones redondos;
+
+```text
+StarterGui.ZB_MobileControls
+└─ Actions
+   ├─ Fire  (Caption "DISPARAR", Icon weapon)
+   ├─ Hook  (Caption "GANCHO", Icon hook)
+   ├─ Up    (Caption "SUBIR", Arrow ▲)
+   └─ Down  (Caption "BAJAR", Arrow ▼)
+```
+
+| Cambio visual | Seleccionar | Propiedad |
+|---|---|---|
+| Color del botón | Actions.Fire / Hook / Up / Down | BackgroundColor3 / UICorner / UIStroke |
+| Etiqueta del botón | <botón>.Caption | Text |
+| Icono | <botón>.Icon (o UIAssets.Icons.weapon/hook) | Image |
+
+Accesos de menú y HUD móvil los distribuye `ReplicatedStorage.Shared.MobileHudLayout`
+en tiempo de ejecución, tomando `UIAssets.Icons` para iconos redondos (bag, calendar,
+info, trophy, close) y añadiendo una leyenda corta. No editar esos botones en
+Properties esperando que persista: los posiciona el layout según viewport. La
+lógica de intención vive en `Shared.LocalCombatInput` y `StarterPlayerScripts.MobileControls`.
+Los controles solo aparecen con `TouchEnabled` en landscape y combate activo.
+
 ## 1. «Cambiá la mochila por un bolso»
 
 1. Detener Play.

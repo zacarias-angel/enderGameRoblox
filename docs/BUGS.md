@@ -18,11 +18,211 @@ buscar el primer error de Output, no el último warning.
 | B08 | Resuelto | Ambos Places abiertos; bloqueo inicial `Place is not open` resuelto |
 | B09 | Límite de QA | MCP rechaza FireClient de StateChanged e inserción del fixture por Capabilities; prueba de daño automática no ejecutada |
 | B10 | Alta | Corregido en Studio: UI estirada y manual duplicado; tema nativo, layout vertical y manual único en ambos Places. Validación Player/touch pendiente |
+| B11 | Alta | Renovación diaria en sesión abierta: reproducida, corregida y verificada en Studio el 09/10. Falta validar medianoche/reconexión en Player; cobro persistente y ranking siguen abiertos |
+| B12 | QA publicada parcial | Usuario confirma arma/apuntado/Beam y observador remoto en Libre/VS; rigs alternativos siguen pendientes |
+| B13 | Alta / corregido Studio | Cancelación sin impulso, epoch de cuerpo, limpieza de etiqueta y salida comprobados; repetir con dos jugadores publicados |
+| B14 | Media / corregido Studio | Running silenciado en 0g y restaurado en Lobby; repetir escucha real/primera persona publicada |
+| B15 | Alta / corregido Studio | Origen público, anulación grupal, reintento y fallback común comprobados con transporte simulado; teleport real con tercero pendiente |
+| B16 | Alta / corregido Studio | VICTORIAS VS, encuentro completo deduplicado y congelados Libre; API/guardado en memoria comprobados, persistencia publicada pendiente |
 
 La estabilización base de Libre/VS fue validada en producción el 2026-09-14.
 Las verificaciones locales posteriores no cierran automáticamente estos pendientes.
 
 ## 2. Registro de causas y correcciones
+
+### Correcciones tras el reporte publicado — B13 a B16, 2026-10-09
+
+**Implementadas y comprobadas en Studio; no publicadas desde esta sesión.**
+Respaldo por Place: `ServerStorage.ZB_ProductionFixBackup_20261009`.
+
+#### B13 — cuerpo restaurado y etiqueta de agarre
+
+- Reproducido con funciones anteriores exactas: quitar `cubrirce` dejaba agarre
+  activo. La cancelación ahora se diferencia de soltar voluntariamente: no impulsa
+  portador ni objetivo, libera anclaje, detiene pose y limpia referencias/listeners.
+- FreezeService invalida `cubrirce`, incrementa `ZB_GrabEpoch` y comunica
+  `CancelGrabForTarget` antes de reset/restauración; CharacterRemoving también invalida.
+- Cliente verifica vigencia/epoch antes de seguir al objetivo, incluidos Model de
+  arma/accesorio anidados. Un prompt de escudo por avatar; se retira al restaurar.
+  Fuera de combate/countdown/menú se deshabilitan prompts y se cancela la sujeción.
+- QA: invalidación, epoch, salida sin impulso, root desanclado, eliminación de
+  etiqueta y caso de pieza anidada. Las señales locales diferidas se comprobaron
+  tras su ejecución; los errores iniciales del fixture por comprobar antes de
+  ese momento no se atribuyen a un fallo de producción.
+
+#### B14 — pasos al flotar
+
+- Nuevo LocalScript `ZeroGFootsteps` en ambos Places: administra únicamente
+  sonidos/AudioPlayers llamados Running en avatares observables, por eventos.
+  Mute por BattleParticipant/GameMode de cada jugador o gravedad global cero.
+  Conserva el volumen previo fuera de 0g; no interviene en audio de combate.
+- QA: Lobby Running ~0.65; Libre=0; Match=0. Intento de restablecer Volume durante
+  Libre vuelve a cero. Al salir se recupera el volumen positivo actualizado (0.9
+  en fixture). Sin operaciones RenderStepped añadidas.
+
+#### B15 — retorno normal/anulado
+
+- Lobby envía JobId público de origen y, si se conoce, código/ID del Lobby
+  reservado. Match valida SourcePlaceId y coherencia del origen entre participantes.
+- Ya no se expulsa individualmente al solicitante de salida: anula y participa
+  en el retorno común de todos los aceptados aún presentes.
+- `LobbyReturnRoute` conserva un destino por encuentro. Primero origen público
+  por ServerInstanceId, o reservado conocido por acceso. Ante fallo síncrono del
+  origen, un único reservado alternativo explícito comparte código en reintentos.
+- TeleportInitFailed reintenta los participantes fallidos al mismo destino; si
+  Roblox informa un Job público resuelto, se reutiliza. Guardar perfiles antes de
+  Lobby→Match y Match→Lobby; fallo de guardado no inicia el viaje.
+- QA controlada con funciones Runtime completas y transporte simulado: cancelación
+  tras primera eliminación devuelve dos juntos y no entrega resultado; final de
+  dos victorias devuelve dos al Job de origen; fallo asíncrono de uno conserva
+  destino; dos errores de origen crean un solo fallback para ambos.
+- Studio no valida teleports reales, capacidad, cierre del origen ni comportamiento
+  de VIP/cross-play. Origen reservado solo se recupera cuando hay acceso conocido;
+  sin acceso se utiliza el fallback común. Revalidar con tres cuentas.
+
+#### B16 — resultados y tablas
+
+- Elegido VICTORIAS VS para la placa antes titulada PARTIDAS. Nuevo `stats.vsWins`
+  y OrderedDataStore `ZeroBreach_Rank_VSWins_v1`. Una victoria al ganar el encuentro
+  completo; una `matchesPlayed` para cada participante al completarlo, no por ronda.
+  Una partida anulada no entrega partida completa, victoria ni premio de final.
+- `VsResultService` aplica resultado/misión y recompensas existentes +15 jugar,
+  +30 extra ganar; `completedVs` retiene 64 IDs recientes para deduplicar. MatchId
+  usa GUID de servidor. La misión VS se registra al finalizar, no al volver por
+  TeleportData. Libre conserva su progreso de misión por entrada; no suma victorias VS.
+- `DailyMissionCatalog` comparte definiciones en ambos Places. Resultado no rellena
+  recursos y preserva las demás misiones del día. No se modifican precios/balance de arma.
+- CONGELADOS MODO LIBRE conserva `limbsFrozen` y valores existentes; nuevas
+  acreditaciones solo para Libre y jugadores válidos de la misma batalla mediante
+  BattleStats. El contador Tab de batalla sigue funcionando tanto en Libre como VS.
+- RankService mantiene snapshots autoritativos en atributos para que PlayerRemoving
+  no reconstruya ceros tras limpiar caché. Solo sincroniza perfiles aplicados;
+  monedas Match usa InventoryCoins. Publicar API antes de consultas históricas;
+  sincronización de ranking no bloquea guardado. DataService serializa sus escrituras
+  por jugador y Match ahora conserva el logro único de misiones del Lobby.
+- QA de API real en memoria: ganador +1 victoria/+1 partida/+45 monedas, duplicado
+  sin cambios, perdedor +1 partida/+15 sin victoria; saldo 500→560 para dos
+  encuentros controlados. Misión play_match=1, energía sin refill, VS no suma a
+  tabla Libre, Libre sí, ledger/logro preservados y snapshot con caché vacía correcto.
+- No reconstruye victorias antiguas ni separa estadísticas históricas mixtas.
+  Ledger acotado/guardado serializado no es bloqueo de sesión ni una transacción
+  DataStore entre servidores. Reconexión, teleport y fallo de guardado reales
+  siguen pendientes de prueba publicada.
+
+Compilación final y fuentes iguales de GrabController (15937 bytes/hash
+4086773193) y ZeroGFootsteps (3178/hash 3037783418) en ambos Places. Rótulo Libre
+ajustado a TextWrapped para mostrar el título completo. Fixtures/mediciones
+retirados y ambos Places terminan en Edit.
+
+### Validación publicada y nuevos fallos — reporte del usuario, 2026-10-09
+
+- Calendario/fecha/futuro/cobros/reapertura correctos; arma, apuntado y Beam vistos
+  por otro jugador correctos. Libre: daño/feedback/respawn protegido, X, física del
+  superviviente y reentrada correctos. VS: ingreso conjunto, countdown, rondas,
+  apuntado, mejor de tres y resultado correctos; abandono anula correctamente.
+- Se actualiza alcance de B12: disparo/observador remoto en VS confirmado por
+  usuario. No implica verificación de todo rig Motor6D/ragdoll alternativo.
+- B13: GrabController solo comprobaba existencia de parte, no su vigencia;
+  watchCharacter solo creaba prompts al activar cubrirce, sin retirarlos al desactivar.
+- B14: Sound `HumanoidRootPart.Running` de volumen ~0.65 no tenía política 0g.
+- B15: retorno normal hacía ShouldReserveServer=true (Lobby nuevo); abandono
+  enviaba primero al solicitante individualmente y al resto por otra ruta grupal.
+- B16: finishMatch no registraba una partida completa. RankService podía borrar
+  caché antes de captureProfile en PlayerRemoving; Match además guardaba/logueaba
+  ranking de monedas como 0 al no tener leaderstats. Nuevo ranking elegido:
+  VICTORIAS VS, no cada ronda; anulación sin victoria. Congelados se titula MODO LIBRE.
+- Prueba reportada por usuario; no se proporcionaron versiones ni capturas.
+  Correcciones posteriores deben republicarse y repetir los casos fallidos.
+
+### B12: Match conservaba IK antiguo sobre rig moderno — 2026-10-09
+
+- **Reproducido:** avatar Match con 15 AnimationConstraint. Funciones exactas del
+  controlador anterior en LocalScript temporal: 35 muestras, alineación mínima
+  Muzzle/dirección 0.351407. El IKControl antiguo no orientaba adecuadamente el brazo.
+- **Causa:** el arreglo de dos segmentos del Lobby del 07/10 no estaba en Match.
+- **Corrección:** sincronizar solo el estado/funciones/hooks de apuntado con Lobby.
+  Rigs modernos usan Transform de hombro/codo/muñeca después de Animator;
+  restauración antes de animación y al dejar de apuntar. Motor6D conserva IKControl.
+  No se editan RigAttachments, estadísticas de arma ni lógica de ronda.
+- **Verificado:** funciones nuevas exactas, 105 muestras en tres direcciones,
+  dot mínimo 0.9999065. Guardia ZB_Ragdoll no alteró Transform en comprobación
+  controlada; limpieza de capa/objetivos y fixture al terminar.
+- Fuentes ShootingController idénticas en ambos Places: 22375 bytes,
+  hash 2798386865. Backup Match en `ServerStorage.ZB_CalendarAndAimBackup_20261009`.
+- **Límite:** Match aislado continúa rechazando TeleportData; esta medición verifica
+  pose, no una partida VS ni impactos reales. Validación de dos cuentas, observador
+  remoto, Motor6D y ragdoll completo pendiente. Cerrado en Studio, sin publicar.
+
+### Calendario real de actividades — 2026-10-09
+
+- Sustituida lista aislada por plantilla mensual editable en StarterGui de Lobby.
+  Mantiene los remotes/cobros B11; fechas de otras jornadas no usan progreso de hoy.
+- Exponer `lastClaimDay`/`lastClaimReward` en DailyRewardState permite marcar el
+  último cobro confirmado. No existe historial completo de misiones o cobros;
+  la GUI identifica la ausencia de registros y no los infiere a partir de la racha.
+- Verificado navegación, años bisiestos, cobros 500→590, nuevo día sin pago adicional,
+  respawn único y composición desktop/teléfono. Detalles en CHECKLIST/UI_ASSETS.
+- Plantilla protegida del layout anterior de AtlasUIController. Bordes de botones
+  usan UIStroke.ApplyStrokeMode=Border; leyenda vertical ajustada tras inspección.
+- Pruebas móviles visuales en simulador; apertura/scroll por propiedades del cliente,
+  no certifican touch. Ambos Places en Edit; simulador default; sin publicación.
+
+### B11: misiones y calendario permanecen en el día anterior — 2026-10-09
+
+- **Reproducido Lobby:** reloj controlado pasó del día UTC 20735 al 20736 sin
+  cerrar la sesión. El cliente mantuvo `Reclamada`, monedas 25/25 y daily 1/1.
+  Se instrumentó únicamente la lectura del reloj de los servicios originales;
+  las fuentes originales se restauraron antes de implementar el arreglo.
+- **Causa:** MissionService aseguraba el día solo al entrar/consultar/progresar/cobrar;
+  DailyRewardService calculaba disponibilidad al entrar/cobrar. No había aviso de
+  cambio de día ni solicitud de snapshots al abrir DailyActivities.
+- **Corrección Lobby:** ModuleScript de servidor `DailyClock` comparte día UTC,
+  hora Unix y siguiente reinicio (00:00 UTC). Los dos servicios revisan el día cada
+  2 s y envían estado solo cuando cambia o hace falta el snapshot inicial.
+  `RequestDailyActivitiesState` recupera ambos estados al iniciar/abrir calendario,
+  con límite de una solicitud por segundo en cada servicio. No recibe un reloj del cliente.
+- **Interfaz:** cuenta atrás `Reinicio UTC en HH:MM:SS`, basada en snapshot del
+  servidor; actualización de texto a 1 Hz y rechazo de snapshots de días anteriores.
+- **Regresión evitada:** asegurar/progresar/cobrar una actividad ya no reaplica
+  perfil completo ni rellena stamina/gancho. `DataService.updateProfile` admite
+  `{applyProfile=false}` y sincroniza el saldo si cambia. API agregada también en
+  Match; las llamadas existentes con dos argumentos conservan su comportamiento.
+- **Verificado:** panel abierto se actualizó a 0/25 y 0/1, daily disponible +75;
+  panel cerrado y salto de dos días terminaron en 0 y +50 según la política existente.
+  Respawn conserva un calendario. Saldo 500→630 (+50 daily/+80 misión),
+  luego 630→705 (+75 nuevo día); solicitudes daily repetidas no duplicaron y
+  cobro de misión del día anterior se rechazó. Renovar el día no otorgó monedas.
+- **Recursos:** gasto mediante Stamina.spend y progreso real dejaron 30→30;
+  prueba de la API de metadatos en Match también 30→30.
+- **Límites:** cobros probados en una sesión Studio con DataStore desactivado por
+  la política existente. No demuestra idempotencia entre servidores, fallos de
+  guardado ni persistencia por reconexión/teleport. Regla de partidas/ranking sin cambios.
+- Respaldo por Place: `ServerStorage.ZB_DailyRolloverBackup_20261009`. Fixtures de
+  reloj/medición retirados; arranque posterior con reloj real mostró 3 misiones,
+  cuenta atrás UTC y saldo inicial 500, sin errores nuevos. Ambos Places en Edit;
+  sin publicación. **B11 cerrado en implementación/QA Studio; validación Player pendiente.**
+
+### Arma de primitivas solo local y Muzzle ausente en servidor — 2026-10-09
+
+- **Reproducido Lobby:** cliente tenía `ZB_Blaster` procedural; servidor no tenía
+  ese modelo. `ShootingService.getMuzzlePosition` caía al HumanoidRootPart, por
+  lo que el visual local y el origen autoritativo no usaban la misma boca.
+- **Corregido en ambos Places:** plantilla SDR-Mk2 en
+  `ReplicatedStorage.WeaponAssets.Templates.blaster`, montada por el nuevo Script
+  `ServerScriptService.WeaponVisualService`. Constructor procedural local deshabilitado.
+  Mantener nombre técnico `ZB_Blaster`/`Barrel.Muzzle` conserva los consumidores existentes.
+- **Verificado Studio:** una arma de 18 piezas/14 mallas en servidor y cliente,
+  sin colisiones ni masa adicional; respawn real en ambos Places sin duplicados.
+  Capturas del montaje. Disparo de Libre con mouse, Beam conectado al Muzzle;
+  36 muestras de alineación con dot mínimo 0.999809. Salida X conservó una arma.
+- **QA controlado:** cambio WeaponId a rifle y restauración sin duplicados;
+  gasto de 70 mediante API real de Stamina y cambio de visual: 30→31.8, sin refill.
+  apply/reset de CombatRagdoll conserva WeaponMount. No equivale a eliminación
+  multijugador ni a validación de todos los rigs. Fixture y atributos QA retirados.
+- **Pendiente:** producción multicuenta, VS real y permisos/carga de mallas.
+  Respaldo y reversión en DISENO. Sin publicación; ambos Places terminan en Edit.
+- **ZB_Intro:** el aviso histórico no reapareció en este arranque. No se corrigió
+  ni se cerró el pendiente por esa ausencia; AtlasUIController permanece sin cambios.
 
 ### Libre: salida sin traslado y brazo sin apuntado — 2026-10-07
 

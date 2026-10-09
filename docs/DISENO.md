@@ -9,6 +9,71 @@ incidentes en [BUGS](BUGS.md).
 
 ## 1. Identidad y ciclo jugable
 
+### Ajustes tras QA publicada — 2026-10-09 (vigente en Studio)
+
+- **Ranking:** primera placa CONGELADOS MODO LIBRE (`limbsFrozen`, valores anteriores
+  conservados; nuevas acreditaciones solo Libre). Segunda VICTORIAS VS (`vsWins`,
+  nuevo store v1). Tercera MONEDAS. Tab muestra congelamientos de la batalla actual
+  en cualquier modo y es independiente de estas placas persistentes.
+- VS completo suma una `matchesPlayed` a cada participante, una victoria al equipo
+  ganador y premios configurados +15/+30 extra ganar. `completedVs` deduplica 64
+  IDs recientes; MatchId generado por GUID. Anulación no entrega resultado completo.
+  Progreso VS de misión se registra en Match al finalizar, no al regresar al Lobby.
+  Libre mantiene el progreso de misión por entrada, sin producir victorias VS.
+- **Retorno:** priorizar el mismo servidor de origen público (`OriginLobbyJobId`)
+  para reunirse con quienes permanecieron. Origen reservado requiere acceso conocido.
+  Si falta/falla la ruta de origen, un único reservado alternativo para el grupo.
+  Cancelación voluntaria incluye al solicitante; fallo asíncrono reutiliza destino.
+- Guardar perfiles antes de ambos viajes y serializar escrituras locales. Snapshots
+  de estadísticas en atributos evitan ceros por orden de PlayerRemoving. No cambia
+  nombre del DataStore ni implementa bloqueo de sesión distribuido completo.
+- **Agarre:** CancelGrabForTarget y ZB_GrabEpoch invalidan sujeción antes de reset/
+  retirada de avatar. Cancelar no impulsa. Prompts de cuerpo se retiran al restaurar;
+  prompts generales quedan desactivados fuera de combate. El propietario del ciclo
+  de vida se resuelve también para piezas de arma/accesorio anidadas.
+- **Audio:** ZeroGFootsteps administra Running por estado 0g de cada avatar/gravedad
+  global; restaura caminata en Lobby, sin intervención en audio de combate.
+- Nuevos módulos de servidor: LobbyReturnRoute (Match), VsResultService (Match),
+  DailyMissionCatalog (ambos). Nuevos campos persistentes: stats.vsWins/completedVs.
+  Match conserva achievements del perfil al normalizar. Histórico anterior no se
+  convierte automáticamente a victorias ni se puede separar por modo sin evidencias.
+- Respaldo por Place `ServerStorage.ZB_ProductionFixBackup_20261009`: restaurar
+  las fuentes originales con Play detenido; retirar/deshabilitar ZeroGFootsteps
+  para revertir audio. Al revertir MissionService a la copia, deja de requerir
+  DailyMissionCatalog; al revertir Runtime deja de requerir módulos nuevos de Match.
+  Datos ya guardados no se revierten automáticamente al restaurar scripts.
+- QA publicada previa reportada por usuario valida calendario, arma/apuntado remoto
+  y flujo principal Libre/VS. Correcciones de esta sección todavía sin publicación;
+  pruebas de revalidación de tres cuentas en CHECKLIST/B13–B16.
+
+### Calendario mensual de actividades — 2026-10-09 (vigente)
+
+En Lobby, `StarterGui.ZB_DailyActivities` es ahora una **plantilla completa**,
+no una pantalla reconstruida por código. Estructura y edición en UI_ASSETS.
+DailyActivities enlaza 42 slots de seis semanas, navegación de mes, hoy UTC,
+selección de fecha, recompensa y tres misiones. `CalendarDates` en Shared calcula
+fechas gregorianas reales (incluidos años bisiestos), comenzando semanas en lunes.
+
+- Día/cobros/progreso son los del servidor. Solo hoy permite reclamar; otros días
+  muestran futuro o ausencia de registro. Se marca únicamente el último cobro
+  confirmado con `lastClaimDay`/`lastClaimReward` del snapshot, sin inventar historia.
+- Mantiene reinicio B11 a 00:00 UTC, solicitud de snapshots y temporizador a 1 Hz.
+  Al cambiar el día sigue hoy si el usuario estaba viéndolo; preserva navegación
+  manual si estaba consultando otra fecha.
+- Desktop: dos columnas, calendario y detalles. Teléfono vertical: una columna
+  con scroll para consultar calendario y misiones sin reducir todo a miniatura.
+  Panel modal/backdrop, cierre por botón/exterior, persistencia al respawn.
+- `EditableCalendar=true` evita que AtlasUIController remaquete/estilice esta
+  plantilla con el layout antiguo. Las guardas se sincronizan también en Match,
+  pero calendario/misiones continúan siendo exclusivos del Lobby.
+- Nombres de filas Row01..Row03 y slots Slot01..Slot42 estables; el controlador
+  actualiza datos y estados. Configuración visual estática se edita en Properties.
+- Respaldo Lobby `ServerStorage.ZB_CalendarBackup_20261009`: fuentes anteriores
+  de DailyActivities, AtlasUIController y DailyRewardService, deshabilitadas.
+  Para revertir con Play detenido, restaurar esas fuentes y retirar/archivar la
+  nueva plantilla StarterGui para evitar duplicación con el constructor anterior.
+  CalendarDates puede conservarse fuera de uso. Sin cambio de DataStore ni esquema de historial.
+
 ### UI limpia y assets individuales — 2026-10-06 (vigente)
 
 **Revisión de edición visual del mismo día:** la fuente de arte ahora es
@@ -121,14 +186,62 @@ y cadenas de impulso forman parte del diseño táctico.
   Preferir DisplayName y fallback Name; miniatura `rbxthumb` con reintento de
   GetUserThumbnailAsync. `VersusHud.DisplayOrder=120`.
 - Resultado: ganador ve VICTORIA, rival DERROTA. Al cerrar VS, el grupo vuelve
-  junto a un servidor reservado del Lobby después del resultado. Se documentan
-  hasta tres reintentos de retorno.
+  junto al Lobby de origen después del resultado, con destino alternativo común
+  si esa ruta no está disponible. Reintentos conservan la ruta; detalles B15.
 - Una salida que deja VS incompleto cancela la partida. La cancelación no debe
   conceder recompensas de partida válida.
 
 ## 2. Movimiento, cámara y controles
 
+### Arma base SDR-Mk2 y visual replicado — 2026-10-09 (vigente)
+
+- El modelo que estaba en `Workspace.SDR-Mk2` se adapta como plantilla
+  `ReplicatedStorage.WeaponAssets.Templates.blaster` en **Lobby y Match**.
+  Nombre visible `SDR-Mk2`; ID persistente `blaster` conservado. Es el arma base
+  gratuita existente: no cambia daño, cadencia, energía, precio ni propiedades guardadas.
+- La plantilla tiene 18 BaseParts (14 MeshParts), `PrimaryPart=Handle`,
+  `Handle.Grip` y `Barrel.Muzzle`. Pivote en Handle, frente hacia -Z; dimensiones
+  aproximadas 0.463×1.430×2.240 studs. Se conservan mallas y colores originales.
+- Nuevo **Script** `ServerScriptService.WeaponVisualService` monta el modelo en
+  RightHand y lo replica. Clon en personaje mantiene el nombre técnico `ZB_Blaster`
+  y la ruta `Barrel.Muzzle`, que ya usan cliente y servidor de disparo.
+- `StarterPlayer.StarterCharacterScripts["WeaponSetup.client"]` queda deshabilitado:
+  ya no construye las tres primitivas del prototipo. El servidor antes no tenía arma
+  ni Muzzle y usaba root como origen alternativo; ahora dispone de la boca real.
+- Uniones internas y montaje mediante WeldConstraint, sin Motor6D de arma que el
+  ragdoll pueda convertir en articulaciones corporales. Todas las piezas son
+  Massless, no ancladas y sin CanCollide/CanTouch/CanQuery.
+- Respawn y cambio de WeaponId montan una sola arma. Rifle/Cañón conservan sus
+  estadísticas y selección; mientras no tengan plantilla propia, usan SDR-Mk2 como
+  visual compartido. No se fuerza `blaster` sobre selecciones guardadas de jugadores.
+- El ajuste de montaje se edita en el atributo CFrame `HandOffset` de la plantilla:
+  actualmente `(0,-0.15,-0.1)` sin giro; Grip representa el punto que se coloca ahí.
+  Para reemplazos, conservar nombre `blaster`, Handle/Grip y Barrel/Muzzle,
+  piezas unidas, y repetir en ambos Places. Reiniciar Play/respawn para obtener clones nuevos.
+- Respaldos por Place en `ServerStorage.ZB_WeaponBackup_20261009`:
+  `WeaponSetup_Original` deshabilitado y `Config_Original`; Lobby además conserva
+  `SDR_Mk2_Original` con posición y articulaciones originales. Para revertir, detener
+  Play, deshabilitar WeaponVisualService, reactivar WeaponSetup.client y restaurar
+  Config desde su copia. Para recuperar el modelo de escena, clonar SDR_Mk2_Original
+  a Workspace y renombrarlo SDR-Mk2; la plantilla no se borra para revertir código.
+- Verificado: montaje visible en capturas de ambos Places, una arma después de
+  respawn en ambos, presencia de Muzzle en servidor/cliente, disparo real de Libre
+  y Beam conectado a la nueva boca (36 muestras; dot mínimo 0.999809).
+  QA controlado de cambio a rifle/restauración conserva una arma y energía
+  30→31.8 por regeneración normal; apply/reset de ragdoll conserva el montaje.
+- No publicado. Visibilidad entre dos cuentas, permisos de mallas en Player,
+  combate VS real y rigs adicionales siguen pendientes. El IK moderno de Match
+  se sincronizó después en B12 del 09/10: medición de pose en Studio confirmada;
+  no equivale a validar disparo multijugador en VS.
+
 ### Retorno de Libre y apuntado del brazo — Lobby, 2026-10-07
+
+**Actualización 09/10 — B12:** ShootingController Match ahora comparte exactamente
+la solución de apuntado del Lobby. Comparación controlada de pose moderna antes:
+dot mínimo 0.351407; después: 0.9999065 en 105 muestras/tres direcciones.
+Fuentes iguales, 22375 bytes/hash 2798386865. Respaldar/restaurar Match desde
+`ServerStorage.ZB_CalendarAndAimBackup_20261009["ShootingController.client"]`
+si se necesita revertir. Rigs adicionales/observador remoto/VS real pendientes.
 
 - La salida local busca `Player.RespawnLocation` o un SpawnLocation anidado en
   Workspace; el actual está dentro de `The Spawn Point Light`. Ya no depende de
@@ -159,10 +272,43 @@ agarre/impulso son la movilidad principal.
 | Salir de Libre/batalla | X / acción de salida correspondiente |
 | Tabla de congelamientos de la batalla | Mantener Tab / botón de tabla |
 | Liberar cursor o volver a apuntar | Alt; los menús lo liberan automáticamente |
+| Disparar (móvil) | Mantener botón ~~DISPARAR~~ |
+| Gancho (móvil) | Mantener botón ~~GANCHO~~ |
+| Subir/bajar (móvil) | Botones ~~SUBIR~~ / ~~BAJAR~~ |
+| Deriva (móvil) | Joystick nativo del motor |
 
 Espacio conserva el salto normal fuera de batalla. Durante combate de escritorio,
 el mouse orienta la cámara sin mantener click derecho; Alt alterna cursor libre.
 No disparar ni lanzar gancho sobre mochila, manual, tabla, chat o cursor liberado.
+
+### Controles táctiles — 2026-10-09 (vigente en Studio)
+
+`ReplicatedStorage.Shared.LocalCombatInput` es un bus de **intención local**
+(no autoridad): registra por acción la pulsación de varios dedos/botones y expone
+`isHeld/set/clear` y `Changed`. Soltar un dedo no interrumpe otro que siga pulsado.
+`aimOffsets()` devuelve los offsets de mira de escritorio o `(0,0)` en táctil.
+
+- `StarterGui.ZB_MobileControls` (atributo `MobileControls=true`) contiene los
+  botones redondos DISPARAR, GANCHO, SUBIR y BAJAR; iconos de `UIAssets.Icons`,
+  `UICorner` redondo y `UIStroke`. Editables en Explorer/Properties.
+- `StarterPlayer.StarterPlayerScripts.MobileControls` es un LocalScript: muestra
+  los controles solo con `TouchEnabled` y landscape, asocia cada dedo al botón que
+  inició el gesto, y cancela al perder foco, abrir teclado/menú/scoreboard, cambiar
+  de estado o de viewport. No se reactivan al cerrar un menú. Consulta
+  `PlayerModule:GetControls()` para el joystick.
+- `ShootingController.client` y `HookController.client` consumen el bus: mismo
+  beam/energía/cooldown/IK que mouse y teclado. El disparo táctil mantiene el
+  botón; la liberación limpia el beam. `ZB_CursorFree` deja de bloquear input
+  cuando `TouchEnabled`.
+- `MovementController.client` usa `GetMoveVector()` del joystick en 0g y los
+  botones SUBIR/BAJAR como R/Ctrl, conservando WASD y la caminata del Lobby.
+- `ReplicatedStorage.Shared.MobileHudLayout` distribuye accesos redondos (mochila,
+  diario, ayuda, tabla, salir), librería de recursos, monedas, LED y encabezado VS
+  en `DeviceSafeInsets`, con leyendas cortas y ajuste a viewport corto.
+  `AtlasUIController` no reestiliza estos accesos (`MobileControls`/`ZB_MobileRound`).
+- Alcance: verificado en Studio con funciones exactas y capturas. **No valida
+  dedos/touch reales, multitáctil físico ni FPS móvil.** Respaldo
+  `ServerStorage.ZB_MobileBackup_20261009` por Place; sin publicación.
 
 ### Controles, avisos y spawn — actualización 2026-10-02
 
@@ -335,16 +481,43 @@ dueño de red aplicar inmediatamente el impulso confirmado.
 
 ### Persistencia, recompensas y ranking
 
+**Renovación diaria vigente desde 2026-10-09 (B11):** `ServerScriptService.DailyClock`
+es un ModuleScript de servidor que devuelve día/hora Unix/próximo reinicio a
+**00:00 UTC**. En Lobby, MissionService y DailyRewardService verifican el cambio
+cada 2 s y envían snapshots nuevos a sesiones abiertas. No se reinician las misiones
+en cada consulta: si el día ya coincide, se lee/normaliza una copia para el estado.
+
+`RequestDailyActivitiesState` (RemoteEvent) solicita snapshots al entrar o abrir
+calendario; cada servicio limita solicitudes a una por segundo/jugador. Respuestas
+MissionState/DailyRewardState incluyen `day`, `serverTime`, `nextResetAt` y `timeZone`.
+DailyActivities muestra `Reinicio UTC en HH:MM:SS` y actualiza texto a 1 Hz,
+sin cambiar autoridad ni depender de la fecha del dispositivo. Conserva una GUI al respawn.
+
+Actualizaciones de actividades usan `DataService.updateProfile(player, mutator,
+{applyProfile=false})`: conserva recursos/equipado, actualizando InventoryCoins y
+CurrencyService solo cuando corresponde al saldo. API disponible en Lobby y Match;
+las llamadas de dos argumentos siguen reaplicando el perfil como antes. No cambia
+el DataStore ni implementa aún guardado transaccional/idempotencia entre servidores.
+Match no incorpora servicios/GUI de misiones: siguen siendo responsabilidad del Lobby.
+
+Respaldos en `ServerStorage.ZB_DailyRolloverBackup_20261009`: para revertir con Play
+detenido, restaurar Source de los scripts correspondientes desde sus copias y
+restaurar DailyActivities en Lobby. Después puede retirarse DailyClock si ya no
+tiene consumidores. Las copias de scripts del respaldo están deshabilitadas.
+Pruebas y límites en B11 de BUGS/CHECKLIST; sin publicación.
+
 - DataService: perfil por jugador, carga/normalización, guardado periódico,
   PlayerRemoving y BindToClose. Aplicar atributos disponibles al instante;
   reintentar servicios en segundo plano sin esperas secuenciales largas.
 - Guardar monedas, armas, láser equipado, estamina, mejoras de gancho, estadísticas,
   `BattleOptOut`, ownedHookTips/ownedHookRopes y sus selecciones. Reparar propiedad
   para incluir cosmético equipado al normalizar perfiles antiguos.
-- `Eliminations` replica total persistente. `CONGELADOS` cuenta solo fullFreeze;
+- `Eliminations` replica total persistente. `CONGELADOS MODO LIBRE` acredita nuevos
+  fullFreeze válidos únicamente en Libre;
   combina jugadores conectados con ranking histórico. Refresco por evento con
   debounce 0.2 s; consulta histórica OrderedDataStore cada 20 s en segundo plano.
-- Placas holográficas: `placas1` CONGELADOS, `placas2` PARTIDAS, `placas3` MONEDAS;
+- Placas holográficas: `placas1` CONGELADOS MODO LIBRE, `placas2` VICTORIAS VS,
+  `placas3` MONEDAS;
   SurfaceGui Face Right con RankLabel según configuración de escena.
 - Monedas Neon (~100/hora documentadas): sin colisión, con toque; ocultación
   local inmediata, entrega validada por servidor. Contar diccionario con pairs.
@@ -354,7 +527,8 @@ dueño de red aplicar inmediatamente el impulso confirmado.
 - Daily por día UTC: LastDailyClaimDay, DailyStreak y escalera de siete días;
   política final de pérdida/reinicio de racha y versionado de datos pendientes.
 - Misiones: jugar, recoger 25 monedas y reclamar daily. Libre registra playMatches
-  al entrar; retorno VS usa MatchId para registrar una sola vez.
+  al entrar; VS completo registra playMatches y su MatchId al finalizar en Match.
+  Retorno/cancelación no registran por sí solos otra misión.
 - Logro único: reclamar todas las misiones del día, +120 monedas persistentes.
 - DailyActivities agrupa calendario/misiones, marca `!` si hay cobro; botones
   Cobrando/Reclamando, bloqueo por jugador y notificación antes del guardado
@@ -487,12 +661,13 @@ MatchService antiguo y CompetitiveArena describen el prototipo superado.
 
 | Ubicación | Sistemas |
 |---|---|
-| ReplicatedStorage.Shared | Config, PlaceConfig |
+| ReplicatedStorage.Shared | Config, PlaceConfig, UITheme, CalendarDates, LocalCombatInput, MobileHudLayout |
 | ReplicatedStorage.Modules | FreezeMap |
-| ServerScriptService, compartidos | PlayerStateService, FreezeService, ShootingService, CombatRagdoll, DataService, StaminaService, RankService, InventoryService, HookEnergyService, HookVisualService, PowerUpService |
+| ServerScriptService, compartidos | PlayerStateService, FreezeService, ShootingService, CombatRagdoll, DataService, StaminaService, RankService, InventoryService, HookEnergyService, HookVisualService, PowerUpService, WeaponVisualService, BattleStats, DailyClock |
 | Servidor Lobby | LobbyTeleportService, BattleFormatStations, CurrencyService, WorkshopService, MissionService, DailyRewardService, QABadgeService, FloatingRobloxBlocks |
-| Servidor Match | MatchRuntimeService, MatchModeBootstrap, MatchArenaPhysics, GrabLaunchService |
-| StarterPlayerScripts, compartidos | MovementController, ShootingController, HookController, HookSpeedCamera, GrabController, GravityController, HudController, RemoteVfx, CombatFeedback, EquipmentDashboard, PowerUpEffects, VersusHud/resultados según Place |
+| Servidor Match | MatchRuntimeService, MatchModeBootstrap, MatchArenaPhysics, GrabLaunchService, WeaponVisualService, LobbyReturnRoute, VsResultService, DailyMissionCatalog |
+| StarterPlayerScripts, compartidos | MovementController, ShootingController, HookController, HookSpeedCamera, GrabController, GravityController, HudController, RemoteVfx, CombatFeedback, EquipmentDashboard, PowerUpEffects, VersusHud/resultados según Place, MobileControls, ZeroGFootsteps |
+| StarterGui | ZB_Intro, ZB_DailyActivities (Lobby), ZB_MobileControls |
 | Cliente Lobby | PortalController, BattleTransitionController, DailyActivities, CoinPickupVisuals, IntroTutorial |
 | Cliente Match | ReturnToLobbyController, VersusHud, RoundResultController |
 | StarterCharacterScripts | ZeroGSetup, AstronautPose, WeaponSetup |

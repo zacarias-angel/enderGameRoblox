@@ -8,6 +8,9 @@ resultados aquí. Guía rápida de imágenes: [UI_ASSETS.md](UI_ASSETS.md).
 **Implementado:** iconos/estilos como instancias en
 `ReplicatedStorage.UIAssets`, manual prearmado en `StarterGui.ZB_Intro`, tienda
 con monedas del juego, inventario y cosméticos de punta/cuerda de gancho.
+Desde el 09/10 también `StarterGui.ZB_DailyActivities` en Lobby: calendario mensual
+real editable con misiones/cobros; contrato en UI_ASSETS. La lista siguiente de
+migraciones es propuesta salvo las pantallas marcadas como implementadas.
 
 **Propuesto, todavía NO implementado:** las nueve skins de este documento,
 venta con Robux, procesamiento de recibos, videos/anuncios y reclamación de UGC.
@@ -55,8 +58,8 @@ El manual ya sigue el flujo visual. Para el resto, migrar una pantalla a la vez:
 |---|---|---|
 | `StarterGui.ZB_EquipmentDashboard` | `Backdrop`, `OpenInventory`, `Panel`, textos y navegación | `StarterPlayer.StarterPlayerScripts.EquipmentDashboard` |
 | `ReplicatedStorage.UIAssets.Components.EquipmentCard` | TextButton con `Icon`, `Title`, `Detail`, `Action`, UICorner/UIStroke | El mismo; clonar para cada artículo |
-| `StarterGui.ZB_DailyActivities` | Calendario, panel, recompensa y lista | `StarterPlayer.StarterPlayerScripts.DailyActivities` |
-| `ReplicatedStorage.UIAssets.Components.MissionRow` | Frame con `Label` y `Claim` | DailyActivities |
+| `StarterGui.ZB_DailyActivities` — implementado 09/10 en Lobby | Calendario mensual, detalles, recompensa y tres filas estáticas; sin reconstrucción runtime | `StarterPlayer.StarterPlayerScripts.DailyActivities` |
+| `ReplicatedStorage.UIAssets.Components.MissionRow` — propuesta | La GUI vigente ya tiene Row01..Row03 en su plantilla; componente compartido todavía no creado | DailyActivities |
 | `StarterGui.ZB_HUD` | Barras, etiquetas y mira | `StarterPlayer.StarterPlayerScripts["HudController.client"]` |
 
 Pasos por pantalla:
@@ -92,7 +95,7 @@ No añadir una skin allí como si fuera un arma más potente.
 | Catálogo de puntas | `ReplicatedStorage.Shared.Config` → `Config.HookTipCosmetics` | IDs, nombre, coste en monedas y datos visuales |
 | Cuerdas | El mismo Config → `Config.HookRopeCosmetics` | Beam configurado por color/ancho; no son modelos 3D |
 | Visual del gancho | `ServerScriptService["HookVisualService.server"]` | Usa `HookTipCosmeticId` y `HookRopeCosmeticId` |
-| Arma actual | `StarterPlayer.StarterCharacterScripts["WeaponSetup.client"]` | Construye un blaster local con Parts; **no lee una carpeta de skins** |
+| Arma actual (actualizado 09/10) | `ReplicatedStorage.WeaponAssets.Templates.blaster` y `ServerScriptService.WeaponVisualService` | SDR-Mk2 montada y replicada desde servidor; WeaponSetup.client procedural deshabilitado. No incluye derechos ni catálogo premium de skins |
 | Inventario/compra | `ServerScriptService.InventoryService`, `ServerScriptService["WorkshopService.server"]` | Integración existente de propiedad/equipado y compras con monedas |
 | Datos persistentes | `ServerScriptService["DataService.server"]` | Debe ampliarse para las categorías nuevas |
 
@@ -171,9 +174,11 @@ Proponer `ReplicatedStorage.CosmeticCatalog` con carpetas `Avatars`, `Hooks`,
   conservando los campos actuales de puntas/cuerdas.
 - Añadir `ServerScriptService.CosmeticEntitlementService` para resolver derechos.
 - Añadir `ServerScriptService.CosmeticVisualService` para clonar visuales y hacer
-  que otros jugadores vean las skins. El arma actual es local: no basta con cambiar
-  su cliente si queremos vender un cosmético visible por todos.
-- Adaptar WeaponSetup para consumir el modelo elegido sin duplicar arma ni Muzzle.
+  que otros jugadores vean las skins. Desde el 09/10 el arma base ya se replica con
+  WeaponVisualService; reutilizar ese montaje para futuras skins de armas, evitando
+  un segundo productor del modelo. Personaje y derechos premium siguen pendientes.
+- Ampliar WeaponVisualService para resolver la skin autorizada sin duplicar arma ni
+  Muzzle; no reactivar el constructor procedural WeaponSetup.client.
 - Integrar `weaponSkin`/`avatarSkin` en inventario y servidor; revisar permisos de
   cambio durante batalla y no rellenar energía al equipar.
 - No registrar skins premium como `cost=0` en WorkshopBuy sin validar su derecho:
