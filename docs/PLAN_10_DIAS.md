@@ -50,7 +50,7 @@ Este documento planifica trabajo; no certifica correcciones ni implementaciones.
 | 4 | 14/10 | Integrar modelos de arma, gancho y personaje, diseño de cuerda, capa y miniaturas. Ajustar pivotes, escala, montaje, materiales y comportamiento con R15. | Colección completa y capa visibles sin colisiones extra ni cambios de balance; otro jugador puede verlas. |
 | 5 | 15/10 | Conectar pase de Robux, derechos en servidor, catálogo, tienda, inventario y selección persistente. Replicar integración en Lobby y Match. | Compra/desbloqueo, cancelación, reentrada y teleport verificados; equipado sin recuperar energía ni duplicar visuales. |
 | 6 | 16/10 | Conectar reclamación oficial de la capa global y verificar adquisición, propiedad y equipado; comprobar stock y estado agotado. Grabar/editar tráiler de 15–30 s; iniciar subida y revisión del video en cuanto esté listo. Cerrar informe de anuncios. | Capa adquirible gratis y comprobada en el inventario de Roblox si ya está aprobada; video enviado o disponible; informe con opciones, elegibilidad, presupuesto y métricas. |
-| 7 | 17/10 | Montar pantalla de video y verificar permisos/reproducción. Corregir espera de ZB_Intro, revisar manual, tienda, actividades y touch. Cerrar regresiones de apuntado, cámara, respawn y salida. | Video probado en Player si ya está aprobado; interfaz y controles utilizables en escritorio y móvil; pendientes externos visibles. |
+| 7 | 17/10 | Montar pantalla de video y verificar permisos/reproducción. Validar en Player el fix B18 de ZB_Intro, cerrado en Studio el 13/10; revisar manual, tienda, actividades y touch. Cerrar regresiones de apuntado, cámara, respawn y salida. | Video probado en Player si ya está aprobado; interfaz y controles utilizables en escritorio y móvil; pendientes externos visibles. |
 | 8 | 18/10 | Prueba integral publicada con al menos dos cuentas: Libre, VS 1v1 y equipos 2v2–4v4, colas, rondas, resultados, retorno y persistencia. | Registro de casos con evidencia; lista final de fallos por gravedad. Congelar funcionalidades nuevas. |
 | 9 | 19/10 | Reserva para corregir bloqueantes, repetir casos fallidos, comprobar FPS/carga/assets y preparar versión candidata con respaldo. | Candidata sin fallos bloqueantes; ambos Places y configuración premium coinciden; contingencias externas acordadas. |
 | 10 | 20/10 | Publicar versión final y hacer smoke test en Roblox Player: entrar, completar partida, consultar ranking, reclamar/equipar y reproducir video. Preparar entrega. | Versión y enlaces registrados, checklist de aceptación, IDs/precios, evidencia y procedimiento de reversión entregados. |
@@ -119,6 +119,20 @@ Al terminar cada día registrar: responsable, terminado, prueba realizada, bloqu
 siguiente acción y Place/version afectados. Marcar listo solo después de probar.
 Preparar copias/versiones de Lobby y Match antes de cambios críticos y publicación.
 
+### Fix cerrado — B18: espera bloqueante de ZB_Intro, 2026-10-13
+
+- [x] **Corrección y QA Studio cerradas en Lobby y Match.** AtlasUIController
+  inicia sin esperar el manual y lo enlaza por eventos cuando aparece.
+- [x] Verificado inicio sin manual, llegada tardía, apertura/cierre con mouse,
+  bloqueo de input durante el menú y respawn con un solo manual/acceso de ayuda.
+- [x] Fuentes iguales y compiladas en ambos Places; nuevo arranque sin aviso de
+  espera de ZB_Intro. Respaldo: `ServerStorage.ZB_GrabHookBackup_20261013`.
+- [ ] **Aceptación publicada:** publicar ambos Places y repetir ayuda→Continue
+  y respawn en Roblox Player, incluido touch. Sin versión publicada en esta sesión.
+
+Responsable: asistente mediante MCP. Evidencia detallada en [BUGS, B18](BUGS.md).
+El día 7 conserva la validación publicada; la corrección de esta espera ya está terminada.
+
 ### Registro previo al sprint — 2026-10-09
 
 - Responsable: asistente mediante MCP. Leída la documentación completa y aplicada
@@ -135,6 +149,36 @@ Preparar copias/versiones de Lobby y Match antes de cambios críticos y publicac
   `ServerStorage.ZB_LightingBackup_20261009` de cada Place. No se registró versión publicada.
 
 ## Decisiones que el equipo debe confirmar al iniciar
+
+### Avance del día 3 — 2026-10-13: prioridad al agarre reportado
+
+- Responsable: asistente mediante MCP; Lobby `125075465377023` y Match
+  `108298899371591`, tratados como partes del mismo juego.
+- Terminado: **B17**, permitir agarre voluntario durante gancho, relevo de tracción
+  sin borrar impulso y seguimiento/limpieza de prompts. **B18**, eliminar espera
+  bloqueante de ZB_Intro y enlazar el manual por eventos.
+- Prueba: disponibilidad de prompts 61/58 durante gancho; bloqueo y recuperación
+  de UI/countdown; funciones exactas de relevo/soltar/cancelar con transporte
+  simulado. Manual tardío, clicks reales y respawn sin duplicados en ambos Places.
+- Estado: cerrados en implementación/QA controlada Studio, **no en producción**.
+  Fuentes compartidas iguales, compiladas, sin fixtures; ambos Places en Edit.
+  Respaldo `ServerStorage.ZB_GrabHookBackup_20261013`; evidencia y límites en BUGS.
+- Siguiente acción: publicar ambos Places y probar trayecto real con gancho→E→soltar,
+  cobertura móvil, escudo de cuerpo B13 y touch. El intento Q/E con fixture no
+  certificó el trayecto físico. Probar retorno/ranking con tres cuentas y
+  reconexión sigue pendiente; estos cambios no cierran B15/B16 ni las aceptaciones
+  de persistencia del día 3. No se registró nueva versión publicada.
+
+### Avance de arte UI — 2026-10-13
+
+- Terminado en ambos Places: integración de los tres atlas entregados, con 16
+  iconos Fit, 8 estados de botones y 4 marcos 9-slice. Recortes/IDs en assets/ui;
+  damero pintado retirado, texto separado y esquinas protegidas contra estiramiento.
+- Prueba: 28/28 recursos cargados por cliente, escritorio y simulador iPhone 17 Pro,
+  contraste, selección/presión, tamaños variados y respawn sin duplicados.
+- Respaldo `ServerStorage.ZB_UIAtlasBackup_20261013`; detalle en UI_ASSETS.
+  Ambos Places en Edit y simulador default; sin publicación. Adelanta presentación
+  de interfaz del día 7; no sustituye colección premium del día 4 ni QA touch real.
 
 **Reporte publicado y revisión posterior 09/10:** usuario valida calendario,
 arma/apuntado remoto, Libre y flujo principal de VS. Reporta agarre/etiqueta,

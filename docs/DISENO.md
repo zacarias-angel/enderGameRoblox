@@ -373,8 +373,26 @@ el prompt E. Confirmar `KeyboardKeyCode` del stand al probar.
   pérdida de empuje por extremidad como mecánica vigente sin revisar Config.
 - `Grabbing` coordina movimiento/pose. Agarre usa transición CFrame suave sobre
   root anclado mientras se sujeta; liberación limpia sujeción e impulsa.
+- Durante el gancho sigue disponible el prompt de agarre: E inicia la sujeción
+  voluntaria y `Grabbing` retira la tracción/visual del gancho sin escribir la
+  velocidad del agarre. Soltar gancho después no borra el impulso; mantenerlo
+  pulsado no produce un relanzamiento automático. B17, QA controlada Studio 13/10.
 - Objetos agarrables: atributo exacto `cubrirce=true`. No permitir autoagarre.
   Match usa `GrabLaunchService`; Lobby tenía la integración en `FloatingRobloxBlocks`.
+
+### Arte UI — atlas integrados el 13/10
+
+- Fuentes separadas del usuario para iconos, botones y paneles, recortadas en
+  `docs/assets/ui/`; 28 recursos subidos y compartidos por Lobby/Match.
+- `UIAssets.Icons`: 16 imágenes Fit; claves sin dibujo mantienen Fallback.
+  `UIAssets.Skins`: cuatro marcos y ocho estados de botón, editables en Properties.
+- `Shared.UIFrameSkins` y `StarterPlayerScripts.UIAssetSkinController` enlazan
+  fondos 9-slice con texto independiente y respaldo nativo. UITheme los aplica
+  a pantallas dinámicas; UIFrameSkin identifica los de las plantillas.
+- Colores de arte: manual/inventario cian, actividades y gancho violeta, resultado
+  ámbar. Presión/hover/disabled/selección son visuales; contratos de gameplay intactos.
+- QA Studio desktop, simulador horizontal/vertical y respawn; sin publicación.
+  Medidas, IDs, límites y reversión en UI_ASSETS.
 
 ### Presentación
 

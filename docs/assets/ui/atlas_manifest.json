@@ -1,0 +1,494 @@
+{
+  "bag": {
+    "file": "ui_bag.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      0,
+      0,
+      314,
+      314
+    ]
+  },
+  "shop": {
+    "file": "ui_shop.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      314,
+      0,
+      627,
+      314
+    ]
+  },
+  "energy": {
+    "file": "ui_energy.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      627,
+      0,
+      940,
+      314
+    ]
+  },
+  "hook": {
+    "file": "ui_hook.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      940,
+      0,
+      1254,
+      314
+    ]
+  },
+  "grab": {
+    "file": "ui_grab.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      0,
+      314,
+      314,
+      627
+    ]
+  },
+  "boost": {
+    "file": "ui_boost.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      314,
+      314,
+      627,
+      627
+    ]
+  },
+  "freeze": {
+    "file": "ui_freeze.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      627,
+      314,
+      940,
+      627
+    ]
+  },
+  "weapon": {
+    "file": "ui_weapon.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      940,
+      314,
+      1254,
+      627
+    ]
+  },
+  "laser": {
+    "file": "ui_laser.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      0,
+      627,
+      314,
+      940
+    ]
+  },
+  "regen": {
+    "file": "ui_regen.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      314,
+      627,
+      627,
+      940
+    ]
+  },
+  "coin": {
+    "file": "ui_coin.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      627,
+      627,
+      940,
+      940
+    ]
+  },
+  "calendar": {
+    "file": "ui_calendar.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      940,
+      627,
+      1254,
+      940
+    ]
+  },
+  "info": {
+    "file": "ui_info.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      0,
+      940,
+      314,
+      1254
+    ]
+  },
+  "trophy": {
+    "file": "ui_trophy.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      314,
+      940,
+      627,
+      1254
+    ]
+  },
+  "shield": {
+    "file": "ui_shield.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      627,
+      940,
+      940,
+      1254
+    ]
+  },
+  "close": {
+    "file": "ui_close.png",
+    "pixels": [
+      256,
+      256
+    ],
+    "kind": "icon",
+    "source": "Hoja de iconos HUD futuristas neón.png",
+    "crop": [
+      940,
+      940,
+      1254,
+      1254
+    ]
+  },
+  "button_cyan_normal": {
+    "file": "ui_button_cyan_normal.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      0,
+      140,
+      444,
+      433
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "button_cyan_hover": {
+    "file": "ui_button_cyan_hover.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      444,
+      140,
+      887,
+      433
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "button_cyan_pressed": {
+    "file": "ui_button_cyan_pressed.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      887,
+      140,
+      1330,
+      433
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "button_cyan_disabled": {
+    "file": "ui_button_cyan_disabled.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      1330,
+      140,
+      1774,
+      433
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "button_violet_normal": {
+    "file": "ui_button_violet_normal.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      0,
+      443,
+      444,
+      740
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "button_violet_hover": {
+    "file": "ui_button_violet_hover.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      444,
+      443,
+      887,
+      740
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "button_violet_pressed": {
+    "file": "ui_button_violet_pressed.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      887,
+      443,
+      1330,
+      740
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "button_violet_disabled": {
+    "file": "ui_button_violet_disabled.png",
+    "pixels": [
+      512,
+      352
+    ],
+    "kind": "button",
+    "source": "Hoja de botones sci‑fi neón.png",
+    "crop": [
+      1330,
+      443,
+      1774,
+      740
+    ],
+    "sliceCenter": [
+      120,
+      115,
+      392,
+      237
+    ]
+  },
+  "panel": {
+    "file": "ui_panel.png",
+    "pixels": [
+      512,
+      497
+    ],
+    "kind": "panel",
+    "source": "Cuadrícula de marcos HUD futuristas resplandecientes.png",
+    "crop": [
+      0,
+      0,
+      627,
+      627
+    ],
+    "sliceCenter": [
+      120,
+      110,
+      392,
+      387
+    ]
+  },
+  "card": {
+    "file": "ui_card.png",
+    "pixels": [
+      512,
+      390
+    ],
+    "kind": "panel",
+    "source": "Cuadrícula de marcos HUD futuristas resplandecientes.png",
+    "crop": [
+      627,
+      0,
+      1254,
+      627
+    ],
+    "sliceCenter": [
+      120,
+      110,
+      392,
+      280
+    ]
+  },
+  "panel_violet": {
+    "file": "ui_panel_violet.png",
+    "pixels": [
+      512,
+      449
+    ],
+    "kind": "panel",
+    "source": "Cuadrícula de marcos HUD futuristas resplandecientes.png",
+    "crop": [
+      0,
+      627,
+      627,
+      1254
+    ],
+    "sliceCenter": [
+      120,
+      110,
+      392,
+      339
+    ]
+  },
+  "panel_warning": {
+    "file": "ui_panel_warning.png",
+    "pixels": [
+      512,
+      456
+    ],
+    "kind": "panel",
+    "source": "Cuadrícula de marcos HUD futuristas resplandecientes.png",
+    "crop": [
+      627,
+      627,
+      1254,
+      1254
+    ],
+    "sliceCenter": [
+      120,
+      110,
+      392,
+      346
+    ]
+  }
+}

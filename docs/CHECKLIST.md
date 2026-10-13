@@ -5,6 +5,44 @@ Actualizado: 2026-10-07. Diseño en [DISENO](DISENO.md), normas en
 
 ## 1. Estado y prioridad inmediata
 
+### Atlas de UI integrados — 2026-10-13
+
+- [x] Recortar fuentes reales a 16 iconos, 8 estados de botones y 4 paneles;
+  retirar damero pintado de marcos. PNG, manifiesto e IDs en `docs/assets/ui/`.
+- [x] Subir recursos y usar los mismos IDs en Lobby y Match; 28/28 cargados en ambos.
+- [x] Iconos Fit; paneles/botones Slice con esquinas escaladas uniformemente,
+  texto independiente y fondos nativos de respaldo.
+- [x] Manual, inventario y calendario con el arte; violeta para gancho/actividades,
+  ámbar para resultados. Controles redondos mantienen forma y usan iconos nuevos.
+- [x] Mouse desktop: Continue, mochila, calendario, presión y selección de navegación.
+  Simulador iPhone 17 Pro: horizontal y calendario vertical; no equivale a touch físico.
+- [x] Contraste de Reclamar, reaplicación sin otro fondo, disabled, regeneración
+  de tarjetas y respawn sin duplicados. Cinco fuentes iguales/compiladas.
+- [x] Respaldo `ServerStorage.ZB_UIAtlasBackup_20261013`; fixtures retirados,
+  simuladores default y ambos Places en Edit.
+- [ ] Publicar y probar carga/touch físico, compra/cobro y flujos VS multicuenta.
+
+Guía de edición, coordenadas y reversión en UI_ASSETS. No se publicaron los Places.
+
+### B17/B18 — agarre con gancho y manual sin espera, 2026-10-13
+
+- [x] Respaldar GrabController, HookController y AtlasUIController por Place en
+  `ServerStorage.ZB_GrabHookBackup_20261013`.
+- [x] Agarre disponible durante Hooking, activación voluntaria y relevo que retira
+  tracción sin borrar el impulso. Registro fuerte de prompts con limpieza al destruir.
+- [x] QA controlada de avisos: Lobby 61 / Match 58 antes/durante/después de gancho;
+  menú/scoreboard/countdown deshabilitan, reactivación restaura.
+- [x] Funciones exactas con transporte simulado: sujeción, fuerza cero, liberación
+  a 90 y liberación tardía de gancho sin borrar impulso; cancelación sin impulso.
+- [x] AtlasUIController inicia sin ZB_Intro; manual tardío enlazado por eventos,
+  sin fallback vacío. Mouse abre/cierra ayuda y respawn conserva una copia en ambos Places.
+- [x] Compilación/paridad de tres fuentes, fixtures retirados y ambos Places en Edit.
+- [ ] Player: trayecto físico Q/E y touch; cobertura móvil, visual remoto/energía,
+  cuerpo congelado y restauración B13. Intento de teclado con fixture no concluyente.
+- [ ] Publicar ambos Places y repetir B15/B16 con grupo/reconexión reales.
+
+Detalles y límites en BUGS. Sin publicación desde esta sesión.
+
 ### Controles táctiles y UI móvil — 2026-10-09
 
 - [x] `ReplicatedStorage.Shared.LocalCombatInput`: bus de intención local con

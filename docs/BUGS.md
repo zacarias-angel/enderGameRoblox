@@ -17,18 +17,93 @@ buscar el primer error de Output, no el último warning.
 | B07 | Media | Halo y shake reforzados en ambos Places el 02/10; arranque/overlay comprobados, sensación de combate pendiente |
 | B08 | Resuelto | Ambos Places abiertos; bloqueo inicial `Place is not open` resuelto |
 | B09 | Límite de QA | MCP rechaza FireClient de StateChanged e inserción del fixture por Capabilities; prueba de daño automática no ejecutada |
-| B10 | Alta | Corregido en Studio: UI estirada y manual duplicado; tema nativo, layout vertical y manual único en ambos Places. Validación Player/touch pendiente |
+| B10 | Alta | Corregido en Studio: UI estirada y manual duplicado. Atlas nuevos integrados el 13/10 con recortes reales, Fit/Slice, texto independiente y respaldo nativo; respawn único en ambos Places. Validación Player/touch pendiente |
 | B11 | Alta | Renovación diaria en sesión abierta: reproducida, corregida y verificada en Studio el 09/10. Falta validar medianoche/reconexión en Player; cobro persistente y ranking siguen abiertos |
 | B12 | QA publicada parcial | Usuario confirma arma/apuntado/Beam y observador remoto en Libre/VS; rigs alternativos siguen pendientes |
 | B13 | Alta / corregido Studio | Cancelación sin impulso, epoch de cuerpo, limpieza de etiqueta y salida comprobados; repetir con dos jugadores publicados |
 | B14 | Media / corregido Studio | Running silenciado en 0g y restaurado en Lobby; repetir escucha real/primera persona publicada |
 | B15 | Alta / corregido Studio | Origen público, anulación grupal, reintento y fallback común comprobados con transporte simulado; teleport real con tercero pendiente |
 | B16 | Alta / corregido Studio | VICTORIAS VS, encuentro completo deduplicado y congelados Libre; API/guardado en memoria comprobados, persistencia publicada pendiente |
+| B17 | Alta / corregido Studio | Agarre disponible durante gancho; relevo retira tracción sin borrar impulso. Prompts con registro fuerte y limpieza. QA controlada en ambos Places; recorrido con Q/E y touch publicado pendiente |
+| B18 | Media / corregido Studio | AtlasUIController inicia sin esperar ZB_Intro; manual tardío enlazado por eventos, sin fallback vacío. Clicks y respawn comprobados en ambos Places; Player pendiente |
 
 La estabilización base de Libre/VS fue validada en producción el 2026-09-14.
 Las verificaciones locales posteriores no cierran automáticamente estos pendientes.
 
 ## 2. Registro de causas y correcciones
+
+### Prevención de regresión B10 al integrar atlas — 2026-10-13
+
+- Fuentes nuevas no cumplen las dimensiones nominales del prompt: 1254×1254
+  iconos/marcos y 1774×887 botones. No reutilizar coordenadas del atlas histórico.
+- Los marcos tenían un damero pintado (alfa 255 en toda la fuente); recortes
+  procesados a transparencia real antes de subir. Iconos y botones sí tenían alfa.
+- 16 iconos Fit, 8 estados y 4 marcos Slice en ambos Places; fondos separados
+  de textos y escala uniforme de esquinas. Datos/IDs/edición en UI_ASSETS.
+- Detectado y corregido durante integración: una imagen oculta podía no cargar,
+  y esperar solo IsLoaded dejaba fondo/texto sin sincronizar. El arte se solicita
+  visible; AssetFetchStatus y cierre de precarga sincronizan con respaldo nativo.
+- Corregido contraste del texto oscuro de Reclamar sobre el fondo violeta.
+- QA Studio: 28/28 recursos cargados en ambos clientes, capturas desktop y
+  simulador horizontal/vertical, estados de botones y respawn sin fondos duplicados.
+  Simulador no certifica touch; falta Player. Respaldo `ZB_UIAtlasBackup_20261013`.
+
+### Agarre durante gancho y arranque del manual — B17/B18, 2026-10-13
+
+**Implementados y verificados en Studio en Lobby y Match; sin publicar.**
+Respaldo de los tres controladores por Place:
+`ServerStorage.ZB_GrabHookBackup_20261013`. Para revertir, restaurar sus fuentes
+en `StarterPlayer.StarterPlayerScripts`, con Play detenido.
+
+#### B17 — no aparece la opción de agarrarse durante el gancho
+
+- Reporte del usuario: al usar el gancho y pasar cerca de un elemento agarrable,
+  ya no aparece la opción de sujetarse.
+- Causa reproducida con la función vigente exacta: `canGrab()` devolvía
+  true→false→true al cambiar `Hooking` false→true→false. Esa condición también
+  deshabilitaba los prompts y rechazaba `startGrab` durante la tracción.
+- Corrección: el gancho no bloquea la disponibilidad del agarre. Al activar
+  voluntariamente E, `Grabbing` hace que HookController suelte el gancho y retire
+  su fuerza/visual; guardia adicional en Heartbeat. El relevo no escribe velocidad:
+  GrabController conserva el frenado y el impulso al soltar. Mantener la tecla de
+  gancho no lo relanza automáticamente; lanzar mientras se está sujeto se rechaza.
+- Registro de prompts con referencias fuertes y retiro por `Destroying`:
+  las claves Instance débiles podían perder el seguimiento aunque el prompt
+  siguiera en Workspace. Endurecimiento adicional; no se aisló el GC como causa
+  del reporte. Los avisos también respetan scoreboard y cursor libre de escritorio.
+- QA sobre los controladores ejecutándose, con atributos controlados: **61**
+  prompts habilitados en Lobby y **58** en Match antes/durante/después de Hooking;
+  menú, scoreboard y countdown dejan **0**, reactivar restaura 61/58.
+- QA con funciones exactas, superficie temporal y transporte simulado en ambos
+  Places: gancho→agarre, fuerza cero, root sujeto, rechazo de otro gancho, soltar
+  con velocidad 90, liberación posterior del gancho sin borrar impulso, una señal
+  de release y un lanzamiento. Invalidar cobertura o abrir menú cancela sin impulso;
+  countdown rechaza agarre.
+- Alcance: la integración anterior simula raycast/transporte; no certifica energía
+  ni visual remoto en multijugador. El intento adicional de teclado Q/E no fue
+  concluyente por desplazamiento del personaje respecto al fixture. Falta recorrer
+  coberturas reales con Q/E y gancho/agarre táctiles en Player, y repetir B13 con cuerpos.
+
+#### B18 — espera de ZB_Intro bloquea el resto de AtlasUIController
+
+- Reproducido en el arranque de Match: aviso `Infinite yield possible` en
+  `PlayerGui:WaitForChild('ZB_Intro')`, antes de crear ayuda y conectar observadores.
+  La copia del manual puede llegar tarde; el aviso por sí solo no demuestra espera infinita.
+- Retirada la espera y el fallback ScreenGui vacío. `watch`/`ChildAdded` enlazan
+  la plantilla al aparecer. Ayuda solo se muestra con manual completo y busca
+  la instancia actual al pulsar; las otras pantallas pueden iniciar sin el manual.
+- QA controlada con el controlador exacto y contenedor aislado en ambos Places:
+  inicia sin manual, ayuda oculta, copia tardía enlazada, abrir bloquea input y
+  cerrar lo libera; **un manual**, sin fallback.
+- QA de UI real por mouse en ambos Places: ayuda abre, Continue cierra y
+  `ZB_MenuOpen` true→false. Respawn real conserva un manual y un acceso de ayuda;
+  root desanclado y Grabbing=false. Nuevo arranque sin aviso de ZB_Intro ni errores
+  nuevos de los controladores; Match aislado conserva rechazo de TeleportData/HTTP.
+
+Fuentes iguales y compiladas en ambos Places (hash polinómico base 31, módulo 2^32):
+GrabController **16406 bytes / 3943661661**; HookController **14923 / 1815726232**;
+AtlasUIController **18981 / 3906578620**. Fixtures y atributos de prueba solo en
+runtime, retirados al detener Play; auditoría final sin `ZB_QA_*`. Ambos Places en Edit.
 
 ### Correcciones tras el reporte publicado — B13 a B16, 2026-10-09
 

@@ -1,10 +1,86 @@
 # UI — Buscar en Explorer y reemplazar
 
-Actualizado: **2026-10-06**, revisión posterior al pedido de edición visual.
+Actualizado: **2026-10-13**, integración de atlas recortados y fondos 9-slice.
 Aplica a Lobby `125075465377023` y Match `108298899371591`.
 
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
 para cambiar una imagen, un texto del manual o sus esquinas.**
+
+## Atlas integrados — 2026-10-13
+
+**Aplicados y probados en Studio en Lobby y Match; sin publicar los Places.**
+Las imágenes sí están subidas a Roblox y sus 28 IDs cargaron correctamente en ambos clientes.
+
+### Archivos de entrega
+
+- Fuentes del usuario en `docs/assets/`: hoja de iconos **1254×1254**, botones
+  **1774×887**, marcos **1254×1254**. No coinciden con las medidas del prompt;
+  se recortaron usando sus dimensiones reales, no coordenadas supuestas de 1024.
+- `docs/assets/ui/`: **16 PNG de iconos, 8 PNG de estados de botones y 4 PNG de paneles**.
+- [atlas_manifest.json](assets/ui/atlas_manifest.json): recortes, medidas reales y SliceCenter.
+- [roblox_asset_ids.json](assets/ui/roblox_asset_ids.json): los 28 IDs empleados en ambos Places.
+- [atlas_preview.jpg](assets/ui/atlas_preview.jpg): referencia local de recortes/transparencia.
+- Iconos y botones ya tenían alfa. Los marcos tenían damero pintado, sin transparencia:
+  se retiró el exterior neutro conservando el cuerpo y los biseles del marco.
+
+### Dónde editar en Studio
+
+| Recurso | Instancia | Propiedades |
+|---|---|---|
+| Iconos | `ReplicatedStorage.UIAssets.Icons.<clave>` | Image, ImageColor3; ScaleType=Fit |
+| Marcos | `ReplicatedStorage.UIAssets.Skins.panel`, `card`, `panel_violet`, `panel_warning` | Image, SliceCenter, SliceScale |
+| Botones | `ReplicatedStorage.UIAssets.Skins.button_cyan_<estado>` / `button_violet_<estado>` | Image, SliceCenter, SliceScale |
+| Fondo de manual | `StarterGui.ZB_Intro.Instructions` | Atributo UIFrameSkin=`panel` |
+| Fondo de actividades | `StarterGui.ZB_DailyActivities.ActivitiesPanel` (Lobby) | UIFrameSkin=`panel_violet` |
+| Botones de reclamación | ClaimDailyButton / Claim de la plantilla | UIFrameSkin=`button`, UISkinFamily=`violet` |
+
+Estados: `normal`, `hover`, `pressed`, `disabled`. Gancho usa botones violeta;
+el resultado de ronda usa marco ámbar. Los controles táctiles circulares mantienen
+su forma nativa y reciben los nuevos iconos; no se les estira un botón rectangular.
+Las claves de iconos sin dibujo en estos atlas conservan sus trazos anteriores.
+
+### Protección contra deformación y comportamiento
+
+- Iconos: PNG **256×256**, dibujo centrado dentro de 192×192; `Fit` conserva proporción.
+- Botones: PNG **512×352**, SliceCenter `(120,115)–(392,237)`, SliceScale base **0.12**.
+- Panel: **512×497**; card: **512×390**; violeta: **512×449**; aviso: **512×456**.
+  SliceCenter `(120,110)–(392,alto−110)`, SliceScale base **0.24**.
+- `Shared.UIFrameSkins` aplica 9-slice y reduce uniformemente la escala de las
+  esquinas si falta espacio. Los segmentos centrales se alargan; las esquinas
+  no se estiran en un solo eje. Botones cuadrados/estrechos mantienen el fondo nativo.
+- `UIAssetSkinController` enlaza las plantillas marcadas y precarga sin bloquear UI.
+  `UITheme` conecta los fondos del inventario y otras pantallas dinámicas.
+- El fondo y el texto son elementos separados. `ZBAtlas_SkinText` sigue el Text,
+  precio, fuente y color del control original; corrige texto muy oscuro sobre
+  fondo oscuro. Editar el control original, no esa copia de runtime.
+- Estados responden a hover/presión, Active/Interactable y atributos visuales
+  UISkinSelected/UISkinDisabled. EquipmentDashboard solo recibió metadatos visuales.
+- Si no carga un fondo, permanece el nativo; iconos recuperan Fallback si falta
+  imagen o no se confirma carga. La precarga vuelve a sincronizar fondos/textos:
+  no depende únicamente de señales IsLoaded del motor.
+
+### Verificación y reversión
+
+- **28/28** recursos con AssetFetchStatus.Success en ambos clientes; cero fallos de precarga.
+- Capturas de manual y mochila de ambos Places en escritorio; botón presionado
+  y seleccionado mediante mouse, navegación Gancho y regeneración de tarjetas.
+- iPhone 17 Pro, viewport **750×381**: manual y mochila en horizontal, calendario
+  horizontal y vertical. Marcos encajan y texto separado; contraste de Reclamar
+  corregido y comprobado en escritorio. No certifica touch físico: parte de la
+  apertura en simulador se hizo mediante propiedades y atajo B.
+- StarterGui.ScreenOrientation sigue `Sensor`; las tres plantillas principales
+  usan DeviceSafeInsets. La política de orientación del juego no se cambió.
+- Prueba controlada: panel 940×500, violeta 370×650, aviso 460×250 y botones
+  172×44 / 64×44 mantienen Slice; reaplicar no crea otro fondo y disabled usa su imagen.
+- Respawn real: un manual, una mochila y ningún fondo duplicado en ambos Places.
+  Navegación visual conservó 500 monedas y recursos 100/100; no se probó compra/cobro.
+- Cinco fuentes compartidas compiladas e iguales entre Places. Sin errores nuevos
+  de UI; Match aislado mantiene rechazo de TeleportData/HTTP, independiente del arte.
+- Respaldo por Place: `ServerStorage.ZB_UIAtlasBackup_20261013`. Restaurar UIAssets,
+  UITheme, AtlasUIController, EquipmentDashboard y las plantillas StarterGui guardadas;
+  retirar UIFrameSkins y UIAssetSkinController para volver al tema previo.
+- Fixtures retirados, servidor HTTP local cerrado, simuladores en `default` y ambos
+  Places en Edit. Falta validar publicación, touch físico y carga bajo conexión móvil.
 
 ## 0. Calendario real editable — agregado 2026-10-09
 
@@ -106,10 +182,10 @@ Un ID que no carga no activa automáticamente el fallback: vaciarlo explícitame
 | Botón durante Play | `Players.<jugador>.PlayerGui.ZB_EquipmentDashboard.OpenInventory.ZBAtlas_bag` |
 | Icono del manual en Studio | `game.StarterGui.ZB_Intro.Instructions.Rows.Row08.Icon` |
 
-**Estado actual:** `bag.Image` está vacío. Su dibujo existe como Frames dentro de
-`bag.Fallback`; no hay un PNG individual que se haya perdido. La carpeta local
-`docs/assets/ui/` es el destino de entrega de futuros PNG, no una carpeta cargada
-automáticamente por Roblox.
+**Estado actual:** `bag.Image` usa `rbxassetid://105198427655513`, procedente del atlas
+de iconos del 13/10. `bag.Fallback` conserva los Frames originales para carga fallida
+o Image vacío. `docs/assets/ui/ui_bag.png` es el recorte local de entrega; Roblox
+no carga automáticamente esa carpeta.
 
 ### Si todavía no está importado el PNG
 
@@ -235,13 +311,17 @@ y editar **Image**. Cada instancia incluye atributos informativos `SourceFile`,
 | Recompensa | `reward` | `ui_reward.png` | 256×256 | Reserva |
 
 Reserva significa que la plantilla existe, pero cambiarla no agrega un nuevo icono
-a una pantalla que no la consume. Todos los campos Image comienzan vacíos.
+a una pantalla que no la consume. Los campos Image se crearon vacíos; el 13/10 se
+asignaron los 16 iconos disponibles en el atlas. El resto conserva Fallback.
 
 **Estilo de paneles generados:** editar
 `game.ReplicatedStorage.UIAssets.Styles.panel` o `card` o `button`, sus propiedades
 de fondo y sus hijos UICorner/UIStroke. El tema copia esas propiedades a los
 controles al construirlos. Los colores de selección/compra y el hover pueden
 cambiar durante el juego porque expresan estado.
+
+Desde el 13/10 esos estilos son también el fondo nativo de respaldo. Para cambiar
+el arte visible de marcos/botones, editar `UIAssets.Skins`, según la sección de atlas.
 
 **Alcance real:** el manual completo está prearmado en StarterGui. Mochila/tienda,
 HUD y actividades todavía construyen sus datos y controles dinámicos con sus
@@ -283,3 +363,4 @@ Registrar futuros reemplazos aquí:
 | Fecha | Instancia | Archivo | ID anterior | ID nuevo | Lobby probado/publicado | Match probado/publicado |
 |---|---|---|---|---|---|---|
 | 2026-10-06 | UIAssets y ZB_Intro | Instancias nativas | Catálogo en script | Image vacío + Fallback | Studio / no | Studio / no |
+| 2026-10-13 | UIAssets.Icons / Skins y plantillas | 28 PNG en assets/ui | Iconos vacíos y estilos nativos | roblox_asset_ids.json | Studio / no | Studio / no |
