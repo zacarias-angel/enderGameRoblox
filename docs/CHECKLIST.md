@@ -1,9 +1,217 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-07. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-16. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### Montaje del Rifle corregido — 2026-10-16
+
+- [x] Reporte del usuario: el Rifle se agarra desde el medio. Se calculó la
+  empuñadura real con la malla (vértices más bajos → Z≈+0.90) y se movió
+  `Handle.Grip` de `(0,0,0)` a `(0,-0.2,0.9)`.
+- [x] Verificado que el Cañón no lo necesitaba (su mango está en Z≈+0.06).
+- [x] Aclaradas las capturas: `@whitechocolatediaz` tiene el **Rifle** (comprado
+  antes con monedas) y no el Cañón; mochila y tienda coinciden.
+- [ ] Confirmar visualmente el montaje en juego (la captura del asistente no pudo
+  mover la cámara del Lobby).
+
+Respaldo: `ServerStorage.ZB_RifleGripBackup_20261016`.
+
+### Pase del Cañón conectado — Lobby (+derecho en Match), 2026-10-16
+
+- [x] Confirmar con el usuario: el Cañón pasa a ser **solo con el pase**; se quita
+  la compra con 250 monedas. Quienes ya lo poseían lo conservan.
+- [x] Configurar `WeaponOffers.cannon`: PassId=2039918698, PassPriceRobux=10,
+  PurchaseIntegrationReady=true.
+- [x] `WorkshopService.grantWeapon/ownsWeapon` y bloqueo de compra con monedas
+  para armas de pase no poseídas.
+- [x] `MonetizationService` (Lobby): verifica `UserOwnsGamePassAsync` al entrar,
+  concede el arma, registra `profile.passes` y guarda; concede tras
+  `PromptGamePassPurchaseFinished`. El cliente no declara propiedad.
+- [x] DataService (Lobby y Match) guarda y conserva `profile.passes`.
+- [x] Cliente: tarjeta **DESBLOQUEAR · N R$** con precio real (`GetProductInfo`)
+  y `PromptGamePassPurchase`; rifle sin ID sigue PASE PRÓXIMAMENTE.
+- [x] QA: con el pase, concede y equipa el Cañón (500 monedas intactas,
+  `passes={"2039918698":true}`); sin el pase, tarjeta DESBLOQUEAR · 10 R$;
+  compra con monedas de un arma de pase rechazada sin cobrar. Sin errores.
+- [x] Reset pre-lanzamiento: `WeaponPassReset` (módulo, ambos Places) quita una vez
+  el Cañón de los testers y limpia `passes` para poder probar la compra; idempotente
+  por `migrations.weaponPassReset`; no toca otras armas. Probado con perfiles
+  simulados (quita Cañón, respeta Rifle, segunda pasada sin cambios).
+- [x] Diagnosticar el reporte "todos tienen el Cañón": `UserOwnsGamePassAsync`
+  devuelve **true para la cuenta creadora** y false para otras (userId 1/156); en
+  Studio multijugador todos son la misma cuenta. No era un fallo del reset.
+- [x] Interruptor `ReplicatedStorage.Monetization.AutoGrantPasses` (hoy false):
+  no concede al entrar; la compra confirmada sí concede. **Poner true antes de
+  lanzar.** Verificado en Studio: el Cañón muestra DESBLOQUEAR · 10 R$.
+- [x] Corregir la contradicción "lo tengo en la mochila pero la vitrina lo ofrece":
+  el cartel de la vitrina era texto fijo. `WeaponDisplayController` ahora crea un
+  BillboardGui **por jugador** (con fondo, `AlwaysOnTop` y tamaño legible) con el
+  estado real (LA TENÉS / DESBLOQUEAR · 10 R$ / PASE · PRÓXIMAMENTE / GRATIS).
+  Verificado: con el Cañón poseído muestra LA TENÉS; sin poseerlo, DESBLOQUEAR · 10 R$.
+  Solo un store activo (EquipmentDashboard); los otros dos (`StoreDashboard`,
+  `WorkshopController.client`) están deshabilitados.
+- [x] `AutoGrantPasses` restaurado a **true** (producción). El error "Ya tienes este
+  objeto" al pulsar DESBLOQUEAR confirma que la cuenta **ya posee el pase**; para
+  probar la compra real usar una cuenta que no lo posea.
+- [ ] Compra real con Robux usando una cuenta tester **sin** el pase (la que ya lo
+  posee ve EQUIPAR y no puede recomprar); cancelación/reconexión y viaje
+  Lobby→Match→Lobby publicados.
+- [ ] Crear y conectar el pase del Rifle; documentar precio/contenido.
+
+Respaldo Lobby: `ServerStorage.ZB_CannonPassBackup_20261016`. Guía en UI_ASSETS 0.5.
+`WeaponPassReset.VERSION=1`; subirlo para re-ejecutar el reset.
+
+### Historial y colores del calendario — Lobby (+datos en Match), 2026-10-16
+
+- [x] Confirmar objetivo del usuario: verde=cobrado, rojo=sin cobrar, otro=disponible.
+- [x] Crear `ServerScriptService.DailyClaimHistory`; `daily` guarda `claimedDays`,
+  `historyStartDay` y `historyVersion=1`. DailyRewardService acredita saldo y fecha
+  en la misma mutación, con guarda anti-doble-cobro.
+- [x] DataService (Lobby y Match) normaliza y preserva el historial al cargar,
+  capturar y guardar; no se pierde al viajar. Módulos idénticos por hash.
+- [x] Calendario pinta estado por color; colores editables como Attributes del
+  ScreenGui y leyenda actualizada. Atributos ClaimState/ConfirmedClaim por slot.
+- [x] Días previos sin registro quedan gris "SIN DATOS"; no se pintan de rojo para
+  no inventar historial. El perfil antiguo solo migra su último cobro confirmado.
+- [x] QA reloj de prueba: migración conserva cobro; 500→550→600 por dos cobros;
+  día intermedio missed; repetidas no duplican; guardado preserva 3 fechas y el
+  hueco. Match conserva 2 fechas al capturar/guardar.
+- [x] Smoke test con reloj real: hoy available, 18 unknown, 23 futuros. Sin fixtures;
+  respaldos y ambos Places en Edit.
+- [ ] Publicar y validar medianoche real, reconexión y cruce Lobby→Match→Lobby;
+  gasto/persistencia del cobro con DataStore real.
+
+Respaldo: `ServerStorage.ZB_DailyHistoryBackup_20261016`. Guía en UI_ASSETS 0.7.
+
+### Cable genérico 3D — Lobby y Match, 2026-10-16
+
+- [x] Confirmar alcance con el usuario: una apariencia genérica, solo estética;
+  Navidad era un ejemplo futuro, sin skins estacionales/consumibles nuevos.
+- [x] Crear RopeSkins.Generic con cuerpo cilíndrico Fabric y refuerzos editables.
+- [x] HookRopeRenderer sigue los extremos replicados y oculta el Beam plano solo
+  localmente; partes sin colisión/query. Sin cambiar física ni compras/inventario.
+- [x] QA de geometría horizontal/vertical, máximo 25 piezas a 150 studs, extremos
+  coincidentes, retiro de marcador y limpieza de cero cables.
+- [x] Lobby: gancho real por intención controlada, cuerpo 3D del dueño, fuerza y
+  consumo existentes; liberación limpia. No certifica teclado Q ni touch físico.
+- [x] Match: fixture visual de 16 studs y limpieza; renderer igual en ambos Places.
+- [x] HookController y HookVisualService intactos contra respaldo; fuerza 1000,
+  velocidad 70, alcance 250 y catálogo de tres entradas heredadas conservados.
+- [x] Retirar fixtures, dejar ambos Places en Edit y documentar edición/reversión.
+- [ ] Prueba publicada multicuenta, visibilidad remota, touch y FPS.
+
+Respaldo por Place: `ZB_GenericHookRopeBackup_20261016`. Sin publicar. UI_ASSETS 0.6.
+
+### Imágenes y vitrinas de armas — Lobby, 2026-10-16
+
+- [x] Separar fuente 2172×724 en tres PNG RGBA 512×512; subir/aplicar imágenes
+  blaster/rifle/cannon y verificar carga 3/3. IDs/proceso en UI_ASSETS 0.4.
+- [x] Clonar tres contenedores iguales al de basegancho1 en WeaponDisplays;
+  montar modelos estáticos centrados, carteles con imágenes y prompts E.
+- [x] Conservar basegancho1/2/3: comparación con respaldo sin cambios.
+- [x] Abrir la misma TIENDA / ARMAS desde cada vitrina, con foco/scroll hacia
+  su ficha. Crear WeaponOffers con PassId=0 y venta GamePass pendiente para dos.
+- [x] E real de las tres vitrinas; tarjeta pendiente no cobra/equipa. Respawn
+  deja una GUI, tres vitrinas, tres prompts y 38 piezas ancladas; saldo 500 intacto.
+- [x] Capturas desktop/móvil horizontal y scroll al Cañón; sin errores nuevos
+  del proyecto. Sin fixtures; Edit/default y servidor HTTP de subida cerrado.
+- [ ] Sincronizar imágenes/catálogo/controlador/plantilla de armas a Match;
+  se abrió después para el cable genérico, pero esa UI sigue pendiente.
+- [ ] Crear/configurar los dos pases y conectar compra oficial, derechos de servidor,
+  propiedad anterior, cancelación, persistencia y teleport. Venta no activada.
+- [ ] Publicar y comprobar dispositivos reales/multicuenta.
+
+Respaldo Lobby: `ServerStorage.ZB_WeaponShowroomBackup_20261016`. Guía en UI_ASSETS 0.5.
+
+### Revisión de armas e imágenes propias — 2026-10-14
+
+- [x] Corregir el frente invertido del SMG/Rifle señalado en la captura del usuario;
+  mantener punto de empuñadura y ubicar Muzzle en el extremo correcto.
+- [x] Aumentar Rifle y Cañón uniformemente un 15 % en ambos Places; longitudes de
+  cuerpo 2.99 y 3.68, escala 1.15, alineación cuerpo/Muzzle dot 1.
+- [x] Crear `UIAssets.WeaponImages.blaster/rifle/cannon`, ImageLabels editables
+  con Fit, recuadro 96×102 y marcador mientras Image está vacío.
+- [x] Conectar tarjetas por WeaponPreviewId; retirar iconos genéricos de las
+  tarjetas de armas y separar imagen de nombre/estadísticas/acción.
+- [x] Capturas del montaje revisado, tarjetas desktop/móvil horizontal en ambos
+  Places, textos que caben y marcador oculto al asignar imagen temporal.
+- [x] Respaldo de modelos/controladores, paridad UI y retiro de fixtures;
+  ambos Studios en Edit y simulador default. Guía en UI_ASSETS 0.4 y DISENO.
+- [x] Asignar imágenes reales en Lobby el 16/10; IDs y evidencia en UI_ASSETS 0.4.
+- [ ] Sincronizar esas imágenes a Match cuando esté abierto.
+- [ ] Publicar y repetir montaje/apuntado con dos cuentas y touch real.
+
+Respaldo: `ServerStorage.ZB_WeaponPresentationBackup_20261014`. Sin publicación.
+
+### Modelos Rifle SMG y Cañón láser — 2026-10-14
+
+- [x] Revisar modelos SM_Wep_SMG_01 y SM_Wep_Laser_Gun_01 importados en Lobby;
+  respaldar y conservar originales en ServerStorage.WeaponImportSources.
+- [x] Adaptar escala/orientación, Handle/Grip y Barrel/Muzzle; plantillas rifle/cannon
+  en ambos Places, conservando blaster gratuito e IDs/estadísticas/precios actuales.
+- [x] Dos meshes y dos marcadores por arma, welds, sin colisión/anclaje ni masa extra;
+  montaje y Muzzle replicados visibles en capturas de ambos Places.
+- [x] Cinco cambios de arma y respawn real por Place: una sola arma. Cambio con
+  energía 30→31.8 por regeneración, sin refill.
+- [x] Libre real en Lobby y prueba de beam controlada para ambos modelos:
+  dos beams desde Muzzle, 100→90.1 energía; alineación de mira >0.999999.
+- [x] Mismos MeshIds/textura en ambos Places, fixtures retirados, controles Edit
+  habilitados y ambos Places en Edit. Contrato y reversión en DISENO.
+- [ ] Publicar y comprobar observador remoto, VS real y rigs adicionales.
+- [ ] Conectar los dos modelos de pago con pases Robux y derechos en servidor;
+  esta adaptación conserva las compras con monedas existentes.
+
+Respaldo: `ServerStorage.ZB_WeaponModelsBackup_20261014` por Place. Sin publicación.
+
+### B19 — barreras de spawn desancladas en VS, 2026-10-14
+
+- [x] Reproducir MatchArenaPhysics desanclando SpawnShieldRojo/Azul: 0/10 piezas
+  ancladas y trims convertidos a colisionables en Play.
+- [x] Respaldar script/modelos en Match y excluir `SpawnCover=true` de weldModel.
+- [x] Dos arranques Play consecutivos: 10/10 ancladas, trims sin colisión,
+  desplazamiento cero tras impulsos; 16 coberturas dinámicas con física conservada.
+- [x] Consultar Output, detener Play y documentar causa/alcance/reversión en BUGS B19.
+- [ ] Publicar Match y repetir dos entradas 1v1 con cuentas reales, verificando
+  estabilidad de los escudos en servidores nuevos y agarre contra ellos.
+
+Respaldo Match: `ServerStorage.ZB_SpawnCoverBackup_20261014`. Sin publicación.
+
+### Postprocesado y feedback de monedas — 2026-10-14
+
+- [x] Reutilizar ZB_StationColor en ambos Places: tinte RGB(226,219,255), saturación
+  0.045, contraste 0.035, brillo 0.015. Sombras globales/locales desactivadas.
+- [x] Contador de monedas editable en StarterGui.ZB_CoinFeedback, visible también
+  en batalla y adaptado por MobileHudLayout.
+- [x] Evento visual de BattleStats al acreditar fullFreeze; nueve sprites con
+  dispersión, Tween curvo hacia el icono y pulso de llegada, sin cambiar pagos.
+- [x] QA Studio con acreditaciones/objetivo simulados en ambos Places; capturas
+  desktop/móvil horizontal, autoimpacto rechazado, saldo intacto, limpieza final.
+- [x] Comprobar límite de 36 sprites y cancelación de tareas diferidas en Lobby;
+  paridad de CoinBurstEffect/CoinFeedbackController/BattleStats entre Places.
+- [x] Respaldar y documentar en luces/UI_ASSETS; retirar fixtures y dejar Edit/default.
+- [ ] Congelamiento real publicado con dos cuentas y revisión de sensación/FPS/touch.
+
+Respaldo: `ServerStorage.ZB_VisualFeedbackBackup_20261014`; sin publicación.
+
+### Accesos del HUD editables y padding — 2026-10-14
+
+- [x] Migrar mochila, acceso de tabla y cursor a plantillas StarterGui en Lobby
+  y Match; salida X en Lobby y retorno L en Match. Controladores enlazan los botones.
+- [x] Aumentar padding interior y separación de accesos; ContentPadding editable
+  y atributos de tamaño/margen/separación móvil en ZB_EquipmentDashboard.
+- [x] Compensar padding del fondo 9-slice para conservar el tamaño del contenedor.
+- [x] Retirar del HUD la opción antigua de próxima batalla y sus conexiones UI.
+- [x] Verificar copia única, ausencia de RoundOptions, texto que cabe y capturas
+  desktop 1211×593/móvil horizontal 750×381 en ambos Places. B, Tab y Alt en Lobby
+  con fixture visual local; no se invocó salida/teleport para esta prueba.
+- [x] Documentar rutas/edición en UI_ASSETS (0.2); comprobar icono compartido bag;
+  respaldar controladores/layout móvil y dejar ambos Places en Edit, simulador default.
+- [ ] Publicar y validar estos accesos con touch físico y flujo de batalla real.
+
+Sin publicación. Respaldo: `ServerStorage.ZB_HudEditableBackup_20261014`.
+Este cierre cubre accesos y presentación; paneles internos siguen dinámicos.
 
 ### Atlas de UI integrados — 2026-10-13
 

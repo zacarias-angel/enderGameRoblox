@@ -106,6 +106,133 @@ para conseguir cuentas/dispositivos de prueba.
 
 ## Prioridades y control diario
 
+### Avance del día 5 — 2026-10-16: pase del Cañón conectado
+
+- Responsable: asistente mediante MCP. Lobby `125075465377023`; Match
+  `108298899371591` recibió la conservación del derecho en su DataService.
+- Terminado: pase `2039918698` ("cañon", 10 R$) conectado. `MonetizationService`
+  verifica `UserOwnsGamePassAsync`, concede el Cañón sin cobrar monedas, registra
+  `profile.passes` y guarda; concede tras `PromptGamePassPurchaseFinished`. El
+  Cañón es **solo con el pase** (se quitó la compra de 250 monedas). La tienda
+  muestra DESBLOQUEAR · 10 R$ y abre el prompt; el cliente no prueba propiedad.
+- QA Studio: con el pase, concede y equipa el Cañón (500 monedas intactas,
+  `passes={"2039918698":true}`); sin el pase (servicio desactivado solo para
+  observar), tarjeta DESBLOQUEAR · 10 R$; comprar con monedas un arma de pase
+  rechazado sin cobro ("se desbloquea con su pase"). Sin errores de scripts.
+- Reset pre-lanzamiento: `WeaponPassReset` quita una vez el Cañón de los testers
+  y limpia `passes` para poder probar la compra (idempotente; subir `VERSION` para
+  repetir). No toca otras armas.
+- Diagnóstico "todos tienen el Cañón": `UserOwnsGamePassAsync` devuelve true para
+  la cuenta creadora del pase y false para otras; en Studio multijugador todos son
+  la misma cuenta. Se agregó `ReplicatedStorage.Monetization.AutoGrantPasses`
+  (hoy false) para no conceder al entrar; **poner true antes de lanzar**. Compra
+  real se prueba con una cuenta tester sin el pase.
+- Respaldo `ZB_CannonPassBackup_20261016`; rutas y QA en UI_ASSETS 0.5.
+- Pendientes: compra real con Robux, segundo jugador sin pase, cancelación/
+  reconexión y viaje Lobby→Match→Lobby publicados; crear el pase del Rifle.
+  Esto cubre el pase del Cañón del día 5, no la colección ni la capa del día 6.
+
+### Avance del día 6 — 2026-10-16: imágenes y showroom de armas
+
+**Avance posterior — historial y colores del calendario (B20):** las fechas ahora
+se pintan verde (cobrado), rojo (pasado sin cobrar), ámbar (disponible) o gris
+(sin datos/futuro). Nuevo `ServerScriptService.DailyClaimHistory`; `daily` guarda
+`claimedDays`/`historyStartDay`. DailyRewardService acredita saldo y fecha juntos;
+DataService de ambos Places preserva el historial. Días previos al registro quedan
+gris "sin datos" (no se inventa historial). QA con reloj de prueba: migración,
+500→550→600, día intermedio en rojo, repetidas sin doble pago, guardado preserva
+3 fechas. Respaldo `ZB_DailyHistoryBackup_20261016`; edición en UI_ASSETS 0.7 y
+B20. Sin publicar; falta medianoche/reconexión reales. Esto adelanta la validación
+de misiones/calendario, no cierra el ranking ni el bloque completo del día 2–3.
+
+**Avance posterior del mismo día — cable genérico:** una apariencia 3D opaca,
+cilíndrica y editable del gancho, con refuerzos, sincronizada en Lobby y Match.
+El usuario aclaró que Navidad era solo un ejemplo; no se crearon consumibles,
+inventario nuevo ni mecánicas de cuerda. Control/fuerza/energía intactos. QA de
+gancho controlado en Libre y fixtures visuales en ambos Places; edición y límites
+en UI_ASSETS 0.6. Respaldo `ZB_GenericHookRopeBackup_20261016`. Match se conectó para
+esta parte; la sincronización de las imágenes/UI del showroom anterior sigue
+pendiente. Sin publicación ni aceptación multicuenta/touch/FPS.
+
+- Responsable: asistente mediante MCP. Lobby `125075465377023` conectado; Match
+  `108298899371591` cerrado/no disponible para esta sesión.
+- Terminado: tres imágenes propias de armas recortadas/subidas/aplicadas y tres
+  vitrinas clonadas del contenedor de ganchos, con armas estáticas, carteles y E.
+  Vitrinas y tienda abren la misma ficha con foco/scroll. SDR-Mk2 gratis; Rifle y
+  Cañón con Pase próximamente, catálogo WeaponOffers con PassId=0.
+- QA Studio: imágenes 3/3 cargadas; E en las tres vitrinas; saldo 500 intacto y
+  sin equipado/cobro por tarjeta pendiente. Respawn mantiene una GUI, tres vitrinas,
+  tres prompts y 38 piezas ancladas. Capturas desktop y móvil horizontal, sin touch
+  físico. Fuentes de ganchos preservadas. Lobby en Edit/default; sin publicar.
+- Respaldo `ZB_WeaponShowroomBackup_20261016`; IDs/rutas en UI_ASSETS 0.4–0.5.
+- Siguiente acción: abrir Match para sincronizar imágenes/catálogo/dashboard;
+  crear los dos pases y conectar compra/derechos de servidor del día 5. Este avance
+  visual no cierra monetización, capa global, video ni informe de anuncios del día 6.
+
+### Corte del día 4 — 2026-10-14
+
+**Modelos de armas integrados:** SM_Wep_SMG_01 reemplaza el visual de `rifle` y
+SM_Wep_Laser_Gun_01 el de `cannon` en ambos Places; SDR-Mk2 sigue como base gratuita.
+Revisión posterior de la captura del usuario: frente/agarre del Rifle corregido,
+ambos modelos +15 % y tarjetas con espacios de imagen propios (UI_ASSETS 0.4).
+Respaldo adicional `ZB_WeaponPresentationBackup_20261014`; PNG reales pendientes.
+Montaje R15, Muzzle/beam, cambios repetidos y respawn comprobados en Studio.
+Estadísticas y compra con monedas existentes conservadas; venta Robux pendiente
+del día 5. Respaldo `ZB_WeaponModelsBackup_20261014`; contrato/evidencia en DISENO.
+Este avance cubre modelos de armas, no la colección completa de gancho/personaje/capa.
+
+**Regresión reportada y corregida — B19:** segunda entrada 1v1 con escudos Azul/Rojo
+flotando. MatchArenaPhysics desanclaba las barreras `SpawnCover=true` por compartir
+el atributo de agarre `cubrirce`. Guard añadido exclusivamente en Match; dos
+arranques Studio con las diez piezas ancladas y desplazamiento cero tras impulsos.
+Respaldo `ZB_SpawnCoverBackup_20261014`; evidencia en BUGS/CHECKLIST. Sin publicar;
+repetir la secuencia de dos entradas reales tras publicar Match sigue pendiente.
+
+**Avance visual adicional de hoy:** postprocesado azul/violeta, sombras
+desactivadas y animación de monedas al acreditar congelamientos completos,
+con dispersión/Tween al contador ahora visible en combate. Plantilla editable
+`StarterGui.ZB_CoinFeedback`, guía en UI_ASSETS (0.3) y valores en luces.md.
+QA Studio controlada desktop/móvil en ambos Places; no validada aún con un
+congelamiento real publicado. Respaldo `ZB_VisualFeedbackBackup_20261014`;
+sin publicación. No equivale a integrar el pack premium del día 4.
+
+**Reporte del usuario de hoy:** una prueba con cuentas funcionó y por ahora la
+considera OK; quiere continuar repitiendo. No se especificaron versiones,
+resultados por caso ni evidencia de cada contador/retorno. Registrar ese avance
+sin marcar toda la aceptación B15/B16 ni persistencia como definitivamente cerrada.
+
+**Cerrado hoy en implementación y QA visual Studio:** accesos del HUD editables
+en StarterGui en Lobby y Match, mayor padding/separación, retirada de la opción
+obsoleta «No entrar a la próxima batalla» y guía actualizada en UI_ASSETS (0.2).
+Capturas desktop/móvil horizontal en ambos Places; B/Tab/Alt en Lobby mediante
+fixture visual local. Sin publicación; no equivale a validar touch ni teleport.
+Responsable: asistente mediante MCP. Respaldo de controladores y layout móvil:
+`ServerStorage.ZB_HudEditableBackup_20261014`. Adelanta parte del día 7.
+
+**El día 4 completo sigue abierto:** SDR-Mk2 como arma base y los atlas UI no
+constituyen la colección premium de arma/cuerda/punta/personaje ni la capa global.
+La integración completa requiere identificar/aprobar los assets y comprobar su
+montaje R15 y visibilidad desde otra cuenta. La viabilidad/publicación de la capa
+global sigue sin evidencia de Dashboard en este registro.
+
+**Orden recomendado para cerrar trabajo adicional hoy:**
+
+1. Inventariar assets de la colección inicial en ambos Places y registrar qué
+   existe, qué falta y su ruta; confirmar estética/contenido antes de integrarlos.
+   Cerrar la preparación del catálogo y los contratos de montaje que se puedan
+   comprobar en Studio; no marcar la colección completa solo por el inventario.
+2. Validar B15/B16 con tres cuentas en Player después de publicar ambos Places:
+   A/B completan VS, C permanece en Lobby; retorno al Job de C, resultado una vez,
+   ranking/misión/saldo y conservación por reconexión. Repetir anulación sin premio.
+   Este bloque permite cerrar aceptación pendiente del día 3 si pasa.
+3. Resolver los datos externos que condicionan los días 5–6: precio/propietario/ID
+   del pase y, para la capa, categoría, elegibilidad, stock/coste y ruta gratuita
+   oficial. Registrar decisiones confirmadas y evidencia; no asumir aprobación.
+
+No se ejecutaron nuevas pruebas de resultados/persistencia ni se creó el pack
+premium al revisar este corte. Misiones, ranking y QA publicada conservan sus
+casillas pendientes hasta que haya evidencia.
+
 **Bloqueantes:** pérdida/duplicación de datos o compras, partidas sin terminar,
 misiones/ranking incorrectos, imposibilidad de entrar/salir o jugar en dispositivos objetivo.
 Se corrigen antes de publicar la final.

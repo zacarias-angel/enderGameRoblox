@@ -2,7 +2,7 @@
 
 Guía completa y catálogo: [../../UI_ASSETS.md](../../UI_ASSETS.md).
 
-Integración del **13/10/2026**: esta carpeta contiene 28 PNG derivados de los tres
+Integración del **13/10/2026**: entrega de 28 PNG derivados de los tres
 atlas entregados: 16 iconos, 8 estados de botones y 4 marcos.
 
 - Iconos: 256×256 RGBA, dibujo dentro de 192×192, `ScaleType=Fit`.
@@ -11,6 +11,12 @@ atlas entregados: 16 iconos, 8 estados de botones y 4 marcos.
 - `atlas_manifest.json`: fuente, recorte, medidas y SliceCenter.
 - `roblox_asset_ids.json`: IDs activos, compartidos entre Lobby y Match.
 - `atlas_preview.jpg`: referencia visual local, no recurso del juego.
+
+Agregado **16/10/2026**: `weapon_blaster.png`, `weapon_rifle.png` y
+`weapon_cannon.png`, 512×512 RGBA, derivados de la imagen de armas neón del usuario.
+Recortes/IDs en `weapon_images_manifest.json`; preparación reproducible con
+`prepare_weapon_images.py`. Aplicados/probados en Lobby; sincronización a Match
+pendiente. Se editan en `ReplicatedStorage.UIAssets.WeaponImages.<id>.Image`.
 
 Los Frames originales se conservan en `UIAssets.Icons.<clave>.Fallback` y los
 estilos nativos sirven de respaldo. Los iconos no incluidos en el atlas siguen

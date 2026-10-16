@@ -1,0 +1,28 @@
+{
+  "source": "../Íconos de armas futuristas en neón.png",
+  "sourcePixels": [2172, 724],
+  "outputPixels": [512, 512],
+  "format": "PNG RGBA",
+  "preparation": "prepare_weapon_images.py; three equal 724x724 crops; remove saturated red matte, retain source; resize with Fit",
+  "images": {
+    "blaster": {
+      "file": "weapon_blaster.png",
+      "crop": [0, 0, 724, 724],
+      "assetId": "73825106772191"
+    },
+    "rifle": {
+      "file": "weapon_rifle.png",
+      "crop": [724, 0, 1448, 724],
+      "assetId": "74291139533144"
+    },
+    "cannon": {
+      "file": "weapon_cannon.png",
+      "crop": [1448, 0, 2172, 724],
+      "assetId": "131349817623777"
+    }
+  },
+  "places": {
+    "125075465377023": "Applied and visually verified in Studio, not published",
+    "108298899371591": "Pending: not connected during image/showroom work; later connection was used only to sync the generic hook rope"
+  }
+}

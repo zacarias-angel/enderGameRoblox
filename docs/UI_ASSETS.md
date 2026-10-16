@@ -1,6 +1,6 @@
 # UI — Buscar en Explorer y reemplazar
 
-Actualizado: **2026-10-13**, integración de atlas recortados y fondos 9-slice.
+Actualizado: **2026-10-16**, estados de color del calendario y cable genérico 3D en ambos Places. Imágenes de armas/vitrinas preparadas en Lobby; sincronización de esas UI a Match pendiente. Las plantillas del 14/10 existen en ambos Places.
 Aplica a Lobby `125075465377023` y Match `108298899371591`.
 
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
@@ -123,9 +123,11 @@ hoy y botones también representan estado. No renombrar hijos del contrato.
 El layout adapta posiciones/tamaños; vertical usa scroll, desktop dos columnas.
 La plantilla está protegida de la reconstrucción/estilizado antiguo de AtlasUIController.
 
-Solo el último cobro diario está confirmado por los datos existentes; no hay
-historial completo de misiones. Fechas anteriores sin registro y futuras tienen
-su explicación; seleccionar una fecha no autoriza cobrarla. Pruebas en CHECKLIST.
+Desde el 16/10 se guarda un historial diario por fecha (ver sección 0.7): verde
+cobrado, rojo pasado sin cobrar, ámbar disponible y gris sin datos/futuro. Los días
+anteriores al inicio del registro no se pintan de rojo para no inventar historial.
+No hay historial completo de misiones; seleccionar una fecha no autoriza cobrarla.
+Pruebas en CHECKLIST.
 
 ## 0.1 Controles táctiles — agregado 2026-10-09
 
@@ -149,10 +151,457 @@ StarterGui.ZB_MobileControls
 
 Accesos de menú y HUD móvil los distribuye `ReplicatedStorage.Shared.MobileHudLayout`
 en tiempo de ejecución, tomando `UIAssets.Icons` para iconos redondos (bag, calendar,
-info, trophy, close) y añadiendo una leyenda corta. No editar esos botones en
-Properties esperando que persista: los posiciona el layout según viewport. La
+info, trophy, close) y añadiendo una leyenda corta. Los accesos migrados del HUD
+se editan en StarterGui según la sección 0.2; en móvil su tamaño/separación se
+configuran mediante atributos y su distribución cambia según viewport. La
 lógica de intención vive en `Shared.LocalCombatInput` y `StarterPlayerScripts.MobileControls`.
 Los controles solo aparecen con `TouchEnabled` en landscape y combate activo.
+
+## 0.2 Accesos del HUD editables en StarterGui — 2026-10-14
+
+**Aplicado en Lobby `125075465377023` y Match `108298899371591`, sin publicar.**
+Detener Play y seleccionar las siguientes instancias en Explorer. Los
+controladores enlazan estas plantillas; ya no reconstruyen los cuatro accesos.
+
+| Control | Instancia permanente | Place | Controlador en StarterPlayerScripts |
+|---|---|---|---|
+| MOCHILA [B] | `StarterGui.ZB_EquipmentDashboard.OpenInventory` | Ambos | `EquipmentDashboard` |
+| TAB: VER CONGELAMIENTOS | `StarterGui.ZB_BattleScoreboard.ScoreAccess` | Ambos | `BattleScoreboard` |
+| ALT: LIBERAR CURSOR · B: MOCHILA | `StarterGui.ZB_BattleCursor.CursorAction` | Ambos | `BattleCameraController` |
+| SALIR DE LA BATALLA [X] | `StarterGui.ZB_BattleExit.LeaveButton` | Lobby | `BattleFormatController.client` |
+| VOLVER AL LOBBY [L] | `StarterGui.ZB_ReturnToLobby.ReturnButton` | Match | `ReturnToLobbyController.client` |
+
+### Qué editar en Properties
+
+- **Texto, fuente y color:** `Text`, `TextSize`, `FontFace`, `TextColor3` del botón.
+- **Posición/tamaño de escritorio:** `Position`, `AnchorPoint`, `Size` del botón.
+- **Padding interior:** hijo `ContentPadding` (`UIPadding`), propiedades
+  `PaddingLeft`, `PaddingRight`, `PaddingTop`, `PaddingBottom`.
+- **Texto cuando el cursor está libre:** atributo `FreeCursorText` de `CursorAction`.
+  Su `Text` define el mensaje al apuntar; el controlador alterna ambos mensajes.
+- **Icono de mochila:** `OpenInventory.ZBAtlas_bag.Image`. Vacío sigue la plantilla
+  compartida `ReplicatedStorage.UIAssets.Icons.bag`; una imagen local tiene prioridad.
+- **Arte del fondo compartido:** `ReplicatedStorage.UIAssets.Skins.button_cyan_<estado>`.
+  El atributo `UIFrameSkin=button` enlaza ese arte. El fondo nativo se edita en el
+  botón y su `UICorner`; se usa también como respaldo si la imagen no carga.
+
+Valores iniciales: mochila **200×52**, tabla/cursor **300×48**, salida/retorno
+**260×48**; padding **16 px horizontal / 8 px vertical**. La mochila reserva
+**52 px a la izquierda** para el icono. Margen derecho **32 px**, margen inferior
+**32 px** y separación **16 px** entre los tres accesos inferiores.
+`UIFrameSkins` compensa el padding al colocar el arte: el fondo cubre el botón
+completo, mientras el texto conserva su espacio interior.
+
+### Configuración móvil desde StarterGui
+
+En `StarterGui.ZB_EquipmentDashboard`, editar estos **Attributes** en ambos Places:
+
+| Atributo | Inicial | Efecto |
+|---|---|---|
+| `MobileButtonSize` | 52 | Diámetro de mochila, tabla y salida/retorno |
+| `MobileEdgeMargin` | 20 | Margen derecho de esos accesos |
+| `MobileGap` | 16 | Separación horizontal entre ellos |
+| `MobileNavY` | 128 | Posición vertical del grupo durante batalla |
+
+`Shared.MobileHudLayout` adapta los accesos a círculos en dispositivos táctiles;
+reinicia el padding rectangular de la copia y coloca iconos/leyendas. Los cambios
+de `Position`/`Size` del botón son para escritorio; en móvil usar estos atributos.
+La visibilidad depende de batalla y menús. Los cuatro ScreenGui usan
+`ResetOnSpawn=false` y `DeviceSafeInsets`. No renombrar los ScreenGui ni los botones.
+
+**Retirada aplicada:** `HudController.client` ya no crea `RoundOptions`,
+`OptOutButton`, `Check` ni `OptOutLabel`, ni conecta la opción «No entrar a la
+próxima batalla». También se retiró su tratamiento de AtlasUIController y
+MobileHudLayout. Los servicios/remotes históricos del servidor no se modificaron.
+
+**Verificación:** una copia de cada acceso en PlayerGui, ausencia de RoundOptions,
+fondos de tamaño completo y textos que caben. Capturas de escritorio **1211×593**
+y iPhone 17 Pro horizontal **750×381** en ambos Places. Atajos B, Tab y Alt
+comprobados en Lobby con fixture visual de batalla local; sin invocar la salida.
+La revisión de Match usó un fixture visual local porque Play aislado rechaza
+TeleportData e intenta retornar con un error HTTP preexistente. No certifica
+teleports ni touch físico. En vertical **401×778** sigue el aviso existente de
+girar el dispositivo; no se certifica gameplay vertical.
+Ambos Studios quedaron en Edit y con viewport predeterminado.
+
+Respaldo de los seis controladores por Place y MobileHudLayout:
+`ServerStorage.ZB_HudEditableBackup_20261014`; los controladores incluyen
+`OriginalPath`. No activar las copias como interfaces adicionales.
+
+## 0.3 Monedas: dispersión y vuelo al contador — 2026-10-14
+
+**Implementado en ambos Places, sin publicar.** El contador ahora permanece
+visible también en batalla y tiene plantilla permanente:
+
+```text
+StarterGui.ZB_CoinFeedback (ScreenGui, ResetOnSpawn=false, DeviceSafeInsets)
+├─ CoinsLabel (TextLabel: total actualizado por HudController)
+│  └─ Icon (ImageLabel: UIAssetKey=coin)
+│     └─ FeedbackScale (UIScale: pulso al llegar las monedas)
+├─ SpriteTemplate (ImageLabel oculto, plantilla de moneda 24×24)
+└─ Bursts (Frame transparente: sprites temporales durante Play)
+```
+
+| Cambio visual | Dónde editar |
+|---|---|
+| Fuente/color/posición/tamaño del total desktop | `StarterGui.ZB_CoinFeedback.CoinsLabel` |
+| Icono destino | `CoinsLabel.Icon.Image`; vacío usa `UIAssets.Icons.coin` |
+| Imagen/tamaño de las monedas animadas | `ZB_CoinFeedback.SpriteTemplate.Image` / `Size`; vacío usa `UIAssets.Icons.coin` |
+| Número visual de monedas | Attribute `CoinsPerBurst` del ScreenGui: 9 |
+| Límite simultáneo | Attribute `MaxActiveCoins`: 36 |
+| Radio alrededor del personaje | Attribute `SpreadRadius`: 3.5 studs, proyectados a pantalla |
+| Duración de dispersión | Attribute `SpreadDuration`: 0.22 s |
+| Duración del vuelo | Attribute `FlightDuration`: 0.65 s |
+| Escalonado entre monedas | Attribute `Stagger`: 0.035 s |
+
+La dispersión utiliza sprites 2D proyectados alrededor del personaje. TweenService
+los dispersa, luego los dirige por una curva al centro del icono del contador;
+al llegar se encogen/desvanecen y el icono hace un pulso. No son pickups físicos.
+El número de sprites no representa una cantidad de recompensa. El total muestra
+monedas reales replicadas; la animación no paga ni modifica el saldo.
+
+En móvil, `Shared.MobileHudLayout` coloca el contador arriba a la izquierda
+(42,64; 132×20, TextSize=12), dejando libres los accesos de batalla. Posición y
+tamaño desktop del contador no sustituyen esta adaptación móvil.
+
+**Conexión:** `ServerScriptService.BattleStats.recordFullFreeze` emite
+`ReplicatedStorage.RemoteEvents.FreezeCoinFeedback` solamente para el atacante
+al acreditar el congelamiento completo de un jugador de la misma batalla.
+`StarterPlayer.StarterPlayerScripts.CoinFeedbackController` consume el evento;
+`ReplicatedStorage.Shared.CoinBurstEffect` implementa los tweens. El cliente
+ignora secuencias repetidas/antiguas del encuentro y eventos de otra partida;
+menús/tabla abierta no reproducen el burst. Salida, retirada de personaje o
+cambio de viewport limpian las monedas. No se dispara por cobrar misiones o
+recoger monedas normales. Los premios/economía existentes no se cambiaron.
+
+**QA controlada Studio:** cuatro acreditaciones con objetivo simulado por Place,
+sprites observados en desktop y móvil horizontal; saldo 500 intacto; autoimpacto
+rechazado. Final: cero sprites y escala del icono 1. En Lobby, seis bursts rápidos
+alcanzaron 36 sprites como máximo; los dos siguientes crearon cero, cancelar dejó
+cero y las tareas diferidas no recrearon sprites. Tres fuentes nuevas/modificadas
+CoinBurstEffect, CoinFeedbackController y BattleStats tienen bytes/hash iguales
+entre Places. Sin errores nuevos de esos scripts; fixtures retirados y simuladores
+default. Falta congelamiento real publicado con dos cuentas y touch físico.
+
+**Reversión:** fuentes previas de HudController, AtlasUIController,
+MobileHudLayout y BattleStats en `ServerStorage.ZB_VisualFeedbackBackup_20261014`
+con `OriginalPath`. Restaurarlas y retirar ZB_CoinFeedback, CoinFeedbackController,
+CoinBurstEffect y FreezeCoinFeedback para quitar esta integración completa.
+
+## 0.4 Imágenes propias de las tres armas — 2026-10-14
+
+**Plantillas aplicadas en Lobby y Match el 14/10. Imágenes reales cargadas en
+Lobby el 16/10; Match pendiente porque su Studio no estaba conectado.**
+Las tarjetas de armas de mochila/tienda ya no
+insertan iconos genéricos weapon/rifle/cannon. Reservan un recuadro de **96×102**
+unidades UI y usan una plantilla ImageLabel diferente por ID:
+
+| Arma / modelo | Instancia permanente | Image en Lobby | Archivo en assets/ui |
+|---|---|---|---|
+| SDR-Mk2 | `ReplicatedStorage.UIAssets.WeaponImages.blaster` | `rbxassetid://73825106772191` | `weapon_blaster.png` |
+| Rifle / SM_Wep_SMG_01 | `ReplicatedStorage.UIAssets.WeaponImages.rifle` | `rbxassetid://74291139533144` | `weapon_rifle.png` |
+| Cañón / SM_Wep_Laser_Gun_01 | `ReplicatedStorage.UIAssets.WeaponImages.cannon` | `rbxassetid://131349817623777` | `weapon_cannon.png` |
+
+Detener Play, seleccionar la instancia y asignar una imagen importada o su
+`rbxassetid://ID` en Properties. Repetir el mismo ID en ambos Places. Usar PNG
+RGBA con la silueta completa del arma y margen. Los PNG actuales son **512×512**
+con `ScaleType=Fit` e ImageRectOffset/ImageRectSize en cero. La fuente entregada
+`assets/Íconos de armas futuristas en neón.png` mide realmente **2172×724**;
+se separaron tres cuadros de 724×724, de izquierda a derecha blaster/rifle/cannon,
+y se retiró el mate rojo exterior de los derivados, conservando el original.
+Proceso reproducible en `assets/ui/prepare_weapon_images.py`; recortes/IDs en
+[weapon_images_manifest.json](assets/ui/weapon_images_manifest.json).
+
+Mientras `Image` esté vacío, el hijo `ZBAtlas_ImagePlaceholder` muestra **IMAGEN
+DEL ARMA**. Se oculta al asignar Image a la copia del recuadro. No hay fallback
+al icono SVG/genérico. Fondo, UICorner/UIStroke e imagen se editan en estas
+plantillas; el texto de la tarjeta queda a partir de x=128 y conserva espacio
+separado para nombre, estadísticas y acción.
+
+`EquipmentDashboard` clona la plantilla por `WeaponPreviewId`, tanto en compra
+como en equipado; `AtlasUIController` respeta ese layout. Las tarjetas siguen
+siendo dinámicas: no editar `PlayerGui...Panel.Cards.CardN` para cambios permanentes.
+Las copias toman propiedades al crearse; tras editar la fuente iniciar Play nuevo
+o regenerar las tarjetas. Cambiar una imagen no cambia el modelo 3D del arma.
+
+QA de las plantillas del 14/10: tres espacios sin iconos genéricos; textos que caben en desktop y iPhone 17
+Pro horizontal **750×381** en ambos Places. Imagen temporal de prueba ocultó el
+marcador y se retiró. Las tres armas se mostraron mediante snapshot visual de
+inventario de QA; eso no concedió propiedad ni cobró monedas. En móvil la segunda
+fila se consulta con scroll. Sin errores nuevos; ambos Studios en Edit/default.
+Respaldo de los dos controladores y modelos previos al ajuste de presentación:
+`ServerStorage.ZB_WeaponPresentationBackup_20261014`. Sin publicar.
+
+## 0.5 Vitrinas físicas de armas y acceso compartido — Lobby, 2026-10-16
+
+En `Workspace.WeaponDisplays` hay tres Models, clonando el contenedor de
+`Workspace.basegancho1` y sustituyendo su gancho por el arma de exhibición:
+
+| Modelo | WeaponId | Posición del pedestal |
+|---|---|---|
+| `basearma1` | `blaster` | (-110, 1.4504, -20) |
+| `basearma2` | `rifle` | (-70, 1.4504, -20) |
+| `basearma3` | `cannon` | (-30, 1.4504, -20) |
+
+Cada modelo contiene:
+
+```text
+basearmaN
+├─ Base (PrimaryPart; pedestal original)
+│  ├─ Chamber (vidrio original)
+│  └─ Rim (aro original)
+├─ Weapon (clon de la plantilla; solo exhibición)
+└─ OfferPlate
+   ├─ WeaponOfferSign (SurfaceGui)
+   │  ├─ WeaponImage
+   │  ├─ Title
+   │  └─ Access
+   └─ WeaponOfferPrompt (ProximityPrompt, E: Ver arma)
+```
+
+Mover **el Model completo** para conservar juntos pedestal, vidrio, arma, cartel
+y prompt. Los tres contenedores conservan la geometría del original; los originales
+basegancho1/2/3 siguen intactos. Todas las piezas de los nuevos exhibidores están
+ancladas; sus armas no tienen colisión ni se conceden por tocarlas. Los previews
+se ajustaron a un tamaño máximo de 12 studs y centraron dentro del vidrio.
+No son las plantillas de equipado: modificar aquí la escala no cambia el arma en mano.
+
+**Edición visual:** textos en `OfferPlate.WeaponOfferSign.Title/Access`; imagen
+del cartel en `WeaponImage.Image`. Su imagen inicial copia `UIAssets.WeaponImages`;
+si se sustituye después, actualizar también el cartel. El prompt se edita en
+`OfferPlate.WeaponOfferPrompt`. El arma base indica GRATIS PARA TODOS; las otras
+indican PASE · PRÓXIMAMENTE.
+
+**Acceso común:** `StarterPlayerScripts.WeaponDisplayController` escucha los
+prompts del showroom y dispara el BindableEvent
+`StarterGui.ZB_EquipmentDashboard.OpenWeaponOffer` en su copia PlayerGui.
+EquipmentDashboard abre TIENDA / ARMAS, resalta la ficha y hace scroll hacia ella.
+Es la misma tarjeta de la tienda, no otra ruta de cobro. Este evento es local,
+solo abre UI y no concede saldo/propiedad. Su ausencia no bloquea el dashboard.
+
+**Pases:** `ReplicatedStorage.WeaponOffers.blaster/rifle/cannon` son Configurations
+con WeaponId, DisplayName, SaleMode, PassId, PassPriceRobux y PurchaseIntegrationReady.
+blaster usa SaleMode=Free; rifle/cannon usan GamePass.
+
+| Offer | SaleMode | PassId | Ready | Estado |
+|---|---|---|---|---|
+| `blaster` | Free | — | — | Gratis para todos |
+| `rifle` | GamePass | 0 | false | Pase próximamente; sin compra con monedas |
+| `cannon` | GamePass | 2039918698 | true | **Conectado**: pase de 10 R$ |
+
+**Cañón conectado al pase (2026-10-16):** se compra **solo** con el pase; ya no se
+compra con 250 monedas. Quienes ya lo poseían lo conservan y lo equipan gratis.
+
+- `ServerScriptService.MonetizationService` (Lobby): al entrar consulta
+  `UserOwnsGamePassAsync` por cada pass configurado y concede el arma con
+  `_G.ZB.Workshop.grantWeapon` (sin cobrar monedas), registra el derecho en
+  `profile.passes` y guarda. También escucha `PromptGamePassPurchaseFinished`
+  para conceder tras una compra confirmada. El cliente **nunca** declara propiedad.
+- `WorkshopService.grantWeapon/ownsWeapon` conceden/consultan propiedad; el
+  `WorkshopBuy` de armas rechaza comprar con monedas un arma de pase que no se posee.
+- `DataService` (Lobby y Match) guarda y conserva `profile.passes` para no perder
+  el derecho al viajar. Match no tiene MonetizationService (no vende); refleja la
+  posesión por el perfil ya persistido.
+- Cliente `EquipmentDashboard`: si el arma es de pase, no poseída y Ready, muestra
+  **DESBLOQUEAR · N R$** (precio real con `GetProductInfo`, respeta precios
+  regionales) y al pulsar abre `PromptGamePassPurchase`. Sin PassId válido muestra
+  PASE PRÓXIMAMENTE.
+
+Rifle sigue con PassId=0 (PASE PRÓXIMAMENTE) hasta tener su pase. Cambiar
+`rifle.PassId` + `PurchaseIntegrationReady=true` con un ID válido activa el mismo
+flujo sin tocar código. No se modificó la economía de monedas de otras categorías.
+
+**Cartel propio de cada vitrina (16/10):** el texto de la vitrina
+(`OfferPlate.WeaponOfferSign.Access`) es **compartido** y no cambia por jugador;
+decía "PASE · PRÓXIMAMENTE" a todos, incluso a quien ya tenía el Cañón. Ahora
+`StarterPlayerScripts.WeaponDisplayController` crea un **BillboardGui local**
+(`ZB_StandState`, 280×42, con fondo/UIStroke y `AlwaysOnTop=true` para que no lo
+tape el pedestal, `MaxDistance=140`) sobre cada vitrina que muestra, **solo al
+cliente**, el estado real: `LA TENÉS · EQUIPÁ` (posee), `DESBLOQUEAR · N R$` (pase
+listo, precio real), `PASE · PRÓXIMAMENTE` (sin ID) o `GRATIS PARA TODOS`. Se
+actualiza con `InventoryState`. Resuelve la contradicción "lo tengo en la mochila
+pero la vitrina me lo ofrece". El Sign compartido queda como referencia estática;
+el estado fiable es el Billboard del cliente. Nota: si el modelo aún no replicó su
+`Base`, se espera con `WaitForChild('Base',5)` antes de crear el cartel (si no, no
+se creaba por replicación tardía).
+
+**"Ya tienes este objeto" al comprar:** si al pulsar DESBLOQUEAR Roblox responde
+que ya se posee, la cuenta **ya tiene el pase**. Eso es esperado: no se puede
+recomprar. Para probar la compra real hace falta una **cuenta que no posea el
+pase**. `AutoGrantPasses=true` (valor de producción) hace que los dueños del pase
+reciban el arma al entrar (ven LA TENÉS); el creador del pase siempre lo posee.
+
+**Interruptor de pruebas `AutoGrantPasses` (16/10):** `ReplicatedStorage.Monetization.AutoGrantPasses`
+(BoolValue, **hoy `false`**) controla si `MonetizationService` concede el arma del
+pase al entrar. En `false` no concede al entrar (para probar la compra); la compra
+confirmada sigue concediendo. Ausente = `true`. **Subirlo a `true` antes de lanzar**
+para que los dueños del pase recuperen el arma al reentrar.
+
+> **Causa del reporte "todos tienen el Cañón":** la API de Roblox devolvió
+> `UserOwnsGamePassAsync` **true para la cuenta creadora** del pase y **false** para
+> otras (userId 1 y 156). Como el dueño del pase recibe el arma al entrar, y en
+> Studio *multijugador* todos los jugadores son la misma cuenta, "todos" aparecían
+> con el Cañón. Con `AutoGrantPasses=false` y el reset, los testers ven DESBLOQUEAR.
+> Una cuenta que ya posee el pase no puede recomprarlo: para probar la compra real
+> usar una cuenta sin el pase.
+
+**Reset pre-lanzamiento del Cañón (16/10):** como el juego aún no es público y los
+que tenían el Cañón son testers, `ServerScriptService.WeaponPassReset` (módulo en
+ambos Places) quita **una vez** el Cañón de `workshop.ownedWeapons`, restaura el
+equipado a `blaster` si hacía falta y limpia el registro `passes`, para que los
+testers sin el pase vean **DESBLOQUEAR** y puedan probar la compra. Es idempotente
+por perfil: guarda `migrations.weaponPassReset = VERSION`; para volver a ejecutarlo
+se sube `WeaponPassReset.VERSION` y se republica. No afecta armas fuera de su lista
+(p. ej. `rifle`). DataService lo aplica al normalizar el perfil en Lobby y Match.
+
+**Caveat de prueba:** si la cuenta **ya posee el pase**, `MonetizationService` vuelve
+a conceder el Cañón al entrar (comportamiento correcto); esa cuenta verá EQUIPAR y
+no podrá comprar de nuevo. Para probar la compra real hay que usar una cuenta que
+**no** posea el pase (y, en Studio, la compra externa consume Robux reales; conviene
+probar en la experiencia publicada con una cuenta tester sin el pase).
+
+**QA del pase del Cañón (16/10, Studio):** el pase 2039918698 ("cañon", 10 R$) está
+a la venta. Con el pase poseído, `MonetizationService` concedió `cannon`
+(`ownedWeapons=blaster,cannon`, `passes={"2039918698":true}`); la tarjeta mostró
+EQUIPAR y el arma se equipó con 500 monedas intactas. Con el pase **no** poseído
+(servicio desactivado solo para observar), la tarjeta mostró **DESBLOQUEAR · 10 R$**.
+Intento de comprar el Rifle (de pase, sin ID) con monedas fue rechazado:
+"Este arma se desbloquea con su pase; no se compra con monedas.", sin cobrar. No se
+pudo probar la compra real con Robux ni un jugador distinto sin el pase dentro de
+Studio; el prompt oficial quedó conectado. Sin errores de scripts; avisos
+CorePackages del entorno. MonetizationService reactivado y fixtures retirados.
+Respaldo Lobby: `ServerStorage.ZB_CannonPassBackup_20261016`.
+
+**QA del 16/10:** 3/3 imágenes con AssetFetchStatus.Success; capturas de vitrinas
+y tienda. E real en las tres vitrinas abrió su ficha correcta. Click en tarjeta
+pendiente mantuvo 500 monedas y blaster equipado. Respawn: una GUI de equipo,
+tres vitrinas, tres prompts y 38/38 piezas ancladas. Simulador iPhone 17 Pro,
+750×381: la ficha de Cañón se enfoca y desplaza correctamente tras respawn; input
+de prueba por teclado, no touch físico. Sin errores nuevos de los scripts del
+proyecto; avisos FoundationProvider proceden de CorePackages. Fuentes de los tres
+ganchos comparadas con respaldo y conservadas. Studio en Edit/default; servidor
+HTTP local de subida cerrado. Sin publicar el Place.
+
+**Respaldo Lobby:** `ServerStorage.ZB_WeaponShowroomBackup_20261016`, con imágenes,
+EquipmentDashboard y plantilla StarterGui anteriores; `OriginalHookStands` conserva
+las tres fuentes. Reversión: restaurar por OriginalPath y retirar WeaponDisplays,
+WeaponOffers y WeaponDisplayController. No insertar OriginalHookStands en Workspace
+además de los originales existentes.
+
+**Match pendiente:** copiar/reemplazar UIAssets.WeaponImages con los mismos tres
+IDs, WeaponOffers y EquipmentDashboard; conservar/añadir OpenWeaponOffer en su
+plantilla para paridad. El handler visual está limitado a Lobby. Las vitrinas y
+WeaponDisplayController son decoración/acceso del Lobby y no necesitan copiarse
+a la arena Match. Probar mochila/carga de imágenes y equipado al sincronizar.
+
+## 0.6 Cuerda genérica con volumen — Lobby y Match, 2026-10-16
+
+**Implementado en ambos Places, sin publicar. Alcance confirmado por el usuario:
+solo personalización estética del sistema actual.** Se creó una única apariencia
+genérica. La cuerda de Navidad era un ejemplo de una posible actualización futura;
+no se creó una skin navideña, usos, caducidad ni otro sistema de consumibles.
+
+```text
+ReplicatedStorage.HookCosmeticAssets.RopeSkins
+└─ Generic (Model)
+   ├─ Core (Part Cylinder, Material Fabric)
+   └─ Decorations
+      └─ Rib (Part Cylinder, refuerzo del cable)
+```
+
+| Qué modificar | Instancia / propiedad |
+|---|---|
+| Grosor del cable | `Generic.Core.Size.Y` y `.Z` (inicial 0.18, mantener iguales para sección circular) |
+| Color/material del cuerpo | `Generic.Core.Color` / `.Material` |
+| Forma/color del refuerzo | `Generic.Decorations.Rib`, Size / Color / Material |
+| Separación de refuerzos | Attribute `Generic.Spacing` (2.5 studs) |
+| Cantidad máxima de refuerzos | Attribute `Generic.MaxDecorations` (24) |
+| Mezcla con el color equipado | Attributes CoreTintStrength=0.10 / DecorationTintStrength=0.35 |
+| Límite de cables visibles | Attribute `RopeSkins.MaxRenderedRopes` (12; máximo 6 táctil) |
+| Distancia de visibilidad | MaxViewDistance=350 / DecorationViewDistance=180 |
+
+La longitud del Core se adapta al gancho; su Size.X es solo una referencia de
+edición. El eje local X corre a lo largo del cable. Los adornos se definen con
+CFrame relativo al Core y se repiten entre extremos. Editar las plantillas en
+Edit, repetir los cambios en ambos Places y relanzar el gancho/iniciar Play para
+obtener copias nuevas. No editar `Workspace.ZB_HookRopeCosmetics` para guardar arte.
+
+**Render:** `StarterPlayer.StarterPlayerScripts.HookRopeRenderer` lee los dos
+Attachments del Beam `ZB_HookRope` ya replicado. Oculta ese Beam solo en el cliente
+y dibuja un cilindro 3D opaco con refuerzos, anclado y sin colisión/touch/query.
+No es RopeConstraint, no mueve al jugador ni modifica fuerzas, energía, alcance,
+raycast, compras o datos. HookController.client y HookVisualService.server se
+compararon contra el respaldo y están intactos. El Beam anterior sigue siendo
+el fallback si se retira el renderizador y se reinicia Play.
+
+El render usa un Model que coincida con HookRopeCosmeticId si existe y, en caso
+contrario, Generic. Hoy solo existe Generic: las entradas de color/grosor ya
+presentes en Config usan esta misma geometría. No se registraron artículos nuevos
+ni se cambiaron precios o propiedad. Modelos específicos para futuros cosméticos
+se conectarán al catálogo autorizado existente cuando haya arte y contenido.
+
+Límites para Generic: hasta 24 refuerzos más Core por cable en desktop, 12 más
+Core en táctil; prioridad al cable propio y ocultación de geometría lejana.
+Son límites de instancias/dibujo, no una medición de FPS.
+
+**QA Studio:** horizontal de 18 studs y vertical de 26 correctos; eje de cilindro
+alineado, longitud actualizada, Beam plano oculto. A 150 studs, 25 piezas como
+máximo; extremos coincidentes ocultan todo y destruir el marcador deja cero cables.
+En Lobby, entrada real a Libre e intención de gancho controlada por el bus actual:
+Hooking=true, un cable del dueño de 198.54 studs, fuerza existente aplicada y energía
+100→88.40; soltar dejó Hooking=false y cero cables. Para esa medición se desactivaron
+cámara/MobileControls solo en runtime. El intento de teclado Q no fue concluyente.
+Match: marcador de prueba de 16 studs, un cable de siete piezas y limpieza completa;
+no simula un VS válido. Renderer idéntico: 7973 bytes / hash base31 `1816714824`.
+Fuerza base 1000, velocidad máxima 70 y alcance 250 conservados. Sin errores nuevos
+del renderer; avisos CorePackages y rechazo de TeleportData de Match son del entorno.
+Fixtures retirados y ambos Places en Edit. Falta observador remoto/touch real/FPS.
+
+**Reversión:** retirar HookRopeRenderer y RopeSkins con Play detenido, reiniciar
+para recuperar el Beam anterior. `ServerStorage.ZB_GenericHookRopeBackup_20261016`
+de cada Place conserva las fuentes originales sin modificar como evidencia.
+No hace falta restaurar datos, inventario ni configuración de movimiento.
+
+## 0.7 Estados de color del calendario — 2026-10-16
+
+**Aplicado en Lobby (calendario) y con datos guardados también desde Match, sin
+publicar.** Cada fecha de `StarterGui.ZB_DailyActivities` se pinta por su estado.
+Colores editables como **Attributes** del ScreenGui (valores iniciales RGB):
+
+| Attribute | Estado | Color inicial | Etiqueta |
+|---|---|---|---|
+| `ClaimedDayColor` | Cobrado (verde) | 22,85,53 | ✓ |
+| `MissedDayColor` | Día pasado sin cobrar (rojo) | 92,33,43 | SIN COBRO |
+| `AvailableDayColor` | Disponible hoy (ámbar) | 112,78,24 | COBRAR |
+| `FutureDayColor` | Futuro (neutro) | 17,29,46 | (vacío) |
+| `UnknownDayColor` | Sin datos (gris) | 26,35,48 | SIN DATOS |
+
+Hoy conserva su borde cian y la selección dorado; `IsToday`, `ConfirmedClaim` y
+`ClaimState` (claimed/missed/available/future/unknown) quedan como atributos de
+cada `Calendar.Grid.SlotNN` para inspección. La leyenda del calendario explica
+los colores; su texto se edita en `Content.Calendar.Legend.Text`.
+
+**Historial:** antes solo se guardaba el último cobro. Ahora `daily` incluye
+`claimedDays` (mapa fecha→importe), `historyStartDay` y `historyVersion=1`.
+El nuevo ModuleScript de servidor `ServerScriptService.DailyClaimHistory`
+normaliza y registra esas fechas; `DailyRewardService.server` acredita saldo y
+fecha en la **misma** mutación de perfil, y `DataService.server` (Lobby y Match)
+las conserva al cargar, capturar y guardar.
+
+**Límite honesto:** los días anteriores a que cada jugador empezara este registro
+quedan como `SIN DATOS` (gris); **no se pintan de rojo** porque no hay forma
+fiable de saber si se reclamaron. El perfil antiguo solo migra su último cobro
+confirmado. Desde que el registro empieza, cada día pasado sin cobrar sí queda rojo.
+
+QA (con reloj de prueba en memoria, no la medianoche real): migración de perfil
+antiguo `lastClaimDay=base-2,streak=2` conservó ese cobro; dos cobros de UI
+(base y base+2) dieron saldo 500→550→600; el día intermedio base+1 quedó **missed**
+en rojo; hoy disponible en ámbar; futuros neutros; tres solicitudes repetidas no
+pagaron dos veces; captura/guardado preservó 3 fechas, el hueco y el saldo 600.
+Smoke test con reloj real: hoy `available`, 18 días previos `unknown`, 23 futuros.
+Avisos CorePackages y rechazo de TeleportData de Match son del entorno, no del código.
+Sin fixtures; ambos Places en Edit. Respaldo `ServerStorage.ZB_DailyHistoryBackup_20261016`.
+Falta validación publicada de medianoche/reconexión y el gasto real del cobro.
 
 ## 1. «Cambiá la mochila por un bolso»
 
@@ -290,8 +739,8 @@ y editar **Image**. Cada instancia incluye atributos informativos `SourceFile`,
 | Impulso/movimiento | `boost` | `ui_boost.png` | 256×256 | Manual |
 | Congelamiento | `freeze` | `ui_freeze.png` | 256×256 | HUD y ranking |
 | Blaster/arma | `weapon` | `ui_weapon.png` | 256×256 | Tarjetas y manual |
-| Rifle | `rifle` | `ui_rifle.png` | 256×256 | Tarjetas |
-| Cañón | `cannon` | `ui_cannon.png` | 256×256 | Tarjetas |
+| Rifle | `rifle` | `ui_rifle.png` | 256×256 | Icono legado/reserva; tarjetas actuales usan WeaponImages.rifle |
+| Cañón | `cannon` | `ui_cannon.png` | 256×256 | Icono legado/reserva; tarjetas actuales usan WeaponImages.cannon |
 | Láser | `laser` | `ui_laser.png` | 256×256 | Tarjetas |
 | Recarga | `regen` | `ui_regen.png` | 256×256 | Tarjetas |
 | Moneda | `coin` | `ui_coin.png` | 256×256 | Saldo y ranking |
@@ -323,10 +772,11 @@ cambiar durante el juego porque expresan estado.
 Desde el 13/10 esos estilos son también el fondo nativo de respaldo. Para cambiar
 el arte visible de marcos/botones, editar `UIAssets.Skins`, según la sección de atlas.
 
-**Alcance real:** el manual completo está prearmado en StarterGui. Mochila/tienda,
-HUD y actividades todavía construyen sus datos y controles dinámicos con sus
-controladores; ahora consumen iconos/estilos editables. Su migración completa a
-plantillas está desglosada en [SUGERENCIAS.md](SUGERENCIAS.md), no se presenta como terminada.
+**Alcance real:** el manual, calendario de Lobby, controles táctiles y accesos
+del HUD de la sección 0.2 tienen plantillas en StarterGui. El panel interior de
+mochila/tienda, marcador de jugadores y barras del HUD aún se construyen con
+controladores y consumen iconos/estilos editables. Su migración restante está
+desglosada en [SUGERENCIAS.md](SUGERENCIAS.md), no se presenta como terminada.
 
 ## 4. Exportación y aceptación
 
@@ -364,3 +814,4 @@ Registrar futuros reemplazos aquí:
 |---|---|---|---|---|---|---|
 | 2026-10-06 | UIAssets y ZB_Intro | Instancias nativas | Catálogo en script | Image vacío + Fallback | Studio / no | Studio / no |
 | 2026-10-13 | UIAssets.Icons / Skins y plantillas | 28 PNG en assets/ui | Iconos vacíos y estilos nativos | roblox_asset_ids.json | Studio / no | Studio / no |
+| 2026-10-14 | StarterGui: accesos de mochila, tabla, cursor y salida/retorno | Plantillas nativas + ContentPadding | Accesos creados por scripts y opción antigua | Accesos editables; opción antigua retirada | Studio desktop/móvil / no | Studio desktop/móvil / no |

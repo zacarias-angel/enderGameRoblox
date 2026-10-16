@@ -46,6 +46,27 @@ incidentes en [BUGS](BUGS.md).
   y flujo principal Libre/VS. Correcciones de esta sección todavía sin publicación;
   pruebas de revalidación de tres cuentas en CHECKLIST/B13–B16.
 
+### Historial diario y colores del calendario — 2026-10-16 (vigente)
+
+Desde el 16/10 el calendario distingue el estado de cada fecha con color:
+
+- **Verde** = recompensa diaria cobrada ese día; **rojo** = día pasado sin cobrar;
+  **ámbar** = disponible hoy; **gris** = sin datos/futuro; borde cian = hoy,
+  dorado = selección. Colores editables como Attributes del ScreenGui
+  (`ClaimedDayColor`, `MissedDayColor`, `AvailableDayColor`, `FutureDayColor`,
+  `UnknownDayColor`); cada `Calendar.Grid.SlotNN` expone `ClaimState`/`ConfirmedClaim`.
+- **Historial real:** `daily` en el perfil guarda `claimedDays` (mapa fecha→importe),
+  `historyStartDay` y `historyVersion=1`. Un nuevo ModuleScript de servidor
+  `ServerScriptService.DailyClaimHistory` normaliza y registra; `DailyRewardService`
+  acredita saldo y fecha en la misma mutación de perfil (anti-doble-cobro), y
+  `DataService` de ambos Places preserva el historial al cargar/capturar/guardar.
+- **Límite deliberado:** los días anteriores al inicio del registro quedan como
+  “sin datos”; **no** se pintan de rojo para no inventar historial. El perfil antiguo
+  solo migra su último cobro confirmado. Match guarda el mismo historial para no
+  perderlo en el teleport, aunque el calendario se muestra solo en Lobby.
+- Implementación y QA detalladas en UI_ASSETS 0.7 y BUGS B20. No cambia el cobro,
+  la racha ni la renovación 00:00 UTC; solo añade el historial y su presentación.
+
 ### Calendario mensual de actividades — 2026-10-09 (vigente)
 
 En Lobby, `StarterGui.ZB_DailyActivities` es ahora una **plantilla completa**,
@@ -212,8 +233,9 @@ y cadenas de impulso forman parte del diseño táctico.
   ragdoll pueda convertir en articulaciones corporales. Todas las piezas son
   Massless, no ancladas y sin CanCollide/CanTouch/CanQuery.
 - Respawn y cambio de WeaponId montan una sola arma. Rifle/Cañón conservan sus
-  estadísticas y selección; mientras no tengan plantilla propia, usan SDR-Mk2 como
-  visual compartido. No se fuerza `blaster` sobre selecciones guardadas de jugadores.
+  estadísticas y selección. Desde el 14/10 tienen plantillas propias SMG/láser,
+  descritas a continuación; SDR-Mk2 queda como fallback si falta una plantilla.
+  No se fuerza `blaster` sobre selecciones guardadas de jugadores.
 - El ajuste de montaje se edita en el atributo CFrame `HandOffset` de la plantilla:
   actualmente `(0,-0.15,-0.1)` sin giro; Grip representa el punto que se coloca ahí.
   Para reemplazos, conservar nombre `blaster`, Handle/Grip y Barrel/Muzzle,
@@ -233,6 +255,154 @@ y cadenas de impulso forman parte del diseño táctico.
   combate VS real y rigs adicionales siguen pendientes. El IK moderno de Match
   se sincronizó después en B12 del 09/10: medición de pose en Studio confirmada;
   no equivale a validar disparo multijugador en VS.
+
+### Rifle SMG y Cañón láser — modelos integrados 2026-10-14
+
+**Implementados en Lobby y Match; sin publicar.** Reemplazan el visual compartido
+de Rifle/Cañón, conservando los IDs, estadísticas, precios en monedas y selección
+existentes. No se crearon pases ni cambió la modalidad de venta en esta integración.
+
+| ID | Modelo visible | Plantilla permanente | Dimensiones aproximadas |
+|---|---|---|---|
+| `blaster` | SDR-Mk2 gratuita | `ReplicatedStorage.WeaponAssets.Templates.blaster` | 0.463×1.430×2.240 |
+| `rifle` | SM_Wep_SMG_01 | `ReplicatedStorage.WeaponAssets.Templates.rifle` | 0.370×1.362×3.036 (ajuste +15 %) |
+| `cannon` | SM_Wep_Laser_Gun_01 | `ReplicatedStorage.WeaponAssets.Templates.cannon` | 0.415×1.530×3.726 (ajuste +15 %) |
+
+- Fuentes colocadas por el usuario en Workspace de Lobby: cada Model tenía dos
+  MeshParts (cuerpo y gatillo). Longitudes originales 63.570 y 104.406 studs;
+  escalas uniformes 0.04089995 para SMG y 0.03064951 para láser. Los originales
+  están conservados en `ServerStorage.WeaponImportSources` del Lobby.
+- **Revisión posterior del usuario:** el giro inicial de 180° en Y del SMG
+  interpretaba el frente de la malla al revés. Corregido: mesh sin ese giro,
+  desplazado alrededor de Handle para mantener el punto de empuñadura; caño real
+  hacia -Z. Láser ya apuntaba hacia -Z. Ambos modelos aumentados uniformemente
+  **15 %**, con Model.GetScale=1.15 y atributo PresentationScale=1.15.
+  Ambas plantillas tienen `PrimaryPart=Handle`, `Handle.Grip` y `Barrel.Muzzle`.
+  Handle/Barrel son marcadores transparentes; dos meshes visibles; tres welds
+  internos y, al equipar, un cuarto `WeaponMount` a RightHand.
+- Piezas sin anclaje/colisión/touch/query, Massless y sin CastShadow. Los modelos
+  no traen scripts de disparo: usan WeaponVisualService y los servicios existentes.
+- `HandOffset=(0,-0.15,-0.1)` como el arma base; Grip local identidad. Muzzle local
+  del modelo vigente: Rifle `(0,0.6555,-0.897)`, Cañón `(0,0.667,-2.4495)`, ambos
+  orientados -Z y situados al frente de la malla. Cuerpo/Muzzle tienen dot 1 en
+  ambos Places. Las medidas anteriores al +15 % quedan en el respaldo de presentación.
+  Montaje/escala/cuerpo se editan en la plantilla; repetir cambios en ambos Places
+  y reequipar/respawn para renovar los clones.
+- MeshIds de Rifle: cuerpo `76621132828690`, gatillo `113738827003683`.
+  Cañón: cuerpo `122061092754289`, gatillo `80768984918661`.
+  Textura de los cuerpos `96378986462286`; gatillos conservan textura vacía.
+  IDs iguales en ambos Places; Match reconstruido desde los mismos assets.
+- QA: capturas de montaje R15 en ambos Places; cinco cambios sucesivos entre
+  blaster/rifle/cannon y respawn real dejan una sola arma. Cada nueva arma tiene
+  cuatro piezas, todas sin colisión/anclaje y Massless, y Muzzle presente en cliente
+  y servidor. Equipar con stamina 30 produjo 31.8 por regeneración, sin refill.
+- Entrada Libre mediante el servicio real de Lobby. Disparo por mouse mostró
+  consumo y solicitudes al servidor. Medición adicional con intención local
+  controlada: dos beams conectados al Muzzle de cada modelo; energía 100→90.1,
+  dot Muzzle/rayo de mira 0.99999964 (Rifle) / 0.99999982 (Cañón).
+  Para esa medición se desactivaron cámara y MobileControls solo en runtime;
+  los controles táctiles de escritorio limpian la intención simulada del bus.
+  Estos ajustes/fixtures desaparecieron al detener Play; scripts Edit habilitados.
+- Límite: no certifica compra/equipado premium, teleports, combate VS con dos
+  cuentas ni todos los rigs. Match aislado conserva rechazo de TeleportData.
+- Respaldo por Place: `ServerStorage.ZB_WeaponModelsBackup_20261014`, carpeta
+  `PreviousTemplates` y atributos CreatedRifle/CreatedCannon. No había plantillas
+  propias anteriores: retirarlas devuelve el fallback SDR-Mk2 sin cambiar Config.
+  Lobby también contiene copias originales en `ImportedSources`; no insertarlas
+  además de los originales archivados. Ambos Places quedan en Edit, sin fixtures.
+
+**Ajuste del montaje del Rifle (16/10):** el usuario reportó que el Rifle parecía
+agarrarse desde el medio. La empuñadura real se calculó analizando la malla del
+cuerpo (`AssetService:CreateEditableMeshAsync`): los vértices más bajos (el mango)
+están al ~59 % desde el frente → Z≈+0.90 en el modelo. `Handle.Grip` pasó de
+`(0,0,0)` a `(0,-0.2,0.9)`. El Cañón se verificó igual y su mango ya estaba en
+Z≈+0.06, casi en el origen: no se tocó. Recalcular con la malla si se reemplaza el
+modelo. Respaldo `ServerStorage.ZB_RifleGripBackup_20261016`.
+
+**Aclaración de capturas del usuario (16/10):** `@whitechocolatediaz` tiene
+equipado el **Rifle** (que compró antes con monedas) y **no** el Cañón; la mochila
+(SDR-Mk2 + Rifle) y la tienda (Cañón DESBLOQUEAR) coinciden. No era una
+inconsistencia de propiedad, sino el montaje del Rifle.
+
+**QA de la revisión:** capturas R15 del Rifle corregido y Cañón ampliado en Match;
+longitudes de cuerpo 2.99 / 3.68 studs, correspondientes a ×1.15. Un arma montada
+y cambio con energía 30→31.8 sin refill. Espacios de imagen propios en las tarjetas,
+sin SVG genérico y con texto separado, ver UI_ASSETS 0.4. Los dos controladores
+UI coinciden byte/hash entre Places. Sin fixtures, ambos en Edit/default y sin
+publicar. Respaldo `ServerStorage.ZB_WeaponPresentationBackup_20261014` contiene
+los modelos y controladores previos; restaurarlos por OriginalPath para revertir.
+La medición inicial de beam de arriba validó Muzzle/mira, pero no detectó el
+frente invertido de la malla: no presentarla como aceptación visual definitiva.
+
+### Showroom de armas — Lobby, 2026-10-16
+
+- `Workspace.WeaponDisplays.basearma1/basearma2/basearma3`: clones del contenedor
+  basegancho1, con SDR-Mk2/Rifle/Cañón de solo exhibición. Originales de ganchos
+  preservados; piezas nuevas ancladas y previews sin colisión, máximo 12 studs.
+- Fila en X=-110/-70/-30, Z=-20, altura del pedestal original. Consultas de
+  intersección precisas previas sin colisión con estructuras en esas ubicaciones.
+  Se conserva el PivotOffset del pedestal y se coloca por su GetPivot normalizado,
+  no aplicando otra vez la rotación de su CFrame. Mover el Model completo en Edit.
+- Cartel frontal con imagen, título y GRATIS PARA TODOS / PASE · PRÓXIMAMENTE.
+  Prompt E abre TIENDA / ARMAS y enfoca esa ficha, sin conceder propiedad/cobrar.
+  Rutas de edición, componentes e IDs en UI_ASSETS 0.4–0.5.
+- `ReplicatedStorage.WeaponOffers.<id>`: SaleMode Free/GamePass, PassId,
+  PassPriceRobux y PurchaseIntegrationReady. Gratis base; **Cañón con pase
+  2039918698 conectado** (solo con pase, ya no por monedas). Rifle aún con
+  PassId=0 (PASE PRÓXIMAMENTE). Propietarios existentes conservan equipo.
+- Cliente nuevo WeaponDisplayController → BindableEvent OpenWeaponOffer de la
+  plantilla ZB_EquipmentDashboard → renderer compartido de tienda. Handler opcional
+  por eventos, sin espera bloqueante si falta el BindableEvent.
+- **Pases:** `ServerScriptService.MonetizationService` (Lobby) resuelve
+  `UserOwnsGamePassAsync` al entrar y tras `PromptGamePassPurchaseFinished`,
+  concede el arma con `WorkshopService.grantWeapon` (sin cobrar), registra
+  `profile.passes` y guarda. `DataService` de ambos Places conserva `passes`.
+  La tienda muestra DESBLOQUEAR · N R$ y abre el prompt oficial; el cliente no
+  prueba la propiedad. `WorkshopBuy` rechaza comprar con monedas un arma de pase
+  no poseída. Match no vende; refleja la posesión por el perfil persistido.
+  QA Studio: concede/equipa con el pase, DESBLOQUEAR sin él, y rechazo sin cobro.
+  Compra real con Robux/multicuenta publicada pendiente. Detalle en UI_ASSETS 0.5.
+- **Reset pre-lanzamiento:** `ServerScriptService.WeaponPassReset` quita una vez el
+  Cañón de los testers (y limpia `passes`) para poder probar la compra; idempotente
+  vía `migrations.weaponPassReset`; subir `VERSION` para repetir.
+- **Estado por jugador en la vitrina:** el Sign de la vitrina es compartido; un
+  BillboardGui local (`WeaponDisplayController`) muestra al cliente su estado real
+  (LA TENÉS / DESBLOQUEAR · N R$ / PASE · PRÓXIMAMENTE / GRATIS), corrigiendo la
+  contradicción entre la mochila (propiedad) y el cartel fijo. Solo hay un store
+  activo: `EquipmentDashboard`; `StoreDashboard` y `WorkshopController.client` están
+  deshabilitados.
+- **`ReplicatedStorage.Monetization.AutoGrantPasses`** (BoolValue): si es false, no
+  concede el arma del pase al entrar (pruebas pre-lanzamiento); la compra confirmada
+  siempre concede; ausente = true. **Poner true antes de lanzar.** El reporte "todos
+  tienen el Cañón" se debió a que la API devuelve propiedad true para la cuenta
+  creadora del pase y, en Studio multijugador, todos son la misma cuenta. Para
+  probar la compra real, usar una cuenta que no posea el pase.
+- Imágenes de la fuente del usuario exportadas a tres PNG y subidas; 3/3 cargadas
+  en Lobby. E en las tres vitrinas abrió su ficha correcta; saldo 500 y blaster
+  intactos al pulsar una tarjeta pendiente. Respawn mantuvo tres vitrinas, tres
+  prompts y una GUI. Capturas escritorio y móvil horizontal, foco/scroll a Cañón.
+- Respaldo Lobby `ZB_WeaponShowroomBackup_20261016`. Fuente de las imágenes y
+  archivos/IDs en assets/ui/weapon_images_manifest.json. Sin fixtures ni publicación;
+  Lobby en Edit/default. **Match no estaba conectado:** sincronizar imágenes,
+  WeaponOffers y dashboard/plantilla cuando se abra; las vitrinas son solo de Lobby.
+
+### Cable del gancho: apariencia genérica 3D — 2026-10-16
+
+- Alcance confirmado: estética, misma mecánica y personalización existentes.
+  Navidad fue un ejemplo futuro, no una skin a implementar ni un consumible.
+- Una plantilla `ReplicatedStorage.HookCosmeticAssets.RopeSkins.Generic`:
+  cuerpo cilíndrico Fabric oscuro y refuerzos, con tintado suave del color equipado.
+- Cliente HookRopeRenderer sigue los Attachments ya replicados, oculta el Beam
+  anterior localmente y muestra geometría sin colisión/query. No crea RopeConstraint
+  ni altera fuerzas, energía, alcance, velocidades, precios o inventario.
+- Resuelve un Model por HookRopeCosmeticId si existe; fallback Generic para las
+  tres entradas heredadas de color/grosor. Hoy hay una sola plantilla visual.
+- Misma fuente/plantilla en ambos Places. Código de HookController y
+  HookVisualService sin cambios; prueba controlada del gancho en Libre y fixtures
+  de geometría/limpieza en Studio. El intento de Q físico no fue concluyente;
+  multicuenta/touch/FPS y VS real siguen pendientes.
+- Edición, límites y QA en UI_ASSETS 0.6; respaldo por Place
+  `ZB_GenericHookRopeBackup_20261016`. Ambos Places en Edit, sin publicar.
 
 ### Retorno de Libre y apuntado del brazo — Lobby, 2026-10-07
 

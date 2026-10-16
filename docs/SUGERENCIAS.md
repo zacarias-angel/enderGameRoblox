@@ -1,6 +1,6 @@
 # Sugerencias — UI editable, cosméticos y monetización
 
-Actualizado: **2026-10-06**. Documento de trabajo: añadir pasos, decisiones y
+Actualizado: **2026-10-16**. Documento de trabajo: añadir pasos, decisiones y
 resultados aquí. Guía rápida de imágenes: [UI_ASSETS.md](UI_ASSETS.md).
 
 ## 0. Qué existe y qué falta
@@ -23,6 +23,25 @@ no hay que buscarlas esperando que ya existan. No se crearon productos, pases,
 campañas ni recursos pagos desde esta sesión.
 
 ### Orden recomendado
+
+**Avance real del 16/10 — venta del Cañón por pase conectada:**
+Lobby tiene tres vitrinas en `Workspace.WeaponDisplays`, imágenes propias y
+accesos que abren la misma sección de armas de la tienda. SDR-Mk2 es gratuita.
+El catálogo de estas armas es `ReplicatedStorage.WeaponOffers.blaster/rifle/cannon`.
+
+- **Cañón:** pase `2039918698` ("cañon", 10 R$) **conectado**. `MonetizationService`
+  (Lobby) verifica `UserOwnsGamePassAsync`, concede el arma con `grantWeapon`,
+  registra el derecho en `profile.passes` y guarda; también concede tras
+  `PromptGamePassPurchaseFinished`. El Cañón es **solo con el pase**: ya no se
+  compra con 250 monedas (quienes lo tenían lo conservan). La tienda muestra
+  **DESBLOQUEAR · 10 R$** y abre el prompt oficial.
+- **Rifle:** sigue PASE PRÓXIMAMENTE (`PassId=0`). Al poner un ID válido y
+  `PurchaseIntegrationReady=true` usa el mismo flujo sin tocar código.
+
+Pendientes: probar la compra real con Robux, un segundo jugador sin pase y el
+viaje Lobby→Match→Lobby publicado; cancelación/reconexión; y crear el pase del
+Rifle. Guía y pruebas en UI_ASSETS 0.4–0.5. No se publicó el Place.
+Las rutas de packs del apartado 3 siguen siendo propuestas distintas, no pases ya creados.
 
 1. [x] Cambiar imágenes y texto del manual desde Explorer/Properties.
 2. [ ] Migrar las demás pantallas a plantillas completas, conservando sus callbacks.
@@ -95,7 +114,7 @@ No añadir una skin allí como si fuera un arma más potente.
 | Catálogo de puntas | `ReplicatedStorage.Shared.Config` → `Config.HookTipCosmetics` | IDs, nombre, coste en monedas y datos visuales |
 | Cuerdas | El mismo Config → `Config.HookRopeCosmetics` | Beam configurado por color/ancho; no son modelos 3D |
 | Visual del gancho | `ServerScriptService["HookVisualService.server"]` | Usa `HookTipCosmeticId` y `HookRopeCosmeticId` |
-| Arma actual (actualizado 09/10) | `ReplicatedStorage.WeaponAssets.Templates.blaster` y `ServerScriptService.WeaponVisualService` | SDR-Mk2 montada y replicada desde servidor; WeaponSetup.client procedural deshabilitado. No incluye derechos ni catálogo premium de skins |
+| Armas actuales (actualizado 14/10) | `ReplicatedStorage.WeaponAssets.Templates.blaster`, `.rifle`, `.cannon` y `ServerScriptService.WeaponVisualService` | SDR-Mk2 gratuita, SM_Wep_SMG_01 como Rifle y SM_Wep_Laser_Gun_01 como Cañón, replicadas desde servidor. IDs/estadísticas/precios en monedas conservados; derechos y venta Robux pendientes. Montaje/QA en DISENO |
 | Inventario/compra | `ServerScriptService.InventoryService`, `ServerScriptService["WorkshopService.server"]` | Integración existente de propiedad/equipado y compras con monedas |
 | Datos persistentes | `ServerScriptService["DataService.server"]` | Debe ampliarse para las categorías nuevas |
 
@@ -142,7 +161,8 @@ welds y propiedades en un reemplazo futuro. No son archivos que el juego lea de 
   Attachment `Muzzle` en la boca. Mantener aproximadamente la envolvente del
   blaster actual (unos 0.6×0.6×2 studs para referencia), y medirla en la mano R15.
   Piezas unidas, sin colisión, Massless y no ancladas al equiparlas. Los nombres
-  `Handle/Grip` pertenecen al adaptador propuesto; el constructor actual aún no los usa.
+   `Handle/Grip` y `Barrel/Muzzle` ya son el contrato de WeaponVisualService en las
+   tres plantillas actuales; no añadir otro constructor local del arma.
 
 **Hallazgo útil:** los bounds actuales de `default` y `heavy` son aproximadamente
 16×6.4×16 y 7.57×8.05×9.77 studs; `spike` sí mide 0.3×0.3×1.2. No asumir que todas
@@ -185,6 +205,14 @@ Proponer `ReplicatedStorage.CosmeticCatalog` con carpetas `Avatars`, `Hooks`,
   eso permitiría obtenerlas gratis por el flujo de compra con monedas.
 
 ## 3. Tres pases de packs: crear, configurar y aplicar
+
+**Implementado antes de los packs — pase por arma (2026-10-16):** en lugar de un
+IntValue en `ReplicatedStorage.Monetization.Passes`, cada arma usa su entrada en
+`ReplicatedStorage.WeaponOffers.<id>` con `SaleMode=GamePass`, `PassId` y
+`PurchaseIntegrationReady`. `ServerScriptService.MonetizationService` resuelve el
+derecho y conserva `profile.passes`. El Cañón ya está conectado (pase `2039918698`).
+Los packs Aurora/Plasma/Solar de abajo siguen siendo una propuesta diferente: si se
+crean, reutilizar este servicio y catálogo en vez de duplicar la lógica de pases.
 
 **Sugerencia:** un pase permanente por colección:
 

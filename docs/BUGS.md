@@ -26,11 +26,75 @@ buscar el primer error de Output, no el último warning.
 | B16 | Alta / corregido Studio | VICTORIAS VS, encuentro completo deduplicado y congelados Libre; API/guardado en memoria comprobados, persistencia publicada pendiente |
 | B17 | Alta / corregido Studio | Agarre disponible durante gancho; relevo retira tracción sin borrar impulso. Prompts con registro fuerte y limpieza. QA controlada en ambos Places; recorrido con Q/E y touch publicado pendiente |
 | B18 | Media / corregido Studio | AtlasUIController inicia sin esperar ZB_Intro; manual tardío enlazado por eventos, sin fallback vacío. Clicks y respawn comprobados en ambos Places; Player pendiente |
+| B19 | Alta / corregido Studio | SpawnShieldRojo/Azul pierden el anclaje por MatchArenaPhysics. Excluir modelos SpawnCover; dos arranques Studio conservan las diez piezas fijas. Repetir dos entradas VS publicadas pendiente |
+| B20 | Media / corregido Studio | Calendario solo distinguía hoy/último cobro; no había historial por fecha. Nuevo `DailyClaimHistory` + colores verde/rojo/ámbar. Migración conserva último cobro; días previos sin registro quedan "sin datos". Validar medianoche/reconexión publicada |
 
 La estabilización base de Libre/VS fue validada en producción el 2026-09-14.
 Las verificaciones locales posteriores no cierran automáticamente estos pendientes.
 
 ## 2. Registro de causas y correcciones
+
+### Historial y colores de días en el calendario — B20, 2026-10-16
+
+- Reporte del usuario: los días reclamados debían verse en el calendario —verde
+  si se reclamó, rojo si no, otro color si está disponible. Antes solo existía
+  `daily.lastClaimDay`/`streak`: se marcaba hoy y el último cobro, sin historial.
+- **Causa:** no se persistían los días cobrados, así que no había forma de pintar
+  días pasados como reclamados o perdidos.
+- **Corrección:** nuevo ModuleScript de servidor `ServerScriptService.DailyClaimHistory`
+  (normaliza/consulta/registra). `daily` guarda `claimedDays` (fecha→importe),
+  `historyStartDay` y `historyVersion=1`. `DailyRewardService.server` acredita saldo
+  y fecha en la **misma** mutación atómica del perfil, con guarda para no pagar dos
+  veces. `DataService.server` de Lobby y Match normaliza al cargar y preserva el
+  historial al capturar/guardar (no lo pierde al viajar). El calendario
+  (`StarterPlayerScripts.DailyActivities`) pinta por estado y expone los colores
+  como Attributes del ScreenGui.
+- **Límite honesto:** los días anteriores al registro quedan como `SIN DATOS`
+  (gris); no se pintan de rojo para no inventar historial. El perfil antiguo solo
+  migra su último cobro confirmado. Match no tiene calendario propio (es de Lobby),
+  pero guarda el mismo historial para no perderlo en el teleport.
+- **QA (reloj de prueba en memoria):** migración `lastClaimDay=base-2,streak=2`
+  conservó ese cobro; cobros de UI base/base+2 dieron 500→550→600; base+1 quedó
+  `missed`; tres solicitudes repetidas no duplicaron; captura/guardado preservó 3
+  fechas, el hueco y el saldo 600. Match verificó la preservación del historial al
+  guardar. Smoke test con reloj real: hoy `available`, 18 `unknown`, 23 futuros.
+  `DailyClaimHistory`/`DailyClock` idénticos por hash entre Places. Sin fixtures;
+  respaldo `ServerStorage.ZB_DailyHistoryBackup_20261016`. Sin publicar.
+- **Pendiente:** prueba publicada de medianoche real, reconexión y cruce
+  Lobby→Match→Lobby; y que el saldo del cobro se gaste/persista con DataStore real.
+
+### Escudos de spawn flotando en la segunda entrada VS — B19, 2026-10-14
+
+- Reporte del usuario: dos entradas al 1v1 con cuentas reales; la primera funcionó,
+  pero al salir y volver a entrar SpawnShieldRojo y SpawnShieldAzul estaban flotando.
+- Inspección Edit en Match `108298899371591`: ambos modelos en
+  `Workspace.Arena.SpawnCovers`, atributos `SpawnCover=true` y `cubrirce=true`;
+  cinco piezas ancladas por modelo, con dos trims decorativos sin colisión.
+- Causa reproducida en Play Server: `ServerScriptService.MatchArenaPhysics.server`
+  procesa todos los modelos `cubrirce=true` como coberturas dinámicas. Cambia todas
+  sus piezas a `Anchored=false` y `CanCollide=true`, y crea cuatro welds por escudo.
+  Antes del fix: **0/10 piezas ancladas**, cuatro trims con colisión y ocho welds.
+  El fallo ocurre al inicializar Match; no se encontró un desanclaje específico de
+  la segunda ronda. En gravedad cero, los escudos quedan expuestos al desplazamiento
+  por contacto/impulso, aunque una primera partida parezca correcta.
+- Corrección: `weldModel` retorna sin modificar los modelos con `SpawnCover=true`.
+  Conserva anclaje y colisiones por pieza definidos en Studio. `cubrirce` sigue
+  presente para la interacción de agarre. No se cambian posiciones ni geometría.
+- Alcance: Match solamente. Lobby inspeccionado sin modelos `SpawnCover`; no requiere
+  replicar un script de física exclusivo del Match.
+- QA: dos arranques Play consecutivos de Match, cada uno con impulsos aplicados
+  a los escudos y observación posterior de 1 s. En ambos, **10/10 ancladas**, trims
+  sin colisión, ningún weld añadido y desplazamiento máximo **0 studs**. Las otras
+  **16** coberturas dinámicas mantienen **48** piezas sin anclar y **32** welds.
+- Output sin errores nuevos de MatchArenaPhysics; Play aislado conserva rechazo
+  de TeleportData y errores HTTP de retorno del entorno. Ambos Places en Edit.
+- Respaldo: `ServerStorage.ZB_SpawnCoverBackup_20261014` en Match, con fuente
+  anterior identificada por OriginalPath y clones de los dos escudos originales.
+  Para revertir el fix basta restaurar la fuente; no insertar clones adicionales
+  de los escudos en Workspace.
+- **Sin publicar.** Falta publicar Match y repetir entrar→salir→entrar al 1v1 con
+  las dos cuentas, en servidores Match nuevos. Estos dos arranques Studio no
+  certifican la secuencia real de teleports ni cierran toda la aceptación VS.
 
 ### Prevención de regresión B10 al integrar atlas — 2026-10-13
 

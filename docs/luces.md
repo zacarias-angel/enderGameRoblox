@@ -1,5 +1,41 @@
 # ZERO BREACH — Visual Upgrade & Post-Processing
 
+## Configuración vigente — revisión del usuario, 2026-10-14
+
+**Aplicada en Lobby y Match, sin publicar.** El usuario pide un postprocesado
+azul/violeta y quitar las sombras de objetos. Esta revisión sustituye la dirección
+de sombras activas y los valores de color del registro del 09/10, conservado abajo
+como historial. No cambia geometría, colisiones ni materiales.
+
+| Instancia / propiedad | Valor en ambos Places |
+|---|---|
+| `Lighting.GlobalShadows` | `false` |
+| Luces locales existentes: `Shadows` | `false` (31 en Lobby, 1 en Match) |
+| `Lighting.ZB_StationColor.Enabled` | `true` |
+| `TintColor` | RGB(226,219,255), azul/violeta suave |
+| `Saturation` | 0.045 |
+| `Contrast` | 0.035 |
+| `Brightness` | 0.015 |
+
+Se reutiliza el ColorCorrectionEffect existente; no se añade otro. Al comenzar,
+Lobby lo tenía desactivado con TintColor magenta, contraste 1 y saturación -1;
+se respalda ese estado real, no se supone que aún coincide con el 09/10.
+La eliminación de sombras se realiza en Lighting y luces locales; los valores
+`CastShadow` de cada pieza se conservan, pero las sombras quedan desactivadas
+globalmente. Cualquier ajuste de tinte se hace desde Properties del efecto.
+
+Respaldo por Place: `ServerStorage.ZB_VisualFeedbackBackup_20261014`, con
+`LightingProperties.GlobalShadows`, copia de `ZB_StationColor` y ObjectValues de
+luces en `LocalLightShadows`, cada uno con atributo `Shadows` original. Para revertir,
+restaurar esas propiedades y copiar las propiedades del efecto respaldado al
+existente; no insertar otra copia activa. Este respaldo también contiene fuentes
+previas al feedback de monedas, identificadas por `OriginalPath`.
+
+Verificación: capturas Edit y Play en ambos Places, una corrección de color por
+Place, sombras globales desactivadas, sprites de monedas y contador legibles en
+escritorio y simulador iPhone 17 Pro horizontal (750×381). No se midieron FPS ni
+se validó combate publicado/touch físico. Ambos Studios quedaron en Edit y default.
+
 ## ROL
 
 Actuá como un Senior Roblox Technical Artist, Lighting Artist y desarrollador experto en Luau, especializado en entornos sci-fi, iluminación en tiempo real, optimización gráfica y postprocesado en Roblox Studio.
