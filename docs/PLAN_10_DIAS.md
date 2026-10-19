@@ -5,6 +5,142 @@ Sprint: **11–20 de octubre**, diez días naturales, incluida la entrega.
 Base: [CHECKLIST](CHECKLIST.md), [BUGS](BUGS.md) y [SUGERENCIAS](SUGERENCIAS.md).
 Este documento planifica trabajo; no certifica correcciones ni implementaciones.
 
+## Replanificación vigente — 19/10/2026: beta y extensión solicitada
+
+**Decisión del usuario:** mantener la entrega del **20/10** como contingencia,
+con alcance beta y prioridad a reducir errores. Solicitar **al menos 7 días más**.
+La extensión **no está confirmada**: la fecha propuesta sería el **27/10/2026**
+(21–27/10, siete días adicionales). No desplazar la entrega original hasta recibir
+confirmación. El calendario original de diez días se conserva abajo como referencia;
+esta sección define el orden de trabajo actual.
+
+**Ajuste de prioridades confirmado por el usuario:** trabajar **hoy 19/10 y mañana
+20/10 en móvil**, incluidos los cambios de interfaz/assets que resulten necesarios,
+y probar el recorrido principal en esos dispositivos. Proponer colección premium,
+capa global y video para la extensión. **Anuncios:** el usuario informa que la
+experiencia aún no alcanza la elegibilidad por su cantidad de jugadores activos;
+no comprometer su activación para el 20/10 ni para el 27/10. La elegibilidad queda
+pendiente de comprobación en el Dashboard para la modalidad elegida. El informe
+puede prepararse durante la extensión; activar anuncios requiere cumplir los
+requisitos correspondientes, no solamente disponer de siete días adicionales.
+
+**Avance móvil 19/10:** Up/Down retirados; Fire/Hook ampliados con aspecto circular;
+arrastre de disparo conectado a la cámara y botón contextual IMPULSO para liberar
+agarre. Cambios compartidos en ambos Places. QA controlada/simulador pasa para
+fire+arrastre, segundo gesto, liberación con velocidad 90 y cancelación por menú;
+capturas iPhone 17 Pro/Galaxy A06. El teléfono físico, agarre iniciado por tap real
+y partidas publicadas siguen siendo el siguiente cierre de hoy/mañana. No dar
+por aceptado móvil solo por el simulador; detalles en CHECKLIST y BUGS B21/B22.
+
+### Corte real del alcance
+
+| Área | Evidencia disponible | Qué falta para aceptarla |
+|---|---|---|
+| Libre / VS / gancho / agarre / respawn | Implementaciones y correcciones registradas; el usuario reportó funcionamiento del flujo principal en una versión anterior. | Repetir con versiones actuales publicadas, dos cuentas en combate y una tercera en Lobby; cubrir 1v1 y 2v2 antes de aceptar esos formatos. |
+| Guardado, misiones, calendario y ranking | B11/B16/B20 con QA de Studio; historial diario y deduplicación documentados. | Reconexión y teleport reales, cambio de día UTC, pagos únicos y estadísticas por encuentro completo. |
+| Armas y monetización | Pase del Cañón conectado; inspección del Lobby el 19/10: `PassId=2039918698`, integración activa y `AutoGrantPasses=true`. Rifle: `PassId=0`, integración inactiva. | Compra/cancelación con cuenta sin pase y conservación de derechos al viajar/reconectar; auditar paridad del catálogo y derechos en Match. No confundir al creador con una cuenta sin pase. |
+| Presentación / onboarding | Manual de inicio con placa completa y botón ENTENDIDO de imagen, adaptado a escritorio/móvil; carteles de ganchos con imágenes/E; flotantes de estado de armas retirados; hologramas y animación retirados; BillboardGui a 20 studs. Cinco imágenes de láser completas y nuevo aviso de protección en ambos Places. | QA publicada y touch real; arte del manual aplicado. El texto del manual quedó dentro de la placa: cambios de controles requieren nueva imagen. Aviso enlazado al escudo existente sin cambiar inmunidad. |
+| Congelamiento azul | `FreezeAppearance` y cuerpo Ice aplicados en ambos Places; QA controlada R15 de parcial, total y restauración, 15 partes corporales por Place. | Impactos entre jugadores reales, visibilidad remota y ciclo completo de ronda/respawn. |
+| Cartelera de Libre | `AnimationIconSign`: cuatro eventos recientes con fotos/nombres/cruz; QA de presentación con datos simulados. | Acreditación con congelamientos reales y varios jugadores. |
+| Colección premium completa, capa global y video | El plan original los exige; esta revisión no aporta evidencia suficiente para darlos por terminados. El usuario propone pasarlos a la extensión. | Acordar alcance y completar contenido, IDs, permisos y distribución. Su entrega depende de la extensión y de las aprobaciones externas correspondientes. |
+| Anuncios e informe | El usuario informa elegibilidad pendiente por falta de jugadores activos suficientes; no se comprobó un umbral ni una modalidad en esta revisión. | Preparar informe y revisar requisitos/Dashboard durante la extensión. La activación queda para cuando la experiencia sea elegible y haya presupuesto/decisión, sin fecha prometida. |
+
+**No hay un porcentaje de avance verificable:** implementación, prueba Studio y
+aceptación publicada son estados distintos. La beta propuesta es una reducción
+del alcance original; comunicarla junto a sus pendientes, sin declararla final.
+
+### Hoy 19/10 — candidata y pruebas prioritarias
+
+1. Revisar móvil real: distribución y tamaño de controles, disparo+gancho,
+   apuntado, menús, scroll, salida, orientación, zonas seguras y legibilidad.
+   Registrar los fallos y aplicar los cambios de UI/assets necesarios hoy y mañana.
+2. Mantener el resto del alcance estable. Respaldar las versiones actuales de
+   Lobby y Match; registrar versión, configuración e IDs. Preparar la candidata
+   de ambos Places y coordinar la publicación para QA.
+   La prueba válida de VS se inicia por la cola del Lobby; Play aislado de Match
+   sin TeleportData no comprueba teleport ni una partida completa.
+3. Con tres cuentas A/B/C: C permanece en Lobby; A/B juegan Libre y VS 1v1,
+   completan un encuentro, vuelven al mismo servidor que C y repiten con abandono.
+   Anotar saldo, equipado, victorias/partidas y misiones antes y después.
+4. Reconectar A; comprobar guardado, propiedad y cobros únicos. Repetir dos entradas
+   VS para las barreras de spawn B19. Probar agarre de cuerpo y liberación al reset.
+5. Probar 2v2 con cuatro cuentas si se incluye en la beta. Repetir el recorrido
+   en móvil tras cada cambio relevante de controles/UI/assets y clasificar fallos
+   por impacto. El simulador sirve para layout; la aceptación táctil es en teléfono.
+6. Corregir primero los casos fallidos y repetirlos; el pulido visual restante no
+   desplaza pérdidas de datos, bloqueos de partida o errores de compras.
+
+### Mañana 20/10 — decisión de entrega
+
+Completar los ajustes móviles y de UI/assets iniciados el 19/10; repetir controles,
+menús y combate en teléfono real y hacer una comprobación breve en escritorio para
+evitar regresiones. Es el bloque principal de trabajo de ambos días. Colección
+premium, capa global, video y activación de anuncios no compiten por estas horas.
+
+**Beta candidata:** Lobby, Libre y formatos VS efectivamente comprobados, combate,
+gancho/agarre, respawn/salida, inventario y economía existente, con lista de
+limitaciones y canal de reportes. No prometer funcionalidades externas sin entregar.
+
+Antes de abrir la beta:
+
+- [ ] Registrar versiones publicadas de ambos Places y probar en servidores nuevos.
+- [ ] Entrada, combate, congelamiento azul, reset/respawn y salida utilizables.
+- [ ] VS termina o se anula correctamente; grupo retorna junto, sin quedar atrapado.
+- [ ] Reconexión/teleport conservan saldo, propiedad y selección, sin duplicar pagos.
+- [ ] Resultados y misiones no cuentan rondas/anulaciones como encuentros completos.
+- [ ] Compras ofrecidas verificadas con una cuenta sin propiedad; no activar ventas
+  nuevas cuyo derecho, precio o entrega no estén probados.
+- [ ] Dispositivos objetivo pueden jugar; controles y assets críticos cargan.
+- [ ] Preparar notas beta, pendientes conocidos, contacto de soporte y reversión.
+
+**Criterio de salida:** no publicar una beta abierta con fallos conocidos de pérdida
+de datos, cobros/entregas incorrectos, bloqueo del recorrido principal o imposibilidad
+de jugar en los dispositivos anunciados. “Beta” permite pendientes de contenido o
+pulido; no sustituye esos mínimos. Si no se cumplen, entregar estado y candidata
+de acceso limitado para revisión, junto con los bloqueos pendientes.
+
+Si la extensión no llega, entregar el alcance beta acordado el 20/10 y proponer
+updates pequeños después, con fechas comunicadas según capacidad real. Si se
+aprueba, usar la semana para cerrar aceptación, no para ampliar modos o balance.
+
+### Semana adicional propuesta — solo si se aprueba
+
+| Fecha | Prioridad | Cierre verificable |
+|---|---|---|
+| 21/10 | Datos, misiones, calendario y ranking. | Reconexión, cambio de día UTC y teleport conservan datos; premios y resultado se acreditan una vez. |
+| 22/10 | Libre, 1v1, 2v2, retorno y regresiones de cuerpos/barreras. | Casos reales con grupo, abandono, dos entradas y observador remoto; registrar qué formatos pasan. |
+| 23/10 | Seguimiento de móvil, carga, permisos y rendimiento. | Revalidar los ajustes trabajados el 19–20/10, ampliar dispositivos y medir carga/FPS; no aplazar el primer trabajo móvil hasta esta fecha. |
+| 24/10 | Tienda, derechos Robux y paridad Lobby/Match. | Compra/cancelación con tester sin pase; equipado/propiedad tras reconexión y viaje. Rifle solo si ID, precio y QA están resueltos. |
+| 25/10 | Colección premium, capa global, video e informe de anuncios propuestos para la extensión. | Entregar lo aprobado y disponible; registrar bloqueos externos. Revisar elegibilidad publicitaria y preparar informe, sin comprometer activación mientras no se cumplan los requisitos. |
+| 26/10 | Regresión integral y correcciones finales. | Candidata con evidencia por caso y sin bloqueantes; repetir únicamente fallos o áreas afectadas por nuevos cambios. |
+| 27/10 | Entrega revisada, si la extensión fue confirmada. | Versiones, smoke test Player, evidencia, notas y reversión; pendientes externos explicitados y acordados, sin etiquetarlos terminados. |
+
+Preparar desde hoy los assets y datos externos que requieran revisión; el 25/10
+no es una garantía de aprobación de la capa global o del video. La capa solicitada
+sigue siendo de inventario global de Roblox; no cambiarla por un accesorio interno
+sin acordarlo con el usuario.
+
+La activación publicitaria queda fuera de una fecha cerrada mientras falte
+elegibilidad. Registrar modalidad, requisitos oficiales vigentes, estado del
+Dashboard y próxima revisión; no inventar un número mínimo de jugadores ni asumir
+que todas las modalidades publicitarias tienen los mismos requisitos.
+
+### Texto sugerido para solicitar la extensión
+
+> Solicitamos ampliar la entrega del 20 al 27 de octubre para completar la colección
+> premium, la capa global y el video, además de cerrar las validaciones pendientes
+> de juego, datos y compras. Hoy y mañana priorizamos la adaptación móvil y los
+> ajustes necesarios de interfaz/assets. Como contingencia para el día 20 proponemos
+> una beta de alcance reducido y probado, con limitaciones y actualizaciones
+> documentadas. La ampliación está sujeta a confirmación. La activación de anuncios
+> queda condicionada a alcanzar la elegibilidad de la experiencia; durante la
+> extensión podemos preparar el informe y revisar los requisitos, sin prometer su
+> activación para una fecha que no depende solo del desarrollo.
+
+---
+
+## Plan original del sprint (referencia de alcance)
+
 ## Objetivo de entrega
 
 - Misiones diarias actualizadas, progreso correcto y cobro persistente sin duplicados.

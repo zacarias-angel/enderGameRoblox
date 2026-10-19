@@ -1,0 +1,22 @@
+{
+  "laser_red": {
+    "file": "laser_red.png",
+    "size": [
+      512,
+      512
+    ]
+  },
+  "spawn_protection": {
+    "file": "spawn_protection.png",
+    "size": [
+      1536,
+      249
+    ],
+    "crop": [
+      0,
+      125,
+      1629,
+      389
+    ]
+  }
+}

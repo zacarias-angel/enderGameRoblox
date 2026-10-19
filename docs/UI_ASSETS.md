@@ -1,10 +1,206 @@
 # UI — Buscar en Explorer y reemplazar
 
-Actualizado: **2026-10-16**, estados de color del calendario y cable genérico 3D en ambos Places. Imágenes de armas/vitrinas preparadas en Lobby; sincronización de esas UI a Match pendiente. Las plantillas del 14/10 existen en ambos Places.
-Aplica a Lobby `125075465377023` y Match `108298899371591`.
+Actualizado: **2026-10-19**, guía definitiva de reemplazo, marco 9-slice dedicado
+del manual y láser rojo/aviso de protección. Aplica a Lobby `125075465377023` y
+Match `108298899371591`.
 
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
 para cambiar una imagen, un texto del manual o sus esquinas.**
+
+## 0.9 Guía definitiva: cambiar CUALQUIER imagen sin equivocarse
+
+### Las 6 reglas de oro
+
+1. **Detené Play antes de editar el origen.** Los cambios hechos en
+   `StarterGui` con una prueba en curso **no** llegan a la copia que ya está en
+   `Players > [tu usuario] > PlayerGui`. Para una prueba puntual podés editar
+   esa copia de `PlayerGui`, pero se pierde al detener Play. Los fondos de skin
+   (`ZBAtlas_Background`) se clonan **una vez** al iniciar la pantalla: cambiar
+   `Skins.intro.Image` con Play corriendo no actualiza la copia ya creada.
+2. **Editá la plantilla compartida, no una copia generada.** Las tarjetas,
+   botones y paneles crean copias en runtime (`ZBAtlas_Background`, `Card1`, etc.).
+   Cambiar una copia en `PlayerGui` no cambia el juego.
+3. **Mantené nombres, rutas y atributos.** Los controladores buscan por nombre
+   (`WeaponOfferSign`, `HookOfferPrompt`, `Skins.intro`, etc.). Renombrar rompe
+   el enlace aunque la imagen se vea.
+4. **Un PNG por uso.** Icono: transparente, cuadrado, `ScaleType=Fit`. Marco:
+   transparente, 9-slice, `ScaleType=Slice`. No uses un atlas recortado para
+   reemplazar un panel completo.
+5. **Sin texto quemado en la imagen**, salvo avisos que lo necesiten (por ejemplo,
+   el banner de PROTEGIDO). El texto vivo va en TextLabel para poder traducir,
+   escalar y editar.
+6. **Probar en Play, después publicar.** Studio verifica el diseño; la publicación
+   lleva el cambio a jugadores. Un ID publicado tarda en propagar caché.
+
+### Mapa: qué instancia editar para cada imagen
+
+| Qué querés cambiar | Instancia exacta | Propiedad / ajuste |
+|---|---|---|
+| Íconos de la UI (bolso, calendario, arma, gancho, etc.) | `ReplicatedStorage.UIAssets.Icons.<clave>` | `Image`; `ScaleType=Fit`; 256×256 |
+| Imagen de un arma en tienda/mochila | `ReplicatedStorage.UIAssets.WeaponImages.<id>` | `Image`; 512×512 |
+| Imagen de punta de gancho | `ReplicatedStorage.UIAssets.HookTipImages.<id>` | `Image`; 512×512 |
+| Imagen de color de láser | `ReplicatedStorage.UIAssets.LaserImages.<id>` | `Image`; 512×512 |
+| **Placa completa del manual de inicio** | **`StarterGui.ZB_Intro.Instructions.Artwork`** | `Image`; `ScaleType=Fit`; 1024×768 (arte con textos ya incluidos) |
+| **Botón ENTENDIDO (imagen completa)** | **`StarterGui.ZB_Intro.Instructions.Continue`** | `Image`; `ScaleType=Fit`; 1024×341; es un ImageButton |
+| Marco 9-slice alternativo (no usado ahora) | `ReplicatedStorage.UIAssets.Skins.intro` | `Image` + `SliceCenter` + `SliceScale` + `PixelWidth/PixelHeight` |
+| Marco compartido de otros paneles | `ReplicatedStorage.UIAssets.Skins.panel` | Igual que `intro`; **afecta varios paneles** |
+| Fondo/tarjeta compartida | `ReplicatedStorage.UIAssets.Skins.card` | Igual que `intro` |
+| Botones (normal/hover/pressed) | `Skins.button_cyan_*` / `button_violet_*` | `Image`; el sistema elige el estado |
+| Banner de protección | `StarterGui.ZB_SpawnProtection.Notice.Banner` | `Image`; `ScaleType=Fit` |
+| Íconos del manual | `StarterGui.ZB_Intro.Instructions.Rows.RowNN.Icon` | `Image` propio; si está vacío usa `UIAssetKey` |
+| Logo del manual | `StarterGui.ZB_Intro.Instructions.Logo` | `Image` propio o `UIAssetKey=emblem` |
+| Textos del manual | `StarterGui.ZB_Intro.Instructions.*` | `Text`, `TextSize`, `TextColor3`; no tocar nombres |
+| HUD y accesos móviles | `StarterGui.ZB_*` + `UIAssets.Icons` | Propiedades; `MobileHudLayout` reubica en Play |
+| Placas de ranking | `RankGui` (SurfaceGui/BillboardGui) | `Image` del fondo; conservar nombres |
+
+**El manual actual usa una placa completa, no un fondo 9-slice.** La imagen
+`Instructions.Artwork` contiene el marco, los títulos y las instrucciones. El
+contenido vivo viejo (`Logo`, `Title`, `Subtitle`, `Rows`) queda oculto para no
+duplicar texto. El botón es una imagen completa (`Continue`, ImageButton) ubicada
+sobre el borde inferior de la placa, en la posición editable que definiste en
+Edit; no es un skin con texto encima.
+
+**Modo arte completo** (`ZB_Intro.FullArtIntro = true`): `AtlasUIController`
+toma como referencia el tamaño del panel, la placa y el botón **tal como los
+dejaste en Edit**, y escala todo junto para el viewport. Así el botón conserva su
+posición y tamaño relativo: en la versión actual queda **superpuesto al borde
+inferior de la placa**, como en el editor. Si `Artwork` no existe o su `Image`
+está vacía, vuelve automáticamente al manual clásico con las filas vivas. Ese
+respaldo evita una pantalla en blanco.
+
+Atributos de `ZB_Intro`:
+
+| Atributo | Valor actual | Uso |
+|---|---|---|
+| `FullArtIntro` | `true` | Activa la placa completa |
+| `IntroMaxWidth` | `980` | Ancho máximo en escritorio |
+
+`IntroAspect`, `ContinueAspect`, `ContinueWidthScale` y `ContinueGapScale` quedan
+como legado y ya no determinan la posición. El diseño se controla moviendo
+`Artwork` y `Continue` en StarterGui. Valores actuales del botón: `Position`
+`(0.5, 0.835913)`, `Size` `322×89`, `AnchorPoint` `(0.5, 1)`.
+
+### Reemplazar la placa y el botón: paso a paso
+
+1. **Detené Play.**
+2. Dejá los archivos como `docs/assets/ui/intro_plate.png` y
+   `docs/assets/ui/btn_entendido.png` (o pasámelos).
+3. Subilos a Roblox y copiá los dos `rbxassetid://...`.
+4. Seleccioná **`StarterGui.ZB_Intro.Instructions.Artwork`**, pegá el ID de la
+   placa en **Image**. Debe ser `ScaleType = Fit`.
+5. Seleccioná **`StarterGui.ZB_Intro.Instructions.Continue`**, pegá el ID del
+   botón en **Image**. Es un **ImageButton**, `ScaleType = Fit`, sin texto.
+6. Verificá que `ZB_Intro.Instructions` tenga `UIFrameSkin` **vacío** (sin skin
+   encima) y que `Logo/Title/Subtitle/Rows` estén en `Visible = false`.
+7. **Play** y comprobá:
+   - La placa se ve nítida y el botón conserva la posición que le diste en Edit.
+   - En la versión actual el botón se superpone al borde inferior, sin tapar la
+     última fila.
+   - `Artwork.IsLoaded = true` y `Continue.IsLoaded = true`.
+   - Al tocar **ENTENDIDO**, `ZB_Intro.Enabled` pasa a `false`.
+   - Probá **1365×768**, **750×381** y **370×650**.
+8. **Stop** y **publicá ambos Places**.
+
+**IDs aplicados el 19/10:** placa `98656833460778`; botón `106514786390752`.
+Origen: `placa inicio.png` 1448×1086 y `btn entendido.png` 2172×724; versiones
+optimizadas en `assets/ui/intro_plate.png` (1024×768) y `btn_entendido.png`
+(1024×341). IDs en `assets/ui/intro_asset_ids.json`.
+
+| Recurso | Formato | Tamaño | Fondo | Peso orientativo |
+|---|---|---|---|---|
+| Placa completa | PNG RGBA | 1024×768 (4:3) | Transparente fuera del marco; interior opaco | ~1 MB |
+| Botón ENTENDIDO | PNG RGBA | 1024×341 (≈3:1) | Transparente alrededor | ~330 KB |
+
+La placa no es 9-slice: es una ilustración completa con los textos incorporados.
+Mantené la proporción 4:3 si la reemplazás; si cambiás el texto de una fila, hay
+que editar la imagen (las filas vivas están ocultas). El botón también es una
+imagen completa: no lleva TextLabel encima.
+
+**Ojo:** el manual se habilita desde `LoadingScreen.client` al terminar la carga.
+Poner `StarterGui.ZB_Intro.Enabled = false` **no lo oculta al entrar**: el loading
+lo vuelve a encender. Para saltarlo hay que modificar ese flujo o eliminarlo; el
+botón de ayuda del HUD lo reabre si existe.
+
+### Si algún día usás un marco 9-slice en vez de la placa
+
+El sistema anterior sigue disponible: `Skins.intro` existe para eso. Sirve cuando
+el marco NO tiene texto ni filas adentro y querés que el contenido vivo se estire
+dentro. Pasos: detener Play, poner `Instructions.UIFrameSkin="intro"`, reemplazar
+`Skins.intro.Image`, configurar `ScaleType=Slice`, `SliceCenter` y `SliceScale`
+según la especificación de abajo. No lo uses con la placa completa: el texto se
+deformaría.
+
+### Especificación para un marco 9-slice (opcional)
+
+| Requisito | Valor |
+|---|---|
+| Formato | **PNG RGBA** (canal alfa real; nada de JPG ni damero pintado) |
+| Lienzo recomendado | **1024 × 1024 px** (cuadrado; el panel se adapta con 9-slice) |
+| Peso recomendado | **< 1 MB** (ideal 200–600 KB); evitar ruido/fotografía |
+| Margen exterior de brillo | **32 px** desde el borde del lienzo |
+| Zona de esquinas | **96 × 96 px** cada una; ahí va TODO el arte/curva/ornamento |
+| Zona de bordes | 832 × 96 y 96 × 832; **patrón uniforme** (se estira en un eje) |
+| Centro | 832 × 832; **liso/oscuro**, sin logos ni texto; se estira en ambos ejes |
+| `SliceCenter` | **Rect(96, 96, 928, 928)** |
+| `PixelWidth` / `PixelHeight` | **1024 / 1024** |
+| Transparencia | Fondo **transparente**; el relleno oscuro va dentro del marco |
+| Texto/logos | **Ninguno** (van como TextLabel/ImageLabel aparte) |
+| Esquinas seguras | No poner detalles importantes a menos de 96 px del borde |
+| Estilo | Bordes y esquinas consistentes con el HUD; evitar líneas de 1 px |
+| Nombre de archivo | `intro_frame.png` (o variante clara: `intro_frame_v2.png`) |
+
+El marco debe verse bien en **700×540** (escritorio), **740×340** (pantalla baja)
+y **370×650** (vertical). Por eso el centro y los bordes deben poder estirarse.
+Si querés un marco con una forma muy distinta, avisá: hay que ajustar también la
+posición de filas/botón, no solo la imagen.
+
+Guía visual: **`docs/assets/ui/frame_9slice_guide.png`** (lienzo 1024×1024,
+líneas rojas en 96/928, leyenda debajo).
+
+### 9-slice: por qué y cómo (práctica recomendada por Roblox)
+
+Roblox divide la imagen en nueve sub-imágenes:
+
+| Región | Escalado |
+|---|---|
+| 1, 3, 7, 9 (esquinas) | ninguno |
+| 2, 8 (bordes superior/inferior) | horizontal |
+| 4, 6 (bordes izquierdo/derecho) | vertical |
+| 5 (centro) | horizontal + vertical |
+
+Referencia oficial: <https://create.roblox.com/docs/es-es/ui/9-slice>.
+En Studio: seleccionar el ImageLabel → `ScaleType = Slice` → `SliceCenter` →
+editor visual; los offsets son píxeles desde cada borde. Las esquinas nunca se
+deforman; por eso todo el detalle debe vivir ahí.
+
+### Diagnóstico rápido: “cambié la imagen y no se ve”
+
+| Síntoma | Causa más probable | Solución |
+|---|---|---|
+| Sigue la placa/marco anterior | `Artwork.Image` no cambió, o editaste `PlayerGui` durante Play | Detené Play, cambiá `Artwork.Image` y volvé a probar |
+| Se ve la placa pero no el botón | `Continue.Image` vacío, no carga o quedó detrás | Revisar `Continue.Image`, `IsLoaded`, `ZIndex=3` |
+| Texto duplicado (viejo + placa) | `Logo/Title/Subtitle/Rows` visibles | Deben estar ocultos; con `FullArtIntro` se ocultan solas |
+| Pantalla en blanco | `Artwork.Image` vacío o `FullArtIntro` mal | El controlador vuelve al manual clásico; si no, revisar el atributo |
+| El botón no responde | `Continue` no es `ImageButton`/`Active=false` | Es `ImageButton`, `Active=true`, `Activated` conectado |
+| No aparece al entrar | `LoadingScreen.client` hace `Enabled=true` | Es el flujo actual; para saltearlo hay que modificarlo |
+| Esquinas estiradas/borrosas (solo 9-slice) | `SliceCenter` o `SliceScale` mal | Reabrir el editor de 9-rodajas |
+| Aparece cuadrado sin bordes (solo 9-slice) | `ScaleType` no es `Slice` | Cambiar a `Slice` |
+| Fondo blanco/damero | PNG sin alfa o damero pintado | Exportar RGBA transparente |
+| Cambió también la tienda/calendario | Editaste `Skins.panel` | Restaurar `panel`; el manual usa `Artwork` |
+| No cambia nada en el juego publicado | Falta publicar o el asset está en moderación | Publicar ambos Places; verificar ID/permiso |
+
+### Para cambiar otras imágenes: mismo patrón
+
+1. Detené Play.
+2. Identificá la instancia en la tabla de arriba (nunca una copia `ZBAtlas_*`).
+3. Reemplazá **solo `Image`**; conservá `Size`, `Position`, `ScaleType`,
+   `SliceCenter`, atributos y nombre.
+4. Si es icono o placa completa: `ScaleType=Fit`, PNG cuadrado/panorámico con alfa.
+5. Si es marco 9-slice: `ScaleType=Slice`, `SliceCenter` + `PixelWidth/PixelHeight`.
+6. Play → inspeccionar la copia en `PlayerGui` → captura → Stop → publicar.
+
+**No hace falta tocar scripts para reemplazar arte.** Si una imagen no aparece,
+el problema es la instancia/atributo/asset, no el código.
 
 ## Atlas integrados — 2026-10-13
 
@@ -30,7 +226,8 @@ Las imágenes sí están subidas a Roblox y sus 28 IDs cargaron correctamente en
 | Iconos | `ReplicatedStorage.UIAssets.Icons.<clave>` | Image, ImageColor3; ScaleType=Fit |
 | Marcos | `ReplicatedStorage.UIAssets.Skins.panel`, `card`, `panel_violet`, `panel_warning` | Image, SliceCenter, SliceScale |
 | Botones | `ReplicatedStorage.UIAssets.Skins.button_cyan_<estado>` / `button_violet_<estado>` | Image, SliceCenter, SliceScale |
-| Fondo de manual | `StarterGui.ZB_Intro.Instructions` | Atributo UIFrameSkin=`panel` |
+| Fondo/manual de inicio | `StarterGui.ZB_Intro.Instructions.Artwork` | Image; ScaleType=Fit (placa completa) |
+| Botón ENTENDIDO | `StarterGui.ZB_Intro.Instructions.Continue` | Image; ScaleType=Fit (ImageButton) |
 | Fondo de actividades | `StarterGui.ZB_DailyActivities.ActivitiesPanel` (Lobby) | UIFrameSkin=`panel_violet` |
 | Botones de reclamación | ClaimDailyButton / Claim de la plantilla | UIFrameSkin=`button`, UISkinFamily=`violet` |
 
@@ -129,7 +326,7 @@ anteriores al inicio del registro no se pintan de rojo para no inventar historia
 No hay historial completo de misiones; seleccionar una fecha no autoriza cobrarla.
 Pruebas en CHECKLIST.
 
-## 0.1 Controles táctiles — agregado 2026-10-09
+## 0.1 Controles táctiles — actualizado 2026-10-19
 
 **Lobby y Match:** `StarterGui.ZB_MobileControls`, atributo `MobileControls=true`
 (no lo reestiliza AtlasUIController). Contiene `Actions` con botones redondos;
@@ -137,17 +334,29 @@ Pruebas en CHECKLIST.
 ```text
 StarterGui.ZB_MobileControls
 └─ Actions
-   ├─ Fire  (Caption "DISPARAR", Icon weapon)
-   ├─ Hook  (Caption "GANCHO", Icon hook)
-   ├─ Up    (Caption "SUBIR", Arrow ▲)
-   └─ Down  (Caption "BAJAR", Arrow ▼)
+   ├─ Fire  (Caption "DISPARAR", Icon weapon, AbilityRing)
+   └─ Hook  (Caption "GANCHO" / "IMPULSO", Icon hook, ReleaseIcon grab, AbilityRing)
 ```
+
+**Up/Down retirados por pedido del usuario.** Dos botones de acción, con anillos
+circulares y distribución escalonada a la derecha. Fire: 112 px, o 96 px en área
+segura de altura menor a 350; Hook: 96/84 px. Los tamaños anteriores 76/68 px ya
+no describen la versión actual. El joystick nativo permanece independiente.
+
+Mientras se mantiene el disparo se puede arrastrar ese mismo dedo para apuntar,
+incluso fuera del círculo, o usar otro dedo en la zona derecha libre. Al estar
+sujeto, Hook pasa a **IMPULSO**, anillo dorado e icono de agarre: una pulsación
+suelta e impulsa con la física existente. No aparece un tercer botón.
 
 | Cambio visual | Seleccionar | Propiedad |
 |---|---|---|
-| Color del botón | Actions.Fire / Hook / Up / Down | BackgroundColor3 / UICorner / UIStroke |
-| Etiqueta del botón | <botón>.Caption | Text |
-| Icono | <botón>.Icon (o UIAssets.Icons.weapon/hook) | Image |
+| Tamaños normales | ZB_MobileControls | Attributes: FireSize=112, HookSize=96 |
+| Tamaños en pantalla baja | ZB_MobileControls | SmallFireSize=96, SmallHookSize=84 |
+| Márgenes seguros de acciones | ZB_MobileControls | ActionEdgeMargin=22, ActionBottomMargin=26 |
+| Sensibilidad de arrastre | ZB_MobileControls | TouchAimSensitivity=0.0045; radianes/píxel, ajustados por altura |
+| Forma / anillo interior | Actions.Fire / Hook y AbilityRing | UICorner / UIStroke; MobileControls actualiza colores de estado |
+| Estilo de etiqueta | <botón>.Caption | Font / TextSize; Hook.Text cambia por estado |
+| Iconos de acción / liberación | <botón>.Icon / Hook.ReleaseIcon | Image; UIAssets.Icons.weapon/hook/grab como plantillas |
 
 Accesos de menú y HUD móvil los distribuye `ReplicatedStorage.Shared.MobileHudLayout`
 en tiempo de ejecución, tomando `UIAssets.Icons` para iconos redondos (bag, calendar,
@@ -155,7 +364,20 @@ info, trophy, close) y añadiendo una leyenda corta. Los accesos migrados del HU
 se editan en StarterGui según la sección 0.2; en móvil su tamaño/separación se
 configuran mediante atributos y su distribución cambia según viewport. La
 lógica de intención vive en `Shared.LocalCombatInput` y `StarterPlayerScripts.MobileControls`.
+`Shared.MobileAimInput` acumula delta por dedo; `BattleCameraController` lo consume
+en la cámara orbital de combate también en touch. `launch` es intención local;
+`GrabController.client` conserva la validación de estado/objetivo y el impulso
+existente al liberar. No modifica autoridad del servidor, daño, energía ni precios.
 Los controles solo aparecen con `TouchEnabled` en landscape y combate activo.
+
+QA Studio 19/10: iPhone 17 Pro (viewport 750×381), Fire/Hook 112/96; Galaxy A06
+(705×338), 96/84, capturas sin superposición de acciones y leyendas completas.
+Disparo+arrastre comprobado con eventos Touch del simulador; liberación del botón
+IMPULSO comprobada con impulso 90 studs/s. Múltiples dedos también se comprobaron
+con intenciones simuladas, no con dedos físicos. Match usa estado local de QA al
+no disponer de TeleportData; no es una partida VS real. Ambos Places en Edit y
+simuladores restablecidos al viewport default; publicación/teléfono real pendientes.
+Respaldo por Place: `ServerStorage.ZB_MobileAimReleaseBackup_20261019`.
 
 ## 0.2 Accesos del HUD editables en StarterGui — 2026-10-14
 
@@ -602,6 +824,57 @@ Smoke test con reloj real: hoy `available`, 18 días previos `unknown`, 23 futur
 Avisos CorePackages y rechazo de TeleportData de Match son del entorno, no del código.
 Sin fixtures; ambos Places en Edit. Respaldo `ServerStorage.ZB_DailyHistoryBackup_20261016`.
 Falta validación publicada de medianoche/reconexión y el gasto real del cobro.
+
+## 0.8 Láser rojo y aviso de protección — 2026-10-19
+
+Aplicados en Lobby y Match, sin publicar desde esta sesión.
+
+| Recurso | Archivo preparado | Roblox ID | Fuente editable en Studio |
+|---|---|---|---|
+| Láser rojo | `assets/ui/laser_red.png`, RGBA 512×512 | `71886236630717` | `ReplicatedStorage.UIAssets.LaserImages.red.Image` |
+| Protegido / disparar cancela el escudo | `assets/ui/spawn_protection.png`, RGBA 1536×249 | `116492173393960` | `StarterGui.ZB_SpawnProtection.Notice.Banner.Image` |
+
+Fuentes originales: `assets/Láserrojo.png` y `assets/ui protegido.png`.
+`prepare_extra_ui_images.py` elimina el exterior sobrante del marco rojo sin
+recortar el rayo, y recorta el margen transparente del aviso conservando el brillo.
+Manifiesto en `extra_ui_images_manifest.json`; IDs en `laser_asset_ids.json`
+(ahora cinco colores) y `status_asset_ids.json`.
+
+- Rojo usa la misma tarjeta de tienda/mochila que los demás láseres; no cambia
+  coste, propiedad ni comportamiento del rayo. Carga real en tarjeta comprobada.
+- `ZB_SpawnProtection` es una plantilla persistente de StarterGui. `Notice`
+  contiene `Banner`, `Timer` y texto `Fallback`. Reemplazar el PNG en Banner.Image,
+  sin editar código ni reutilizar el fondo 9-slice de un botón.
+- `SpawnProtectionController` usa `SpawnProtectionEndsAt` del servidor y
+  `BattleParticipant`; oculta al quedar el plazo en cero o expirar, al salir,
+  eliminarse, cambiar personaje o abrir menús. El HUD omite temporalmente su
+  MatchStatus para que no se superponga. La cuenta atrás se actualiza a 10 Hz.
+- **Solo escudo de aparición:** el texto de la imagen indica que disparar lo
+  cancela. No se usa para el power-up azul, cuya protección tiene otra regla.
+  Instalar la UI en Match no agrega ni concede un escudo nuevo allí.
+- En Lobby, FreeSpawnTransitionController conserva únicamente la confirmación
+  del traslado del personaje. Ya no crea el antiguo TextLabel/ScreenGui en runtime.
+- Attributes de `ZB_SpawnProtection`: `DesktopWidth=620`, `MobileWidth=520`,
+  `MobileTop=0`, `ImageAspectRatio=1536/249`. ScreenInsets=DeviceSafeInsets,
+  ScaleType=Fit; banner aproximado 620×100 en escritorio y 520×84 en iPhone.
+- Mantener ImageTransparency=0 también durante la carga. El fallback se dibuja
+  encima hasta IsLoaded; esconder la imagen por transparencia impedía completar
+  IsLoaded en la primera prueba. Precarga asíncrona sin bloquear UI/combate.
+
+**QA:** aviso visible tras entrada real Libre (4.8 s restantes); pruebas de
+presentación controladas con plazo cero, expiración y menú pasan. Ambos recursos
+cargan con Success; captura móvil del rojo en tienda y del aviso, captura de
+escritorio en Match mediante atributos locales de QA. Los plazos largos de esas
+capturas son fixtures visuales locales, no un aumento de la duración del escudo.
+Un intento de disparo mediante intención programada no confirmó cancelación de
+servidor; esa aceptación con disparo manual y jugador remoto sigue pendiente.
+Reglas de daño/duración/cancelación del servidor conservadas sin cambios.
+
+Respaldo: `ServerStorage.ZB_RedLaserProtectionUIBackup_20261019` por Place. Para
+revertir el aviso, detener Play, restaurar fuentes respaldadas y retirar la nueva
+plantilla/SpawnProtectionController. El controlador antiguo del Lobby vuelve a
+crear su aviso; no dejar ambos constructores activos. Ambos Places quedaron en
+Edit y el simulador usado se restableció al viewport default.
 
 ## 1. «Cambiá la mochila por un bolso»
 

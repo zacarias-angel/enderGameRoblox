@@ -1,0 +1,21 @@
+{
+  "source": "Íconos de láseres neón sci‑fi geschniegelt.png",
+  "images": [
+    {
+      "id": "cyan",
+      "file": "laser_cyan.png"
+    },
+    {
+      "id": "green",
+      "file": "laser_green.png"
+    },
+    {
+      "id": "gold",
+      "file": "laser_gold.png"
+    },
+    {
+      "id": "purple",
+      "file": "laser_purple.png"
+    }
+  ]
+}

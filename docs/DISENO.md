@@ -9,6 +9,74 @@ incidentes en [BUGS](BUGS.md).
 
 ## 1. Identidad y ciclo jugable
 
+### Manual de inicio con placa completa — 2026-10-19 (Studio)
+
+- `ZB_Intro` usa `FullArtIntro=true`: `Instructions.Artwork` muestra una placa
+  1024×768 con marco, títulos e instrucciones incorporados; `Continue` es un
+  ImageButton 1024×341 con el botón entero, superpuesto al borde inferior de la
+  placa en la posición definida en Edit.
+- `Logo`, `Title`, `Subtitle` y `Rows` quedan ocultos para no duplicar texto. El
+  skin 9-slice anterior no se aplica al panel; `Skins.intro` se conserva como
+  alternativa si se vuelve a un marco sin texto.
+- `AtlasUIController` escala en conjunto el panel, la placa y el botón tomando
+  como referencia su posición/tamaño en StarterGui; `IntroMaxWidth` limita el
+  ancho. Así el botón conserva la colocación de Edit (superpuesto al borde
+  inferior) en cualquier viewport. Si falta el arte, restaura el manual clásico
+  en vez de quedar en blanco. `LoadingScreen.client` enciende el manual al
+  terminar la carga.
+- Aplicado en ambos Places; QA de escritorio, iPhone 17 Pro y Match con clic real
+  en ENTENDIDO. Sin publicación. Guía y especificación en UI_ASSETS 0.9.
+
+### Presentación de láseres y protección — 2026-10-19 (Studio)
+
+- Los cinco colores de láser tienen imagen propia en `UIAssets.LaserImages`,
+  incluido rojo `71886236630717`. Tienda/mochila consumen la plantilla de su color;
+  no cambia el catálogo económico ni la lógica del disparo.
+- El aviso de escudo de aparición es `StarterGui.ZB_SpawnProtection`: imagen
+  `116492173393960` con texto incorporado, Fit y contador independiente. Nuevo
+  SpawnProtectionController común a ambos Places, enlazado a `SpawnProtectionEndsAt`.
+- Se muestra solo con plazo activo y participante, fuera de menús/eliminación;
+  desaparece al expirar o recibir plazo cero. El estado de partida cede esa fila.
+  No representa el escudo power-up azul ni concede protección al entrar en Match.
+- FreeSpawnTransitionController de Lobby conserva su traslado local, sin construir
+  un segundo aviso. Duración y cancelación por disparo siguen en servidor sin cambios.
+- Edición/IDs, evidencia y límites de QA en UI_ASSETS 0.8 y CHECKLIST.
+
+### Controles móviles vigentes — 2026-10-19 (Studio)
+
+- Dos botones de combate: **DISPARAR** (112/96 px) y **GANCHO** (96/84 px).
+  SUBIR/BAJAR retirados por pedido del usuario. Mantener fire/hook conserva su
+  intención mientras el dedo arrastra fuera del botón; levantarlo la termina.
+- La cámara orbital de combate ahora admite touch: arrastrar el dedo de fire/hook
+  o un dedo adicional en la zona derecha libre. Joystick izquierdo y menús no
+  reclaman arrastre de cámara. `Shared.MobileAimInput` acumula delta por dedo;
+  BattleCameraController consume el delta sin depender del estado de disparo.
+- Al agarrarse mediante un prompt, el botón GANCHO pasa a **IMPULSO**. Tocarlo
+  libera y aplica la física existente: jugador en dirección inversa a la cámara,
+  velocidad 90, e impacto hacia la cobertura por la ruta de servidor existente.
+  La cancelación por estado/objetivo/salida no genera impulso.
+- `LocalCombatInput.launch` transporta solo intención local. Daño/energía/impacto
+  siguen validados por sus servicios. Los gestos se cancelan con menú, rotación,
+  pérdida de foco, eliminación o salida. No se amplía soporte de gameplay vertical.
+- Plantilla e imágenes en StarterGui/UIAssets; tamaños, márgenes y sensibilidad
+  editables como Attributes de `ZB_MobileControls` (UI_ASSETS 0.1).
+- Implementación igual en ambos Places. QA de simulador/controlada documentada en
+  CHECKLIST/B21/B22; teléfono físico y multijugador publicado siguen pendientes.
+
+### Apariencia de congelamiento — 2026-10-19 (vigente en Studio)
+
+- El cuerpo progresa de azul claro RGB(140,210,255) a azul hielo RGB(75,180,255),
+  con `Enum.Material.Ice`. Al 100 % se aplica a todas las partes corporales
+  directas R15/R6, salvo HumanoidRootPart; armas/accesorios anidados se conservan.
+- Valores en `ReplicatedStorage.Shared.Config.FreezeAppearance` (`PARTIAL_COLOR`,
+  `FROZEN_COLOR`, `MATERIAL`), consumidos por `FreezeService.server` de ambos Places.
+  La apariencia corporal ya no depende del rojo `LedColors.FROZEN` del HUD.
+- Se conserva el guardado/restauración de color y material por pieza. No cambia
+  daño, umbral, estado de eliminación, agarre ni ciclo de ronda/respawn.
+- QA controlada R15 de parcial/total/reset y segundo ciclo en ambos Places;
+  aceptación publicada multijugador pendiente. Respaldo
+  `ServerStorage.ZB_IceAppearanceBackup_20261019` por Place.
+
 ### Ajustes tras QA publicada — 2026-10-09 (vigente en Studio)
 
 - **Ranking:** primera placa CONGELADOS MODO LIBRE (`limbsFrozen`, valores anteriores

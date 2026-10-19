@@ -28,11 +28,104 @@ buscar el primer error de Output, no el último warning.
 | B18 | Media / corregido Studio | AtlasUIController inicia sin esperar ZB_Intro; manual tardío enlazado por eventos, sin fallback vacío. Clicks y respawn comprobados en ambos Places; Player pendiente |
 | B19 | Alta / corregido Studio | SpawnShieldRojo/Azul pierden el anclaje por MatchArenaPhysics. Excluir modelos SpawnCover; dos arranques Studio conservan las diez piezas fijas. Repetir dos entradas VS publicadas pendiente |
 | B20 | Media / corregido Studio | Calendario solo distinguía hoy/último cobro; no había historial por fecha. Nuevo `DailyClaimHistory` + colores verde/rojo/ámbar. Migración conserva último cobro; días previos sin registro quedan "sin datos". Validar medianoche/reconexión publicada |
+| B21 | Alta / corregido Studio | Touch de disparo no permite seguir al enemigo con cámara. Delta táctil por dedo y cámara de combate móvil; fire+arrastre comprobado en simulador. Teléfono físico y VS real pendientes |
+| B22 | Alta / corregido Studio | Móvil se sujeta pero no puede soltar/impulsar: salida dependía de E/hold-ended. Gancho cambia a IMPULSO; pulsación táctil simulada desancla y aplica 90 studs/s. Teléfono físico y cuerpos publicados pendientes |
+| B23 | Media / corregido Studio | El marco del manual no cambiaba: el arte visible es `ZBAtlas_Background` inyectado desde `Skins.panel`, no el fondo editado. Nuevo slot `Skins.intro` + guía anti-errores; cambio aislado verificado. Falta aplicar el arte nuevo |
 
 La estabilización base de Libre/VS fue validada en producción el 2026-09-14.
 Las verificaciones locales posteriores no cierran automáticamente estos pendientes.
 
 ## 2. Registro de causas y correcciones
+
+### Marco del manual no cambia en Play — B23, 2026-10-19
+
+- Reporte: se intentó cambiar el marco del manual; en Edit se ve un resultado,
+  en Play aparece el marco viejo. También se probó `ZB_Intro.Enabled`.
+- **Causa 1 (copia de Play):** mientras la prueba está corriendo, `StarterGui`
+  ya fue copiado a `PlayerGui`. Editar `StarterGui.ZB_Intro` no modifica la copia
+  activa. Verificado: `PlayerGui.ZB_Intro.Enabled=false` sí oculta el manual.
+- **Causa 2 (skin inyectado):** el marco visible no es el fondo del panel. El
+  panel tenía `UIFrameSkin="panel"`; `UIAssetSkinController` clona
+  `UIAssets.Skins.panel` como `ZBAtlas_Background` y pone el fondo propio en
+  transparente. Cambiar `BackgroundColor3`/`UIStroke` del panel no cambia el arte.
+- **Causa 3 (layout):** `AtlasUIController.intro()` fija tamaño del panel
+  (700×540, 740×340, 370×650) y posiciones de filas/botón en Play; los ajustes
+  manuales de tamaño/posición se revierten.
+- **Causa 4 (loading):** `LoadingScreen.client` hace `intro.Enabled=true` al
+  terminar la carga. Por eso `Enabled=false` en StarterGui no impide que aparezca
+  al entrar; para saltearlo hay que modificar el flujo de carga.
+- **Corrección de flujo:** primero se creó `Skins.intro` para aislar el marco
+  compartido; luego el usuario entregó una **placa completa** y un **botón entero**.
+  El manual ahora usa `FullArtIntro=true`: `Instructions.Artwork` (1024×768,
+  `98656833460778`) contiene marco, títulos y filas; `Continue` es ImageButton
+  (`106514786390752`, 1024×341) debajo. `Logo/Title/Subtitle/Rows` quedan ocultos
+  y `UIFrameSkin` vacío. `Skins.intro` se conserva para un marco 9-slice opcional.
+- **Layout:** `AtlasUIController` toma como referencia el panel/placa/botón del
+  template y escala todo junto para el viewport; el botón conserva la posición y
+  tamaño que el usuario le dio en Edit (hoy superpuesto al borde inferior, sin
+  tapar la última fila). `IntroMaxWidth` limita el ancho. Si falta `Artwork`/Image,
+  vuelve al manual clásico para no quedar en blanco.
+- **Verificación:** Lobby escritorio y iPhone 17 Pro 750×381 con placa/botón
+  cargados, sin solapamiento; clic en ENTENDIDO cierra (`Enabled=false`). Match
+  habilitado localmente: ambos recursos `Success`, clic cierra. `Skins.panel`
+  conservó su ID. Guía y especificación en UI_ASSETS 0.9; `frame_9slice_guide.png`
+  (1024×1024, esquinas 96, `SliceCenter` 96/928) para futuros marcos.
+- **Límite:** sin publicación; falta teléfono físico y aceptación visual final.
+  El texto quedó incorporado en la placa: cambios de controles exigen nueva imagen.
+
+- Reporte del usuario: puede girar cámara sin disparar, pero no mantener seguimiento
+  del enemigo al disparar; puede sujetarse tras usar gancho, pero no liberarse ni
+  impulsarse. También solicita quitar SUBIR/BAJAR y ampliar los dos botones restantes.
+- **B21:** el botón consumía el toque como GUI; no había puente para su arrastre,
+  y BattleCameraController excluía explícitamente `TouchEnabled`. Nuevo módulo
+  `MobileAimInput` registra posiciones por InputObject y acumula delta. MobileControls
+  registra el dedo de fire/hook; la cámara acepta TouchMoved incluso procesado por
+  GUI, pero solo mueve gestos previamente registrados. Otro dedo derecho libre
+  también apunta; tocar joystick/UI no inicia un gesto de cámara. Se conserva
+  la intención de fuego al salir del círculo, hasta End/Cancel real del dedo.
+- Cámara orbital compartida con escritorio, colisión y restauración al salir;
+  sensibilidad táctil editable, sin bloquear el frame ni depender de la energía.
+- **B22:** liberar dependía de `PromptButtonHoldEnded` o de terminar la tecla E;
+  un tap táctil de prompt con HoldDuration=0 no daba una acción persistente de salida.
+  Nuevo `launch` en LocalCombatInput: Hook se presenta como IMPULSO mientras está
+  sujeto y llama a `finishGrab(true)`. Al agarrarse se retira intención previa de
+  hook; liberarse no relanza el gancho automáticamente. Cancelación mantiene la
+  ruta sin impulso. Touch conserva el agarre hasta esa pulsación; teclado sigue
+  mantener/soltar E. Se ocultan prompts durante el agarre y se restauran después.
+- Up/Down eliminados solo de la UI/bindings móviles. Botones Fire/Hook de 112/96 px
+  o 96/84 px en pantalla baja; estado de impulso dorado, dos acciones en total.
+- **QA Lobby:** Libre por remote real. Intenciones sostenidas y dos dedos simulados
+  giran sin soltar fire; Touch del simulador verifica arrastre desde fire (dot≈0.982).
+  Pieza temporal agarrada con E y botón IMPULSO tocado: root desanclado, velocidad
+  inicial 90, alineación 1 con `-camera.LookVector`, Caption vuelve a GANCHO.
+  Menú limpia fire/delta sin reactivar al cerrar. El fixture de prompt mediante
+  InputHoldBegin no activó el evento; se utilizó E para iniciar esa prueba.
+- **QA Match:** escenario local controlado sin TeleportData, no ronda real;
+  fire+gesto y segundo dedo pasan (dot≈0.981), menú cancela. Capturas de iPhone 17 Pro
+  750×381 y Galaxy A06 705×338 sin acciones superpuestas y con textos completos.
+- Respaldo por Place `ZB_MobileAimReleaseBackup_20261019`. Cinco fuentes compartidas
+  iguales por hash; fixtures/puntos de depuración retirados. Ambos en Edit/default,
+  sin publicar. Falta touch físico, agarre iniciado por prompt táctil, cuerpo
+  congelado, observador remoto y recorrido VS/retorno reales.
+
+### Cambio visual: cuerpo congelado azul hielo — 2026-10-19
+
+- Pedido: al congelar un jugador, reemplazar el rojo por azul con material hielo.
+- Causa del rojo: `FreezeService.server` interpolaba el torso hacia
+  `Config.LedColors.FROZEN` RGB(255,82,82) y usaba el mismo valor al eliminar.
+  El material ya era Ice, pero se teñían solo cabeza/torso al completar el porcentaje.
+- Ajuste compartido: nueva configuración `FreezeAppearance`, azul parcial
+  RGB(140,210,255), total RGB(75,180,255), material Ice. El total afecta las partes
+  corporales directas excepto root; parcial admite también Torso R6.
+- Se conserva restauración previa por pieza y no se reutiliza la constante roja
+  del HUD para pintar el cuerpo. Armas/accesorios anidados no se tiñen.
+- QA de Play con clon R15, FreezeService real y sin recompensas: parcial→100,
+  **15 partes** verificadas por Place, reset de color/material, reset repetido y
+  segundo congelamiento; Lobby y Match pasan. Un primer fixture de QA usó resta
+  de Color3 no admitida; se corrigió su comparación, sin cambiar lógica del juego.
+- Respaldo `ZB_IceAppearanceBackup_20261019`; fixtures runtime retirados al detener
+  Play y ambos Places en Edit. No publicado; falta combate entre cuentas reales,
+  observador remoto y prueba de R6. No cierra los pendientes B03/B13 de producción.
 
 ### Historial y colores de días en el calendario — B20, 2026-10-16
 

@@ -1,9 +1,155 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-16. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-19. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### Marco del manual, placa y botón ENTENDIDO — 2026-10-19
+
+- [x] Diagnóstico del reporte: el marco visible del manual no era el fondo de
+  `Instructions`, sino `ZBAtlas_Background`, inyectado por `UIAssetSkinController`
+  desde `UIAssets.Skins.panel` por `UIFrameSkin="panel"`. Además `LoadingScreen.client`
+  vuelve a poner `ZB_Intro.Enabled=true` al terminar la carga, así que apagarlo
+  en StarterGui no lo oculta al entrar.
+- [x] Crear un template dedicado `UIAssets.Skins.intro` y verificar que cambiar
+  solo su imagen afecta al manual y no a `Skins.panel`.
+- [x] Recibir y preparar la placa `placa inicio.png` (1024×768 RGBA,
+  `rbxassetid://98656833460778`) y el botón `btn entendido.png` (1024×341 RGBA,
+  `rbxassetid://106514786390752`).
+- [x] Implementar **modo arte completo** en ambos Places: `Artwork` muestra la
+  placa con textos incorporados; `Continue` es un ImageButton con el botón entero;
+  `Logo/Title/Subtitle/Rows` quedan ocultos; `UIFrameSkin` vacío en el panel.
+- [x] `AtlasUIController` calcula placa+botón por proporción, los centra y deja
+  el botón **debajo** sin tapar las filas. Atributos editables `FullArtIntro`,
+  `IntroAspect`, `ContinueAspect`, `ContinueWidthScale`, `ContinueGapScale`,
+  `IntroMaxWidth`.
+- [x] Respaldo automático: si falta `Artwork` o su `Image` está vacía, vuelve al
+  manual clásico con las filas vivas en vez de mostrar una pantalla en blanco.
+- [x] Corregir la diferencia Edit/Play reportada: el layout ahora escala la
+  posición y tamaño del botón definidos en Edit, en vez de forzarlo debajo con
+  una separación. El botón queda superpuesto al borde inferior de la placa.
+- [x] QA Lobby escritorio: placa/botón cargados, sin contenido viejo superpuesto;
+  botón superpuesto como en Edit; clic en ENTENDIDO cierra el manual. QA iPhone
+  17 Pro 750×381: placa 373 px de ancho, texto legible; clic cierra. Match: misma
+  placa/botón al habilitar el manual, ambos recursos `Success`; clic cierra.
+- [x] Guía definitiva en UI_ASSETS 0.9: reglas de oro, mapa de cualquier imagen,
+  placa completa, botón, 9-slice opcional, especificación PNG y diagnóstico.
+  `assets/ui/frame_9slice_guide.png` creado para futuros marcos.
+- [x] Confirmar que `PlayerGui.ZB_Intro.Enabled=false` oculta el manual en Play;
+  editar `StarterGui` con Play en curso no cambia la copia activa.
+- [ ] Publicar ambos Places y repetir en teléfono físico. La aceptación visual
+  definitiva del arte queda a revisión del usuario.
+- [ ] Si se quiere ocultar el manual al entrar, modificar `LoadingScreen.client`
+  (hoy lo enciende) o retirar el flujo; no basta `Enabled=false`.
+
+Sin respaldo adicional de gameplay: el cambio es de presentación. Guía y
+especificación en UI_ASSETS 0.9; incidente B23.
+
+### Láser rojo y cartel de escudo — 2026-10-19
+
+- [x] Procesar/subir el PNG rojo y agregar `UIAssets.LaserImages.red` en ambos
+  Places. Se completa el catálogo de cinco imágenes; tarjeta roja cargada y
+  comprobada visualmente en tienda móvil, sin modificar precio/propiedad.
+- [x] Procesar el aviso «PROTEGIDO / DISPARAR CANCELA EL ESCUDO» sin margen
+  transparente excesivo. Plantilla `StarterGui.ZB_SpawnProtection` en ambos Places,
+  ImageLabel Fit, cuenta atrás y fallback de texto; tamaños editables por atributos.
+- [x] Nuevo SpawnProtectionController presenta solo `SpawnProtectionEndsAt`
+  activo para un participante. No concede inmunidad ni cambia los servicios de daño.
+  MatchStatus cede su fila mientras el aviso está visible; menús lo ocultan.
+- [x] Retirar el constructor viejo del aviso en FreeSpawnTransitionController de
+  Lobby conservando su confirmación de CFrame. Una plantilla, un controlador.
+- [x] Entrada real a Libre muestra protección con 4.8 s restantes. QA visual con
+  atributos controlados pasa para cero/expiración/menú; imagen cargada y fallback
+  oculto. Match verifica UI con estado local de prueba, no con una ronda real.
+- [x] Carga de los dos recursos Success en ambos clientes; capturas de aviso móvil
+  520×84 y escritorio 620×100, sin aplastamiento ni superposición del estado.
+- [x] Respaldos y paridad de controlador/HUD; fixtures solo runtime, ambos Places
+  en Edit, simulador usado restablecido. IDs y edición en UI_ASSETS 0.8.
+- [ ] Disparo manual durante protección y observador remoto en Player; el intento
+  programado de disparo no confirmó la cancelación del servidor en esta QA.
+- [ ] Validar permisos/carga publicados y teléfono físico.
+
+Respaldo: `ZB_RedLaserProtectionUIBackup_20261019` por Place. Sin publicación.
+
+### Móvil: apuntar disparando y soltar con impulso — 2026-10-19
+
+- [x] Retirar Up/Down de `StarterGui.ZB_MobileControls` y sus bindings de
+  MobileControls. Dos acciones circulares ampliadas, anillos e iconos: disparo
+  112/96 px y gancho 96/84 px según altura segura. Joystick conservado.
+- [x] Añadir `Shared.MobileAimInput`: delta por dedo sin confundir joystick,
+  botones o UI. Arrastre del mismo dedo de disparo/gancho y otro dedo derecho
+  libre; cámara de combate también activa en touch. Teclado/mouse conservados.
+- [x] Acción local `launch`: Hook se convierte en IMPULSO mientras `Grabbing`.
+  La pulsación llama al mismo `finishGrab(true)` del teclado. Prompts se ocultan
+  mientras está sujeto; touch no depende de `PromptButtonHoldEnded`/soltar E.
+- [x] QA Lobby: entrada Libre por remote real; intención sostenida de disparo y
+  dos gestos controlados giran la cámara sin cortar fire. Eventos Touch del
+  simulador también verificaron disparo+arrastre (dot inicial/final ≈0.982).
+- [x] Agarre contra pieza temporal mediante E; liberación tocando IMPULSO en el
+  simulador: `Grabbing=false`, root desanclado, velocidad inicial **90**, producto
+  escalar **1** con la dirección inversa de cámara y retorno de Caption a GANCHO.
+  El intento `InputHoldBegin` del fixture no activó el prompt; no se toma como
+  prueba de la pulsación inicial de agarre en touch físico.
+- [x] Abrir menú cancela intención de disparo y delta; cerrar no vuelve a disparar.
+- [x] Match/Galaxy A06: estado local de combate para QA, cámara con fire y segundo
+  gesto pasa (dot ≈0.981), cancelación por menú pasa. No equivale a VS/teleport real.
+- [x] Capturas iPhone 17 Pro 750×381 y Galaxy A06 705×338, sin acciones encimadas;
+  textos completos, Fire/Hook cargados en Lobby. ScreenOrientation=Sensor y
+  controles de combate solo landscape; DeviceSafeInsets conservado.
+- [x] Cinco fuentes compartidas iguales por bytes/hash entre Places; dos botones
+  por plantilla. Fixtures y puntos de depuración retirados; Edit/default en ambos.
+- [ ] Teléfono físico: joystick+disparo+arrastre, segundo dedo de cámara, gancho→
+  prompt táctil de agarre→IMPULSO, cuerpos congelados, pérdida de foco y salida.
+- [ ] Publicar ambos Places y repetir en Libre/VS, con observador remoto y latencia.
+
+Respaldo por Place: `ZB_MobileAimReleaseBackup_20261019`. QA controlada y de
+simulador, sin publicación. Guía editable en UI_ASSETS 0.1. Incidentes B21/B22.
+
+### Corte preentrega — 2026-10-19
+
+- Entrega original **20/10**. Solicitar extensión mínima de siete días, propuesta
+  **27/10**; **sin confirmar**. Plan vigente y criterios beta en
+  [PLAN_10_DIAS](PLAN_10_DIAS.md#replanificación-vigente--19102026-beta-y-extensión-solicitada).
+- **Prioridad del usuario para hoy 19/10 y mañana 20/10:** cambios de móvil y,
+  cuando corresponda, de UI/assets. Revisar controles, multitáctil, apuntado,
+  menús/scroll, salida, orientación, zonas seguras y rendimiento en teléfono real;
+  usar simulador solo como verificación visual complementaria.
+- **Propuesto para la extensión:** colección premium completa, capa global y
+  video, junto con cierre de QA pendiente. Informe de anuncios preparable durante
+  esa semana; **activación sin fecha comprometida** hasta cumplir elegibilidad.
+  El usuario reporta insuficientes jugadores activos; comprobar modalidad y
+  requisitos en Dashboard, sin dar por verificado un umbral concreto.
+- [x] Congelamiento azul en ambos Places: nuevo `Config.FreezeAppearance`,
+  parcial RGB(140,210,255), total RGB(75,180,255), material `Ice`. Al 100 % afecta
+  las partes corporales directas (R15/R6), excluyendo HumanoidRootPart.
+- [x] QA controlada con clon R15 y el FreezeService real en cada Place: daño
+  parcial→total, **15 partes** azules/Ice, armas/accesorios anidados intactos,
+  reset de todos los colores/materiales y segundo ciclo/reset idempotente.
+  Fixtures solo en Play; retirados al detener. Ambos Places quedan en Edit.
+- Respaldo: `ServerStorage.ZB_IceAppearanceBackup_20261019` por Place. No publicado
+  por el asistente. Falta QA entre jugadores reales y visibilidad remota.
+- [x] Sesiones previas de esta conversación: intro actualizada en ambos Places;
+  carteles flotantes de estado de armas retirados; dos ganchos activos con cartel,
+  imagen y E; hologramas/HoloLevitation retirados; BillboardGui limitados a 20 studs.
+- [x] Cinco imágenes de láser integradas en ambos catálogos UI. Las primeras
+  cuatro se verificaron anteriormente; rojo entregado e integrado posteriormente
+  el 19/10, con carga y captura de su tarjeta. Detalle en la sección de arriba.
+- [x] Cartelera de Libre integrada en `AnimationIconSign`, cuatro notificaciones
+  recientes con fotos/nombres/cruz y caducidad 90 s; presentación/filtro probados
+  con datos simulados. No equivale a acreditar un congelamiento multijugador real.
+- [ ] QA publicada prioritaria: datos/pagos únicos, retorno con tercero en Lobby,
+  encuentro completo/anulado, segunda entrada VS, cuerpos/respawn y móvil real.
+- [ ] Resolver evidencia de compra real del Cañón y paridad del catálogo/derechos
+  en Match. Inspección actual Lobby: `AutoGrantPasses=true`, Cañón conectado,
+  Rifle sin PassId válido. Las notas antiguas de false describen estados previos.
+- [ ] Autorizar/publicar candidata de ambos Places, registrar versiones y probar
+  en servidores nuevos. No dar por cerrado el sprint ni el contenido externo
+  por los cambios de presentación.
+
+Las secciones anteriores al 19/10 se conservan como historial. Sus descripciones
+de hologramas, controles del manual y carteles dinámicos de armas quedaron
+sustituidas por este corte; no reactivarlas siguiendo una nota antigua.
 
 ### Montaje del Rifle corregido — 2026-10-16
 
