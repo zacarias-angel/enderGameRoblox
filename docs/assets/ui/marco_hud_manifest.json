@@ -1,0 +1,20 @@
+{
+  "source": "MarcoHUD.png",
+  "originalSize": [
+    1329,
+    1183
+  ],
+  "file": "marco_hud_roblox.png",
+  "size": [
+    1024,
+    912
+  ],
+  "sliceCenter": [
+    276,
+    246,
+    748,
+    666
+  ],
+  "sliceScale": 0.12,
+  "renderer": "UIFrameArtwork: proportional corner and edge details"
+}

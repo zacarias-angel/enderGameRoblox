@@ -1,9 +1,231 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-19. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-26. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### Corrección del marco tras la captura del usuario — 26/10, B27
+
+- [x] Reconocer que las uniones señaladas fueron introducidas al segmentar el marco;
+  la QA visual de la primera composición no queda aceptada.
+- [x] Preparar el original completo como battle_general_frame_full.png, 1024×341,
+  sin recortar el lienzo; subir 138592401278319 y usarlo en ambos Places.
+- [x] Retirar las cuatro subpiezas y usar un ImageLabel Fit con ImageRect en cero;
+  encajar textos/iconos dentro de su superficie real y ajustar accesos en ventana baja.
+- [x] Captura Lobby escritorio e iPhone 17 Pro 750×381; marcos continuos, sin uniones.
+  Los accesos inspeccionados tienen TextFits=true y cero piezas de segmentación.
+- [x] Match escritorio con estado local de QA: misma imagen, textos que caben,
+  retorno propio y contador separado de tabla. No equivale a VS real.
+- [x] Paridad final del módulo 13259 bytes / hash 1436495399; respaldo por Place
+  ZB_BattleHudFullFrameBackup_20261026, Edit/default y servidor de subida cerrado.
+- [ ] Confirmación visual del usuario y Player/teléfono físico. Sin publicación.
+
+### Barras y marco del HUD de las referencias — integración del 26/10
+
+- [x] Confirmar ambos Places como el mismo juego (Libre y VS) y aplicar al HUD
+  mostrado en las referencias. Conservar los menús interiores y placa del manual.
+- [x] Preparar tres PNG sin sobrescribir fuentes: barras 496×120 y marco 1024×275;
+  subir IDs 91629418883833 / 95575967228479 / 104332063179973.
+- [x] Respaldar fuentes y plantillas por Place en ZB_BattleHudArtworkBackup_20261026.
+- [x] Integrar Shared.BattleHudArtwork y UIAssets.BattleHud, reutilizando Fill y
+  botones existentes; marco también en TeamScore VS. Conservar CoinsLabel.Icon
+  para el vuelo/pulso de monedas. Rehabilitar ScreenGui de mochila de Lobby.
+- [x] Corregir conflicto móvil de dos layouts que alternaban Position: el viejo
+  omite controles marcados. Guardas de logo compacto para ImageLabel sin Symbol/Brand.
+- [x] Libre real por remote existente: mouse consumió arma 100→58.6, Fill mínimo
+  .586; Q consumió gancho 100→83.5875, Fill mínimo .835875. Regeneración posterior.
+- [x] B abrió mochila; click de acceso abrió tabla; click en salida devolvió LOBBY,
+  BattleParticipant=false y barras ocultas. Intento de Tab no concluyente.
+- [x] Respawn real Libre: un HUD, dos adornos de barra y coin Icon visible.
+- [x] Match con estado local de QA, no teleport: Fill=.5/.25 y pruebas de 0/1;
+  texto propio VOLVER AL LOBBY [L] y header VS conservados.
+- [x] Tres imágenes Success en ambos; capturas desktop y iPhone 17 Pro 750×381,
+  controles móviles/joystick sin solapamiento con barras y score/monedas separados.
+  B del simulador abre mochila y oculta acciones; no es touch físico.
+- [x] Arranque móvil final Lobby sin errores nuevos de UI; Match solo rechazos de
+  TeleportData/HTTP esperados al abrirlo aislado. Corregidas las incidencias de QA B26.
+- [x] Paridad de BattleHudArtwork/MobileHudLayout/HudController; Atlas conserva
+  diferencias propias de Place. Retirar fixtures al detener, Edit/default en ambos,
+  cerrar servidor local de subida. Guía y archivos/IDs en UI_ASSETS.
+- [ ] Aceptación visual del usuario y prueba publicada/teléfono físico, incluido
+  score/roster 4v4, touch real, latencia y permisos de imágenes en servidores nuevos.
+
+Sin publicación. Las mediciones de energía proceden de la integración de Fill
+actual; los ajustes posteriores fueron de marco, layout y compatibilidad del logo.
+
+### Auditoría y adaptación a cambios del equipo — 2026-10-26
+
+**Realizado: inspección estática en Edit de ambos Places**, lectura de los ocho
+Markdown principales y README de assets/UI. Lobby PlaceVersion 784, Match 205,
+GameId compartido 10498600200. Versiones de DataModel, sin certificar publicación
+de cambios Edit. Captura del Lobby confirma la mochila editable visible en edición.
+
+- [x] Inventariar scripts activos/deshabilitados y comparar fuentes/configuración
+  de UI, combate y presentación. Leer implementaciones nuevas y sus consumidores.
+- [x] Documentar mochila editable **solo Lobby**: Panel/Sidebar/Summary/Cards,
+  Templates.CatalogCard, EquipmentDashboardLayout y guarda EditableEquipment.
+- [x] Documentar Rankings3D, API, puente desde RankService, cuatro filas por panel,
+  DemoMode=false y HologramMotion. No confundir ejemplos Edit con datos reales.
+- [x] Registrar música por zona, pausa de animaciones congeladas/impulso de ragdoll,
+  lanzamiento visual del gancho y PresentationSettings presentes en ambos Places.
+- [x] Corregir la regla documentada de power-ups: vida 10 s, respawn tras recogida
+  10 s, recolocación inmediata al expirar; aviso compartido para aparición y azul.
+- [x] Actualizar rutas de vitrinas, tres acciones móviles vigentes y ausencia de
+  placas/Hologramas antiguos. Congelados carece de Cabecera/Estado (B25).
+- [x] Comprobar en Edit Lighting azul/violeta y ausencia de sombras locales/globales;
+  consultar Output: Lobby solo entrada de edición; Match aviso de MaterialManager.
+  No equivale a arranque limpio de scripts en Play.
+- [x] Mantener las aceptaciones reportadas por el usuario el 21/10; no repetir el
+  recorrido confirmado como si nunca se hubiera probado.
+
+**Adaptación pendiente (B24):**
+
+- [ ] Migrar mochila editable a Match como conjunto de plantilla, controlador y
+  EquipmentDashboardLayout; conservar funciones de Match sin ventas/calendario.
+- [ ] Asignar tres imágenes de WeaponImages en Match (actualmente vacías) y revisar
+  WeaponOffers, ausente en Match. Persistencia de passes no demuestra paridad UI.
+- [ ] Sincronizar el Grip corregido del Rifle: Lobby (0,-.2,.9), Match (0,0,0).
+  No cambiar balance/escala al trasladar ese ajuste; volver a probar montaje/Muzzle.
+- [ ] Si se busca feedback idéntico, llevar a Match UIInteractionController y
+  Motion con Sounds/configuración; Match conserva la versión anterior sin audio.
+- [ ] Revisar si restaurar Cabecera/Estado del ranking Congelados; verificar datos
+  reales y aspecto de los tres paneles después de iniciar Play.
+
+**QA de los cambios encontrados, todavía sin ejecutar en esta auditoría:**
+
+- [ ] Nueva mochila: arranque oculta vista Edit, B/E/cierre, categorías, compra/equipado,
+  datos reales, scroll, rotación, respawn y ausencia de duplicados tras la migración.
+- [ ] Rankings: demostrar que Config/demo no reemplaza datos reales, fullFreeze Libre,
+  victoria VS tras regreso, monedas y reconexión; top cuatro y actualización histórica.
+- [ ] Power-ups: 10 s sin recoger→otro punto; recogida→10 s oculto; timers antiguos
+  no duplican. Azul renovado dura 5 s, disparo no lo cancela y aviso distingue escudos.
+- [ ] Congelamiento: animaciones propias/remotas pausadas, impulso único, reset/respawn
+  restaura velocidades y cancela tareas viejas; gancho viaja visualmente y limpia al soltar.
+- [ ] Música por participante (jugador en Lobby y otro en Libre), transición de Match,
+  permisos de audios y volumen Hover≈4.516; comprobar mezcla en Player/teléfono.
+- [ ] Revisar manual con texto incorporado para tres controles móviles; teléfono físico,
+  casos específicos pendientes B13/B15/B19 y fallo de guardado/cambio de día UTC.
+- [ ] Registrar versiones efectivamente publicadas y smoke test de los cambios nuevos.
+
+Respaldos observados, no creados aquí: Lobby ZB_EditableEquipmentBackup_20261023,
+ZB_Rankings3DBridgeBackup_20261023, ZB_UIButtonFeedbackBackup_20261023; ambos
+ZB_FeedbackPolishBackup_20261016 y ZB_PowerUpLifetimeShieldBackup_20261019.
+No se modificó Studio, inició Play ni publicó desde esta revisión documental.
+
+#### Huellas de referencia leídas el 26/10
+
+Longitud de Source en bytes / hash base31 módulo 2³². Sirven para comparar fuentes,
+no certifican ejecución ni igualdad de plantillas, propiedades o comportamiento.
+
+| Fuente | Lobby | Match |
+|---|---|---|
+| EquipmentDashboard | 23024 / 2677589399 | 22291 / 34353757 |
+| EquipmentDashboardLayout | 10245 / 850543930 | Ausente |
+| AtlasUIController | 21696 / 4147335155 | 21609 / 1326693876 |
+| UIInteractionController | 11617 / 1629116197 | 3890 / 3701533704 |
+| RankService.server | 14628 / 3379106746 | 12740 / 3786209 (responsabilidad distinta) |
+| CombatRagdoll | 6221 / 2894033906 | Igual |
+| AnimationFreeze | 2223 / 984481200 | Igual |
+| FrozenAnimationController | 1240 / 4022265387 | Igual |
+| HookVisualService.server | 7954 / 2768953496 | Igual |
+| ZoneMusicController | 2221 / 2262914555 | Igual |
+| PowerUpShield | 3007 / 3636150112 | Igual |
+| SpawnProtectionController | 4719 / 1301181075 | Igual |
+| MobileControls | 8921 / 193913164 | Igual |
+| BattleCameraController | 8512 / 646660308 | Igual |
+| GrabController.client | 18291 / 4155865169 | Igual |
+| ShootingController.client | 23318 / 2990126624 | Igual |
+
+Las fuentes de servidor específicas de Lobby/Match no se consideran regresión por
+tener distinto hash. El corte 26/10 de DISENO/UI_ASSETS detalla contratos y rutas.
+
+### Corrección de deformación y MarcoHUD — 2026-10-23
+
+- [x] Reporte del usuario: rechaza el primer resultado porque los detalles de los
+  bordes seguían estirados, también en ranking. No considerar aceptada aquella QA.
+- [x] Ambos Places: nuevo `Shared.UIFrameArtwork`, nueve zonas y cuatro adornos
+  con escala proporcional; solo relleno/uniones simples se extienden. Compensar
+  UIScale local. `UIFrameSkins` reutiliza las piezas y los estados de botones.
+- [x] Ranking: corregir proporción SurfaceGui según cara física. Lobby verifica
+  tres CanvasSize 220×275, ratio .8 igual a la cara 20×25; antes 220×160.
+- [x] Recibir `MarcoHUD.png`; preparar 1024×912 manteniendo proporción y subir
+  `106613197873068`. Cuatro plantillas de panel/tarjeta en ambos Places usan el arte.
+- [x] Deshabilitar el contorno UIStroke adicional de elementos enlazados, incluidos
+  botones compactos y strokes agregados posteriormente. UIInteractionController
+  deja de crear el segundo rectángulo/celeste de hover y su tween.
+- [x] Deshabilitar diez contornos de miniaturas por Place en WeaponImages,
+  HookTipImages y LaserImages. Respaldar sus plantillas.
+- [x] Capturas finales de mochila en ambos Places y tienda/calendario en iPhone
+  17 Pro horizontal (750×381); hover y click real a Armas en Lobby. Inspección
+  final de mochila/tienda: cero contornos extra activos y cero objetos de borde
+  de hover. Miniaturas regeneradas con Enabled=false en runtime, misma propiedad
+  persistida en las plantillas de Edit. Sin errores nuevos de UI en Output.
+- [x] Paridad por hash de UIFrameArtwork, UIFrameSkins y UIInteractionController;
+  ambos Places en Edit, viewport normal y servidor de subida cerrado. Sin publicar.
+- [x] Respaldos por Place `ZB_FrameUndistortedBackup_20261023` y
+  `ZB_MarcoHUDBackup_20261023`. Proceso/IDs y arquitectura en UI_ASSETS.
+- [ ] Aceptación visual final del usuario y prueba publicada/teléfono físico.
+
+### Panel ámbar en mochila, tienda y calendario — 2026-10-23
+
+Primera integración: sustituida por el ajuste MarcoHUD de arriba tras rechazo
+visual del usuario; sus capturas no acreditaron ausencia de deformación.
+
+- [x] Reutilizar `ui_panel_warning.png` / `113491494447703`, registrado en el
+  catálogo; `ScaleType=Slice`, `SliceCenter=(120,110)–(392,346)`, escala base .24.
+- [x] Ambos Places: `ZB_EquipmentDashboard.PanelFrameSkin="panel_warning"`;
+  EquipmentDashboard declara el skin antes de insertar el Panel en la GUI.
+- [x] Lobby: calendario `ActivitiesPanel.UIFrameSkin="panel_warning"`.
+  Tienda comparte el panel de mochila; Match conserva únicamente su mochila.
+- [x] Capturas Play: mochila en ambos Places, calendario escritorio, tienda y
+  calendario iPhone 17 Pro horizontal (750×381), calendario vertical. Arte cargado
+  y 9-slice activo. Tienda/calendario abiertos con evento/propiedades de cliente;
+  no se probaron compras, cobros ni touch físico en esta tarea.
+- [x] Respaldo `ServerStorage.ZB_WarningPanelsBackup_20261023` en ambos Places;
+  guía/rutas en UI_ASSETS. Ambos en Edit, simulador restablecido, sin publicación.
+- [ ] Revisión visual del usuario y validación publicada/teléfono físico.
+
+### Confirmación de extensión y prueba VS — 2026-10-21
+
+- [x] Usuario confirma extensión de siete días: entrega el **27/10/2026**.
+  Sustituye las notas históricas que la describen como pendiente de aprobación.
+- [x] Usuario confirma pruebas de **entrada y salida de VS con tres personas**.
+  Evidencia: reporte del usuario; sin versiones ni registro individual de casos.
+- [ ] Precisar si esa prueba también cubrió retorno al mismo servidor con un tercero
+  esperando, abandono/anulación, segunda entrada/barreras y formato 2v2. No asumir
+  esos resultados ni repetir el recorrido general como si no se hubiera probado.
+- [x] Usuario confirma además saldo, misiones, ranking y equipado después de completar
+  VS, viajar y reconectar, sin pagos duplicados. Se acepta ese recorrido por reporte
+  del usuario; sustituye los pendientes históricos equivalentes de esta lista.
+- [ ] Cambio de día UTC y fallos de guardado: casos específicos no incluidos en esta
+  confirmación. La compra nueva con una cuenta sin pase mantiene su prueba aparte.
+
+### Ajuste móvil y cámara sobre el hombro — 2026-10-21
+
+- [x] Tres botones en ambos Places: Fire rojo (112/96 px), Hook verde (80/68 px)
+  a la izquierda y Grab azul (80/68 px) encima del disparo. Grab cambia de AGARRE
+  a IMPULSO; gancho independiente. Icono de agarre dedicado y navegación superior
+  `MobileNavY=16` para evitar solapamiento con mochila.
+- [x] Acción `grab` selecciona cobertura cercana priorizando la mira; siguiente
+  pulsación en estado Grabbing usa `launch`. QA mediante LocalScript temporal en
+  Match: se agarra, levantar no suelta y pulsar impulso libera/desancla. Prueba
+  controlada de runtime, no teléfono físico ni partida VS completa.
+- [x] Sensibilidad táctil .0045→.005625 (+25 %). MobileAimInput observa Position
+  del dedo registrado y desconecta al finalizar/cancelar el gesto.
+- [x] Cámara móvil sobre el hombro: desplazamiento lateral 2.6 studs y altura
+  adicional .8, editables en ZB_MobileControls. Raycast del desplazamiento y de
+  distancia para colisiones. Mismo controlador/configuración en ambos Places.
+- [x] Simulador iPhone 17 Pro, viewport 750×381: cabeza por debajo/a la izquierda
+  del centro; captura visual confirma mira despejada. Ambos Places en Edit y
+  viewport normal tras QA; fixtures únicamente runtime, retirados al detener.
+- [ ] Teléfono físico y versión publicada: disparar+arrastrar+joystick, gancho,
+  agarre/impulso, cuerpos congelados, cámara junto a paredes, menús/foco y salida.
+- [ ] Revisar/actualizar el arte del manual para los tres controles móviles.
+
+Respaldos por Place: `ZB_MobileThreeActionsBackup_20261021` y
+`BattleCameraController_BeforeMobileShoulder_20261021` en ServerStorage. Sin
+publicación desde esta sesión. Las secciones de dos botones se conservan como historial.
 
 ### Marco del manual, placa y botón ENTENDIDO — 2026-10-19
 

@@ -1,22 +1,45 @@
 # Sugerencias — UI editable, cosméticos y monetización
 
-Actualizado: **2026-10-16**. Documento de trabajo: añadir pasos, decisiones y
+Actualizado: **2026-10-26**. Documento de trabajo: añadir pasos, decisiones y
 resultados aquí. Guía rápida de imágenes: [UI_ASSETS.md](UI_ASSETS.md).
 
 ## 0. Qué existe y qué falta
 
-**Implementado:** iconos/estilos como instancias en
+### Base contrastada con Studio — 2026-10-26
+
+- Mochila/tienda de **Lobby ya migrada** a plantilla completa con
+  EditableEquipment=true, Summary y Templates.CatalogCard. No proponer construirla
+  de nuevo. El siguiente trabajo de UI es adaptar ese contrato a Match, que aún
+  conserva su constructor anterior. Guía de edición local de Artwork en UI_ASSETS.
+- Ranking físico nuevo implementado en Lobby: Workspace.Rankings3D, API de servidor
+  y puente desde RankService; no crear otra persistencia ni otro productor de estadísticas.
+- Música por zona ya implementada en ambos mediante ZoneMusicController y
+  SoundService.ZB_Music. No confundir música con el video promocional pendiente.
+- Pase del Cañón conectado en Lobby, AutoGrantPasses=true; Rifle sigue PassId=0.
+  Match conserva datos de propiedad, pero no tiene WeaponOffers y sus tres imágenes
+  de armas siguen vacías. Compra nueva y paridad visual siguen pendientes.
+- Cable genérico **ya tiene renderer 3D** RopeSkins.Generic, además del Beam
+  replicado. No proponer implementarlo como si todavía solo existiera el Beam plano.
+- Colecciones Aurora/Plasma/Solar, categorías nuevas de skins/entitlements, productos
+  repetibles/ProcessReceipt, video/ads y premio global siguen siendo propuestas.
+  No se identificaron VideoFrame/AdGui en Workspace durante esta inspección; no se
+  comprobó Dashboard ni material externo. Presencia de modelos decorativos, como
+  space_man_mark, no certifica una skin equipable/persistente ni la colección completa.
+
+Priorizar compatibilidad B24 y presentación B25 antes de ampliar contenido. Evidencia
+de esta revisión: Edit/fuentes/captura, no nuevas pruebas Player ni publicación.
+
+**Implementado (base histórica, con las actualizaciones de arriba):** iconos/estilos como instancias en
 `ReplicatedStorage.UIAssets`, manual prearmado en `StarterGui.ZB_Intro`, tienda
 con monedas del juego, inventario y cosméticos de punta/cuerda de gancho.
 Desde el 09/10 también `StarterGui.ZB_DailyActivities` en Lobby: calendario mensual
 real editable con misiones/cobros; contrato en UI_ASSETS. La lista siguiente de
 migraciones es propuesta salvo las pantallas marcadas como implementadas.
 
-**Propuesto, todavía NO implementado:** las nueve skins de este documento,
-venta con Robux, procesamiento de recibos, videos/anuncios y reclamación de UGC.
-En la inspección no se encontró un procesador `ProcessReceipt` ni llamadas de
-compra de pases/productos del juego. Crear un pase en la web no conecta por sí
-solo la recompensa a nuestros scripts.
+**Propuesto, todavía NO implementado como entrega de este documento:** las nueve
+skins, packs, procesamiento de recibos para productos repetibles, videos/anuncios
+y reclamación de UGC. La venta Robux del Cañón **sí está conectada** por pase;
+no usa ProcessReceipt. Crear un pase en la web no conecta por sí solo la recompensa.
 
 Todas las rutas señaladas **POR CREAR** son el contrato propuesto de organización:
 no hay que buscarlas esperando que ya existan. No se crearon productos, pases,
@@ -44,7 +67,8 @@ Rifle. Guía y pruebas en UI_ASSETS 0.4–0.5. No se publicó el Place.
 Las rutas de packs del apartado 3 siguen siendo propuestas distintas, no pases ya creados.
 
 1. [x] Cambiar imágenes y texto del manual desde Explorer/Properties.
-2. [ ] Migrar las demás pantallas a plantillas completas, conservando sus callbacks.
+2. [ ] Adaptar la mochila editable de Lobby a Match y migrar las pantallas restantes,
+   conservando callbacks. Lobby/calendario ya tienen plantilla completa.
 3. [ ] Preparar y probar las nueve skins, sin venta todavía.
 4. [ ] Implementar derechos/persistencia/visuales compartidos de cosméticos.
 5. [ ] Crear tres pases de packs y conectar su entrega autoritativa.
@@ -63,20 +87,22 @@ Las rutas de packs del apartado 3 siguen siendo propuestas distintas, no pases y
 | Emblema compartido | `ReplicatedStorage.UIAssets.Icons.emblem` | Cambiar `Image` |
 | Fondo de paneles generados | `ReplicatedStorage.UIAssets.Styles.panel` | Cambiar `BackgroundColor3` |
 | Esquinas de esos paneles | `ReplicatedStorage.UIAssets.Styles.panel.UICorner` | Cambiar `CornerRadius` |
-| Título del manual | `StarterGui.ZB_Intro.Instructions.Title` | Cambiar `Text` |
-| Texto de una instrucción | `StarterGui.ZB_Intro.Instructions.Rows.Row04.Description` | Cambiar `Text` |
+| Placa visible del manual | `StarterGui.ZB_Intro.Instructions.Artwork` | Cambiar `Image`; contiene textos incorporados |
+| Título/instrucción del fallback clásico | `Instructions.Title` / `Instructions.Rows.Row04.Description` | Cambiar `Text`; ocultos con FullArtIntro=true |
+| Marco de mochila nueva (Lobby) | `StarterGui.ZB_EquipmentDashboard.Panel.Artwork` | Cambiar `Image`; no el PanelFrameSkin heredado |
 
 Trabajar con Play detenido. Repetir o copiar el objeto al otro Place. Los IDs
 de imagen se suben una vez y se reutilizan. No dejar duplicados con el mismo nombre.
 
 ### Próxima migración de pantallas completas — POR HACER
 
-El manual ya sigue el flujo visual. Para el resto, migrar una pantalla a la vez:
+Manual, calendario Lobby y mochila Lobby ya siguen el flujo visual. Para el resto,
+migrar una pantalla a la vez:
 
 | Plantilla propuesta | Contenido visual | Controlador que debe enlazarla |
 |---|---|---|
-| `StarterGui.ZB_EquipmentDashboard` | `Backdrop`, `OpenInventory`, `Panel`, textos y navegación | `StarterPlayer.StarterPlayerScripts.EquipmentDashboard` |
-| `ReplicatedStorage.UIAssets.Components.EquipmentCard` | TextButton con `Icon`, `Title`, `Detail`, `Action`, UICorner/UIStroke | El mismo; clonar para cada artículo |
+| `StarterGui.ZB_EquipmentDashboard` — implementado Lobby; Match pendiente | Backdrop, OpenInventory, Panel completo, resumen y navegación | EquipmentDashboard + Shared.EquipmentDashboardLayout |
+| `StarterGui.ZB_EquipmentDashboard.Templates.CatalogCard` — implementado Lobby | TextButton con Artwork, IconFrame/Icon, Title, Detail, Divider y Action | EquipmentDashboard clona para cada artículo; no crear Components.EquipmentCard duplicado |
 | `StarterGui.ZB_DailyActivities` — implementado 09/10 en Lobby | Calendario mensual, detalles, recompensa y tres filas estáticas; sin reconstrucción runtime | `StarterPlayer.StarterPlayerScripts.DailyActivities` |
 | `ReplicatedStorage.UIAssets.Components.MissionRow` — propuesta | La GUI vigente ya tiene Row01..Row03 en su plantilla; componente compartido todavía no creado | DailyActivities |
 | `StarterGui.ZB_HUD` | Barras, etiquetas y mira | `StarterPlayer.StarterPlayerScripts["HudController.client"]` |
@@ -112,9 +138,9 @@ No añadir una skin allí como si fuera un arma más potente.
 |---|---|---|
 | Puntas de gancho | `ReplicatedStorage.HookCosmeticAssets.HookTips.default`, `.spike`, `.heavy` | Models con PrimaryPart; servidor clona la punta elegida |
 | Catálogo de puntas | `ReplicatedStorage.Shared.Config` → `Config.HookTipCosmetics` | IDs, nombre, coste en monedas y datos visuales |
-| Cuerdas | El mismo Config → `Config.HookRopeCosmetics` | Beam configurado por color/ancho; no son modelos 3D |
+| Cuerdas | Config.HookRopeCosmetics + `ReplicatedStorage.HookCosmeticAssets.RopeSkins.Generic` | Beam replicado y renderer 3D local genérico; no cambia física ni propiedad |
 | Visual del gancho | `ServerScriptService["HookVisualService.server"]` | Usa `HookTipCosmeticId` y `HookRopeCosmeticId` |
-| Armas actuales (actualizado 14/10) | `ReplicatedStorage.WeaponAssets.Templates.blaster`, `.rifle`, `.cannon` y `ServerScriptService.WeaponVisualService` | SDR-Mk2 gratuita, SM_Wep_SMG_01 como Rifle y SM_Wep_Laser_Gun_01 como Cañón, replicadas desde servidor. IDs/estadísticas/precios en monedas conservados; derechos y venta Robux pendientes. Montaje/QA en DISENO |
+| Armas actuales (contrastado 26/10) | `ReplicatedStorage.WeaponAssets.Templates.blaster`, `.rifle`, `.cannon` y `ServerScriptService.WeaponVisualService` | SDR-Mk2 gratuita, Rifle SMG y Cañón láser replicados. Cañón por pase en Lobby; Rifle sin pase conectado. Grip de Rifle difiere entre Places (B24); montaje/QA en DISENO |
 | Inventario/compra | `ServerScriptService.InventoryService`, `ServerScriptService["WorkshopService.server"]` | Integración existente de propiedad/equipado y compras con monedas |
 | Datos persistentes | `ServerScriptService["DataService.server"]` | Debe ampliarse para las categorías nuevas |
 

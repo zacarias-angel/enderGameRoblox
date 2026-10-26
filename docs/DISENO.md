@@ -2,10 +2,169 @@
 
 > La gravedad desapareció. La estrategia no.
 
-Consolidado el 2026-10-02 a partir de la documentación hasta el 2026-09-30.
-Describe el **último estado documentado**, pendiente de contrastar con el Studio
-abierto. Normas en [REGLAS](REGLAS.md), pruebas en [CHECKLIST](CHECKLIST.md) e
+Consolidado el 2026-10-02. **Contrastado con ambos Studios el 2026-10-26**.
+El corte siguiente prevalece sobre las descripciones históricas de abajo.
+Normas en [REGLAS](REGLAS.md), pruebas en [CHECKLIST](CHECKLIST.md) e
 incidentes en [BUGS](BUGS.md).
+
+## 0. Estado real tras los cambios del equipo — 2026-10-26
+
+### Integración posterior: nuevo arte del HUD (26/10)
+
+Por pedido del usuario, ambos Places usan Barra arma.png/Barra gancho.png y el
+marco HUD GENERAL BATALLA para los accesos, estado, monedas y encabezado VS.
+Nuevo módulo compartido `BattleHudArtwork` y plantillas editables en
+`ReplicatedStorage.UIAssets.BattleHud`. Reutiliza los Fill de HudController y los
+botones originales; no cambia balance, energía, pagos ni autoridad de combate.
+**Revisión por captura del usuario (B27):** se retira la segmentación del marco
+general que producía uniones visibles. La fuente vigente es el PNG original
+completo reducido a 1024×341 (`138592401278319`), en un ImageLabel Fit por control;
+texto/iconos se encajan en el área real y los accesos se adaptan al alto de pantalla.
+MobileHudLayout/AtlasUIController ceden esa presentación al nuevo módulo.
+Los paneles interiores de mochila/tienda y calendario no se migraron ni se
+sincronizaron a Match por este cambio de HUD. B24 sigue abierto.
+
+QA: consumo real de arma/gancho en Libre y salida por botón; imágenes cargadas en
+ambos, layout iPhone 17 Pro, respawn único. Match visualizado con estado local de
+prueba (no VS real), Fill de 0/25/50/100 %. Corregida una realimentación de Position
+entre layouts y la suposición de Symbol/Brand en el logo compacto del Lobby.
+Rutas, IDs, respaldo y alcance exacto en UI_ASSETS; ejecución en CHECKLIST.
+Ambos Places en Edit/default, sin publicar. La auditoría siguiente es el corte previo
+a esta integración y conserva su evidencia original.
+
+Auditoría de lectura en **Edit**: fuentes, jerarquías, atributos, assets, Lighting
+y Output de ambos Places; captura del Lobby con su mochila de edición visible.
+Lobby: `PlaceVersion=784`; Match: `PlaceVersion=205`; ambos pertenecen a
+`GameId=10498600200`, propietario User `4575572102`. Son versiones informadas por
+el DataModel abierto: no acreditan que los cambios Edit estén publicados.
+No se ejecutó Play ni se verificaron teleports, compras o persistencia en esta revisión.
+No se puede atribuir autor/fecha de cada cambio solo por inspeccionar el estado actual;
+las fechas de los respaldos son referencias, no un historial de Team Create.
+
+### Paridad actual: no copiar un Place entero sobre el otro
+
+| Sistema | Lobby | Match | Adaptación pendiente |
+|---|---|---|---|
+| Mochila/tienda | Plantilla completa `EditableEquipment=true`, panel 1360×720, módulo `Shared.EquipmentDashboardLayout` | Acceso en StarterGui y panel construido por el controlador anterior; sin ese módulo | Migrar controlador + plantilla + layout como conjunto, preservando mochila sin ventas en Match |
+| Imágenes de armas | Tres IDs asignados en `UIAssets.WeaponImages` | Las tres propiedades `Image` vacías | Asignar los mismos IDs; verificar tarjetas en Play |
+| Ofertas de armas | `WeaponOffers`, Cañón pase 2039918698, Rifle sin pase; `AutoGrantPasses=true` | `WeaponOffers` ausente; datos de pases conservados por DataService | Decidir/sincronizar catálogo de presentación; Match sigue sin servicio de ventas |
+| Empuñadura Rifle | `Templates.rifle.Handle.Grip.Position=(0,-0.2,0.9)` | `(0,0,0)` | Llevar el ajuste de Grip y comprobar montaje; escala 1.15 presente en ambos |
+| Ranking del mundo | `Workspace.Rankings3D` y puente autoritativo | Sin paneles 3D | Sistema de exhibición exclusivo del Lobby; estadísticas VS continúan en Match |
+| Interacción de botones | Controlador ampliado con sonido, configuración `Motion.Hover/Click` | Controlador anterior, solo escalado; sin esos Sounds | Sincronizar si se quiere el mismo feedback; no basta copiar IDs |
+| Presentación de combate | Música, animaciones congeladas, impulso del ragdoll, lanzamiento visual del gancho | Mismos componentes compartidos | Revalidar en Player después de integrar cambios |
+| Power-ups y aviso | Vida/respawn 10 s y aviso de escudo azul | Misma política y controlador de aviso | Probar ciclo temporal, inmunidad y limpieza en cada modo |
+
+### Mochila editable: nueva fuente visual del Lobby
+
+`StarterGui.ZB_EquipmentDashboard` contiene ahora `Panel`, `Backdrop`,
+`OpenInventory`, `OpenWeaponOffer` y `Templates.CatalogCard`. El Panel contiene
+`Sidebar` (Logo, PlayerProfile, Navigation y Wallet), `Header`, `Close`, `Summary`
+(Card1..Card4), `Cards`, `Status`, Artwork, Interior y ResponsiveScale.
+El controlador rellena el resumen y clona CatalogCard para el catálogo; no reconstruye
+la estructura estática. Oculta Panel/Backdrop antes de esperar remotes al arrancar.
+Los datos visibles en Edit son de muestra; no prueban saldo ni propiedad reales.
+
+- `EditableEquipment=true` hace que AtlasUIController omita su layout/estilizado
+  antiguo. El atributo heredado `PanelFrameSkin` ya no selecciona el arte de este Panel.
+- El arte local de Panel/Sidebar/tarjetas usa `92094831612893`; no el MarcoHUD
+  `106613197873068` de `UIAssets.Skins`. Guía de rutas y excepciones en UI_ASSETS.
+- EquipmentDashboardLayout conserva la composición Edit en escritorio y adapta a
+  980×450 en horizontal bajo (`ViewportSize.Y<500`) o 400×710 en vertical estrecho
+  (`X<600` y `Y>X`). Ajusta UIScale con `ViewportMargin=18`, scroll y tarjetas.
+- Compra/equipado siguen enviándose a los servicios existentes. Match todavía no
+  usa este contrato; copiar solo el controlador produciría esperas por Panel/layout.
+- Respaldo Lobby `ServerStorage.ZB_EditableEquipmentBackup_20261023`.
+
+### Rankings 3D: presentación nueva con estadísticas existentes
+
+`Workspace.Rankings3D` reemplaza la referencia física a `Workspace.placas`
+(ausente en ambos Places). Hay tres Models: Monedas, Congelados y Victorias,
+cada uno con Panel y ProyectorHolografico. `Panel.RankingUI` es SurfaceGui
+Face Front, CanvasSize 840×990 sobre panel 21×24.75 studs: proporción coincidente.
+
+Flujo: `RankService.server` combina estadísticas actuales e histórico existente →
+`Rankings3DAPI.SetRanking` → `Rankings3DServer` actualiza Fila1..Fila4.Jugador/Valor.
+Mapa: coins→Monedas, limbsFrozen→Congelados, vsWins→Victorias. No crea otro store,
+no convierte rondas en victorias y no sustituye BattleScoreboard/Tab.
+
+- API solo de servidor: SetRanking, SetRankings, GetRanking, ClearRanking, Changed.
+  Valida listas/nombres/valores finitos, conserva el orden recibido y copia hasta
+  cuatro filas. Es memoria de presentación; la persistencia sigue en RankService/DataService.
+- Prioridad del renderer: API → Config de ejemplo si DemoMode → leaderstats.
+  `DemoMode=false`, `RefreshSeconds=5`; el puente publica antes de buscar las placas
+  antiguas, por lo que no depende de que existan. El histórico se refresca cada 20 s
+  y los cambios locales conservan debounce .2 s.
+- StatName de fallback: Coins/Frozen/WinsVS. No equivale automáticamente a los
+  atributos RankFreeFreezes/VSWins ni a leaderstats.Monedas: mantener el puente API.
+- `Rankings3DEjemplo` está deshabilitado. Los nombres/puntuaciones de Config y las
+  filas visibles en Edit son ejemplos; no son evidencia de clasificación real.
+- **Diferencia estructural:** Congelados tiene marco y cuatro filas, pero carece de
+  Cabecera y Estado, presentes en Monedas/Victorias. Registrar/restaurar presentación
+  si corresponde; el renderer no crea esos elementos (BUGS B25).
+- `HologramMotion` activo anima los paneles mediante TweenService. Ajustes en
+  `Rankings3D.HologramConfig` Attributes: Movimiento_Activado=true, Amplitud=.55,
+  Semiciclo=3, VariacionEntrePaneles=.15; Particulas_Activadas=true, 45/s por panel;
+  Proyeccion_Activada=true, TransparenciaBase=.94. Se reaplican al cambiar atributos.
+  Esto es independiente del antiguo Workspace.Hologramas, que sigue ausente.
+- Respaldo del puente: `ServerStorage.ZB_Rankings3DBridgeBackup_20261023` en Lobby.
+
+### Presentación y power-ups compartidos encontrados en ambos Places
+
+- Controles móviles vigentes: **tres botones**, Fire rojo 112/96 px, Hook verde y
+  Grab azul 80/68 px. Grab inicia agarre y cambia a IMPULSO; Hook es independiente.
+  TouchAimSensitivity=.005625; cámara sobre hombro 2.6 lateral/.8 alto y
+  MobileNavY=16. Las descripciones de dos/cuatro botones de abajo son históricas.
+- `ReplicatedStorage.PresentationSettings` (Configuration): HookLaunchDuration=.18,
+  FreezeKickSpeed=12, FreezeLiftSpeed=3, FreezeAngularImpulsePerMass=2,
+  MusicFadeDuration=.6. Se editan como Attributes; no son estadísticas de arma.
+- HookVisualService anima el destino visual desde el jugador hasta el ancla mediante
+  Tween de .18 s (acotado .05–.35); usa ZB_Launching y conserva/limpia tween y listeners.
+  No reemplaza la tracción local inmediata ni sus remotes de energía.
+- `Shared.AnimationFreeze` pausa pistas guardando Speed; `FrozenAnimationController`
+  observa personajes propios/remotos por ZB_Ragdoll. AstronautPose pausa swim durante
+  ese estado. CombatRagdoll pausa/restaura pistas e invalida tareas con ZB_RagdollEpoch.
+  A los .12 s aplica un impulso único alejándose del atacante (fallback hacia atrás),
+  elevación y giro configurados; no es un cambio del umbral de congelamiento.
+- `ZoneMusicController` selecciona música por BattleParticipant individual en Lobby
+  y por Place en Match. `SoundService.ZB_Music.Lobby`: `134069101231435`, Volume=.25;
+  Battle: `101240840700787`, Volume=.28; ambos Looped. Crossfade de .6 s y pausa
+  de la pista saliente. No se certifican carga/permisos/mezcla en Player por leer los IDs.
+- PowerUpService usa **LIFETIME=10 y RESPAWN_TIME=10**: sin recoger, al expirar se
+  recoloca inmediatamente; recogido, queda oculto 10 s antes de reaparecer. Timers
+  por generación evitan que callbacks viejos reaparezcan otra instancia. Expone
+  PowerUpAvailable, SpawnGeneration, SpawnedAt, SpawnExpiresAt y NextSpawnAt.
+- `PowerUpShield.grant` valida participante/combate/avatar vivo y concede 5 s de
+  ForceField azul. PowerUpShieldUntil usa os.clock de servidor; PowerUpShieldEndsAt
+  usa GetServerTimeNow para UI. Una renovación invalida el temporizador anterior;
+  salida, cambio de personaje, eliminación o fin de combate limpian ambos relojes.
+- SpawnProtectionController ahora presenta **ambos escudos**, priorizando el azul
+  si coinciden. `Notice.ProtectionType` distingue PowerUp/Spawn; Banner.PowerUpMessage
+  cambia el mensaje del azul a ESCUDO ACTIVO. Disparar cancela solo el de aparición.
+  El texto antiguo «solo escudo de aparición» de abajo quedó sustituido.
+- Respaldos compartidos encontrados: ZB_FeedbackPolishBackup_20261016 y
+  ZB_PowerUpLifetimeShieldBackup_20261019. Su presencia no acredita QA publicada.
+
+### Escena y rutas que ya cambiaron
+
+- Piso Lobby conserva Position=(0,-.5,0), Orientation=(0,0,0), Size=(382,1,344).
+  Spawn real en `The Spawn Point Light.SpawnLocation`, aproximadamente (-56.626,1,65.246).
+- Vitrinas de armas movidas: Bases aproximadas de basearma1/2/3 en
+  (-43.707,1.195,-128.871), (-9.336,1.195,-131.944), (-78.395,.997,-129.985).
+  WeaponOfferPrompt ahora está bajo **Base**, no OfferPlate. Mover el conjunto.
+- No existe basegancho1; basegancho2 ofrece default y basegancho3 heavy mediante
+  HookOfferAttachment.HookOfferPrompt. Hay ocho FreeSpawns y quince puntosderefe.
+- Match conserva dos SpawnCovers, cinco piezas ancladas por escudo en Edit. Su
+  gravedad guardada es 196.2; el Script **MatchModeBootstrap > server** fuerza 0
+  después de 1 s y en Heartbeat. No confundir valor Edit con 0g verificada en Play.
+- Hay rutas ambiguas en notación de puntos: en Lobby, FloatingRobloxBlocks y
+  BattleFormatStations son Folders con Script `server`; en Match, MatchModeBootstrap
+  y MatchArenaPhysics tienen la misma estructura. `DataService` es un Folder vacío
+  en ambos, distinto del Script literal `DataService.server`. Usar Explorer/clase
+  o acceso por corchetes según el nombre real al editar; no inferir rutas de GetFullName.
+
+Pendientes de integración y aceptación: CHECKLIST, corte 26/10. Se conserva la
+confirmación previa del usuario sobre VS/datos; no se atribuye esa prueba a esta
+revisión ni se extiende automáticamente al nuevo aspecto de mochila/rankings.
 
 ## 1. Identidad y ciclo jugable
 
@@ -510,16 +669,17 @@ agarre/impulso son la movilidad principal.
 | Salir de Libre/batalla | X / acción de salida correspondiente |
 | Tabla de congelamientos de la batalla | Mantener Tab / botón de tabla |
 | Liberar cursor o volver a apuntar | Alt; los menús lo liberan automáticamente |
-| Disparar (móvil) | Mantener botón ~~DISPARAR~~ |
-| Gancho (móvil) | Mantener botón ~~GANCHO~~ |
-| Subir/bajar (móvil) | Botones ~~SUBIR~~ / ~~BAJAR~~ |
+| Disparar (móvil) | Mantener DISPARAR; arrastrar permite apuntar |
+| Gancho (móvil) | Mantener GANCHO, acción independiente |
+| Agarre/impulso (móvil) | Pulsar AGARRE; siguiente pulsación IMPULSO libera |
+| Subir/bajar (móvil) | Sin botones dedicados (retirados) |
 | Deriva (móvil) | Joystick nativo del motor |
 
 Espacio conserva el salto normal fuera de batalla. Durante combate de escritorio,
 el mouse orienta la cámara sin mantener click derecho; Alt alterna cursor libre.
 No disparar ni lanzar gancho sobre mochila, manual, tabla, chat o cursor liberado.
 
-### Controles táctiles — 2026-10-09 (vigente en Studio)
+### Controles táctiles — 2026-10-09 (historial; sustituidos por tres acciones)
 
 `ReplicatedStorage.Shared.LocalCombatInput` es un bus de **intención local**
 (no autoridad): registra por acción la pulsación de varios dedos/botones y expone
@@ -729,7 +889,9 @@ deshabilitado y no sustituye al beam.
 | Azul | Escudo visible e inmunidad a congelación durante 5 s |
 | Rojo | Congelación total al atravesarlo |
 
-Reaparecen tras 6 s. `Workspace.puntosderefe.Punto1..Punto15`: Parts anclados,
+Vida disponible 10 s; al expirar sin recoger se recolocan inmediatamente. Tras
+recogerlos reaparecen en 10 s (corte verificado por código el 26/10).
+`Workspace.puntosderefe.Punto1..Punto15`: Parts anclados,
 invisibles y con CanCollide/CanTouch/CanQuery=false. Selección por instancia,
 evitando dos últimas ubicaciones y puntos ocupados, con fallback seguro. Ocultar
 visual hasta ubicarlo. Servidor decide todo; `PowerUpEffect` permite al cliente
@@ -772,9 +934,9 @@ Pruebas y límites en B11 de BUGS/CHECKLIST; sin publicación.
   fullFreeze válidos únicamente en Libre;
   combina jugadores conectados con ranking histórico. Refresco por evento con
   debounce 0.2 s; consulta histórica OrderedDataStore cada 20 s en segundo plano.
-- Placas holográficas: `placas1` CONGELADOS MODO LIBRE, `placas2` VICTORIAS VS,
-  `placas3` MONEDAS;
-  SurfaceGui Face Right con RankLabel según configuración de escena.
+- Presentación física actual: `Workspace.Rankings3D.Congelados/Victorias/Monedas`,
+  cuatro filas y SurfaceGui Face Front, alimentados por el puente de RankService.
+  Las antiguas placas1/2/3 y su Face Right ya no existen en la escena inspeccionada.
 - Monedas Neon (~100/hora documentadas): sin colisión, con toque; ocultación
   local inmediata, entrega validada por servidor. Contar diccionario con pairs.
 - Recompensas históricas configuradas: jugar +15, ganar +30 extra, congelar
@@ -834,10 +996,11 @@ InventoryRequest / InventoryState / InventoryEquip
   y 0.3–0.45 de ancho/alto. Orientación eje Z; `TIP_YAW_OFFSET=0` documentado.
   Mantener nombre igual al ID de Config. Punta persistente y visual de lanzamiento;
   no reintroducir el duplicado local eliminado, el visual se replica por servicio.
-- Cuerdas: Config.HookRopeCosmetics (`id`, `name`, `color`, `width0`, `width1`),
-  sin modelo 3D.
+- Cuerdas: Config.HookRopeCosmetics (`id`, `name`, `color`, `width0`, `width1`)
+  conserva el Beam replicado; HookRopeRenderer presenta RopeSkins.Generic en 3D.
 - UI puede reemplazarse por arte propio conservando remotes, estado y cierre.
-- Hologramas: Workspace.Hologramas, Neon/SurfaceGui Face Right; HoloLevitation.
+- Hologramas antiguos: Workspace.Hologramas/HoloLevitation retirados. El sistema
+  actual de rankings usa Workspace.Rankings3D/HologramMotion; ver corte 26/10.
 - Pose de agarre documentada: `133886935716379`.
 
 ## 5. Arquitectura Multi-Place y estructura
@@ -917,13 +1080,13 @@ MatchService antiguo y CompetitiveArena describen el prototipo superado.
 
 | Ubicación | Sistemas |
 |---|---|
-| ReplicatedStorage.Shared | Config, PlaceConfig, UITheme, CalendarDates, LocalCombatInput, MobileHudLayout |
+| ReplicatedStorage.Shared | Config, PlaceConfig, UITheme, CalendarDates (Lobby), LocalCombatInput, MobileAimInput, MobileHudLayout, AnimationFreeze, UIFrameSkins, UIFrameArtwork; EquipmentDashboardLayout solo Lobby |
 | ReplicatedStorage.Modules | FreezeMap |
 | ServerScriptService, compartidos | PlayerStateService, FreezeService, ShootingService, CombatRagdoll, DataService, StaminaService, RankService, InventoryService, HookEnergyService, HookVisualService, PowerUpService, WeaponVisualService, BattleStats, DailyClock |
 | Servidor Lobby | LobbyTeleportService, BattleFormatStations, CurrencyService, WorkshopService, MissionService, DailyRewardService, QABadgeService, FloatingRobloxBlocks |
 | Servidor Match | MatchRuntimeService, MatchModeBootstrap, MatchArenaPhysics, GrabLaunchService, WeaponVisualService, LobbyReturnRoute, VsResultService, DailyMissionCatalog |
 | StarterPlayerScripts, compartidos | MovementController, ShootingController, HookController, HookSpeedCamera, GrabController, GravityController, HudController, RemoteVfx, CombatFeedback, EquipmentDashboard, PowerUpEffects, VersusHud/resultados según Place, MobileControls, ZeroGFootsteps |
-| StarterGui | ZB_Intro, ZB_DailyActivities (Lobby), ZB_MobileControls |
+| StarterGui | ZB_Intro, ZB_DailyActivities (Lobby), ZB_MobileControls, accesos HUD, ZB_CoinFeedback, ZB_SpawnProtection; ZB_EquipmentDashboard completo solo Lobby |
 | Cliente Lobby | PortalController, BattleTransitionController, DailyActivities, CoinPickupVisuals, IntroTutorial |
 | Cliente Match | ReturnToLobbyController, VersusHud, RoundResultController |
 | StarterCharacterScripts | ZeroGSetup, AstronautPose, WeaponSetup |

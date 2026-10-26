@@ -1,6 +1,44 @@
 # ZERO BREACH — Visual Upgrade & Post-Processing
 
-## Configuración vigente — revisión del usuario, 2026-10-14
+## Contraste con el Studio actual — 2026-10-26
+
+**Lectura Edit de ambos Places**, sin cambios de iluminación ni prueba Play/FPS.
+Se conserva la configuración azul/violeta del 14/10. El corte siguiente precisa
+qué propiedades están guardadas; las fases y QA anteriores conservan sus fechas.
+
+| Propiedad | Lobby | Match |
+|---|---|---|
+| ClockTime / Brightness | 14.5 / 2 | 14 / 2 |
+| ExposureCompensation | .25 | .2 |
+| Ambient RGB | 150,160,180 | 145,155,175 |
+| OutdoorAmbient RGB | 160,170,190 | 155,165,185 |
+| LightingStyle / GlobalShadows | Realistic / false | Realistic / false |
+| Bloom Enabled; Intensity / Size / Threshold | true; .30 / 24 / 1.35 | true; .24 / 24 / 1.35 |
+| ZB_StationColor Enabled | true | true |
+| TintColor RGB / Saturation / Contrast / Brightness | 226,219,255 / .045 / .035 / .015 | Igual |
+| Luces locales Workspace / con Shadows=true | 31 / 0 | 1 / 0 |
+
+Lobby mantiene Atmosphere/Sky; DepthOfField y SunRays desactivados. Match mantiene
+ColorGrading activo. No se añadieron efectos en esta revisión.
+
+**Cambio del equipo que afecta la presentación:** hay un nuevo
+`Workspace.Rankings3D` en Lobby, con HologramMotion activo, partículas y proyecciones
+Beam. El antiguo Workspace.Hologramas sigue ausente. Los ajustes del nuevo sistema
+están en **Rankings3D.HologramConfig → Attributes**, no en Lighting:
+
+- Movimiento_Activado=true, Movimiento_Amplitud=.55, Movimiento_Semiciclo=3,
+  Movimiento_VariacionEntrePaneles=.15.
+- Particulas_Activadas=true, Particulas_CantidadPorSegundo=45 por panel;
+  Proyeccion_Activada=true y Proyeccion_TransparenciaBase=.94.
+- Son proyecciones/partículas visuales; LightEmission no agrega una luz que ilumine
+  las estructuras. No reintroducir el HoloLevitation retirado para modificarlas.
+
+Mapa de arte/UI, incluido el nuevo panel local de mochila `92094831612893`, en
+UI_ASSETS. La captura actual de Lobby fue en Edit, con mochila de muestra visible;
+no valida legibilidad en combate, carga en Player ni rendimiento. Perfiles
+HIGH/MEDIUM/LOW y las mediciones siguen pendientes.
+
+## Configuración aplicada — revisión del usuario, 2026-10-14
 
 **Aplicada en Lobby y Match, sin publicar.** El usuario pide un postprocesado
 azul/violeta y quitar las sombras de objetos. Esta revisión sustituye la dirección

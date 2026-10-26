@@ -1,0 +1,10 @@
+{
+  "weapon_bar": "rbxassetid://91629418883833",
+  "hook_bar": "rbxassetid://95575967228479",
+  "general_frame": "rbxassetid://138592401278319",
+  "previous_segmented_general_frame": "rbxassetid://104332063179973",
+  "places": {
+    "125075465377023": "Integrated and checked in Studio; not published by assistant",
+    "108298899371591": "Integrated; visual QA with local battle state, not a real VS; not published by assistant"
+  }
+}

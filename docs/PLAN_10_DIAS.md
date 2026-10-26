@@ -5,7 +5,76 @@ Sprint: **11–20 de octubre**, diez días naturales, incluida la entrega.
 Base: [CHECKLIST](CHECKLIST.md), [BUGS](BUGS.md) y [SUGERENCIAS](SUGERENCIAS.md).
 Este documento planifica trabajo; no certifica correcciones ni implementaciones.
 
-## Replanificación vigente — 19/10/2026: beta y extensión solicitada
+## Corte vigente — 26/10/2026: adaptación al Studio actual
+
+La entrega confirmada sigue siendo **27/10/2026**. Se inspeccionaron ambos Places
+en Edit (Lobby PlaceVersion 784, Match 205), sin iniciar Play ni publicar.
+La nueva base técnica está en DISENO §0 y las rutas visuales en UI_ASSETS, corte
+26/10. Las versiones de los DataModels no certifican publicación del estado Edit.
+
+**Avance comprobado:** mochila completa editable en Lobby, rankings 3D conectados
+al RankService existente, feedback sonoro de botones en Lobby; música por zona,
+pausa de animaciones congeladas/impulso y lanzamiento visual de gancho en ambos.
+Power-ups con vida/respawn de 10 s y aviso que distingue aparición/escudo azul.
+No presentar este inventario como aceptación jugable o como contenido externo entregado.
+
+**Orden inmediato para adaptarnos al trabajo existente:**
+
+1. Resolver B24: mochila nueva solo en Lobby; Match conserva constructor anterior,
+   tres WeaponImages vacías, sin WeaponOffers, Rifle Grip sin corregir y feedback
+   de botones anterior. Migrar componentes completos con su plantilla/layout;
+   no sobrescribir las responsabilidades del Match ni sus servicios VS.
+2. Revisar B25: cabecera y estado ausentes en Rankings3D.Congelados. Conservar el
+   puente RankService→Rankings3DAPI y las cuatro filas, no recrear placas antiguas.
+3. Probar áreas afectadas: mochila/tienda, equipo/Muzzle, ranking real, timers y
+   distinción de escudos, música/animaciones/gancho, tres botones y cámara móvil.
+   Registrar Player/versión/dispositivo y priorizar teléfono físico.
+4. Cerrar los casos específicos aún sin evidencia: retorno al Job del tercero,
+   abandono/reintentos, segunda entrada/barreras, cambio UTC/fallos de guardado y
+   compra nueva con cuenta sin pase. Mantener la aceptación VS/datos reportada el
+   21/10 sin convertirla en validación de los cambios nuevos.
+5. Registrar estado real de colección premium, capa global, video e informe de
+   anuncios. No se encontraron VideoFrame/AdGui en Workspace de ninguno de los
+   dos Places; esto no demuestra ausencia de material externo en Dashboard.
+   Música ya integrada no equivale al video/colección/capa del alcance original.
+
+Para el 27/10: candidata adaptada, versiones de publicación registradas, prueba
+de las áreas nuevas/corregidas y pendientes de contenido externo explícitos.
+No replanificar silenciosamente la fecha ni dar por terminado todo el sprint por
+los cambios del colaborador. Checklist operativa y límites en CHECKLIST 26/10.
+
+## Corte anterior — 21/10/2026: extensión confirmada
+
+- **Confirmado por el usuario:** extensión de siete días sobre la entrega original
+  del 20/10. Nueva fecha de entrega: **27/10/2026**; trabajo adicional del 21 al 27/10.
+- **Prueba confirmada por el usuario:** entrada y salida de VS con tres personas.
+- **Datos y recompensas confirmados por el usuario:** saldo, misiones, ranking y
+  equipado correctos después de completar VS, viajar y reconectar, sin pagos
+  duplicados. Validación reportada; este recorrido deja de ser pendiente general.
+  Se registra como validación reportada del recorrido, sin repetirla como pendiente
+  general. No se proporcionaron versiones ni detalle del destino de retorno,
+  abandono/anulación ni formato de equipos. Los resultados de datos/recompensas
+  sí quedaron confirmados por el reporte anterior.
+- La conservación del servidor de origen con un tercero esperando, abandono,
+  segundo ingreso/barreras y 2v2 quedan por contrastar con el detalle de esa prueba.
+  No tratar esta falta de detalle como un fallo observado.
+- Siguen pendientes de aceptación: móvil físico con los controles/cámara actuales;
+  cambio de día UTC y fallos de guardado fuera del recorrido confirmado;
+  compras/derechos; colección premium,
+  capa global, video, informe de anuncios y cierre de rendimiento/publicación.
+- **Avance de esta sesión:** tres botones móviles rojo=disparo, verde=gancho,
+  azul=agarre/impulso; sensibilidad +25 %, seguimiento de posición del dedo y cámara
+  sobre el hombro en ambos Places. Prueba runtime de agarre→mantener al levantar→
+  impulso pasa en Match; encuadre móvil comprobado visualmente en Lobby. Fuentes
+  compartidas comparadas entre Places. Sin publicación desde esta sesión; falta
+  teléfono físico. Revisar el manual con texto incorporado ante los nuevos controles.
+
+Este corte sustituye las referencias siguientes a una extensión sin confirmar y
+actualiza las pruebas de recorrido VS y datos/recompensas. Las casillas históricas
+de ese recorrido no representan pendientes actuales. El corte del 19/10 se conserva como historial.
+El calendario del 21–27/10 de abajo pasa a ser la semana de extensión confirmada.
+
+## Replanificación anterior — 19/10/2026: beta y extensión solicitada
 
 **Decisión del usuario:** mantener la entrega del **20/10** como contingencia,
 con alcance beta y prioridad a reducir errores. Solicitar **al menos 7 días más**.
@@ -103,7 +172,7 @@ Si la extensión no llega, entregar el alcance beta acordado el 20/10 y proponer
 updates pequeños después, con fechas comunicadas según capacidad real. Si se
 aprueba, usar la semana para cerrar aceptación, no para ampliar modos o balance.
 
-### Semana adicional propuesta — solo si se aprueba
+### Semana adicional — confirmada el 21/10; calendario preparado el 19/10
 
 | Fecha | Prioridad | Cierre verificable |
 |---|---|---|
@@ -113,7 +182,7 @@ aprueba, usar la semana para cerrar aceptación, no para ampliar modos o balance
 | 24/10 | Tienda, derechos Robux y paridad Lobby/Match. | Compra/cancelación con tester sin pase; equipado/propiedad tras reconexión y viaje. Rifle solo si ID, precio y QA están resueltos. |
 | 25/10 | Colección premium, capa global, video e informe de anuncios propuestos para la extensión. | Entregar lo aprobado y disponible; registrar bloqueos externos. Revisar elegibilidad publicitaria y preparar informe, sin comprometer activación mientras no se cumplan los requisitos. |
 | 26/10 | Regresión integral y correcciones finales. | Candidata con evidencia por caso y sin bloqueantes; repetir únicamente fallos o áreas afectadas por nuevos cambios. |
-| 27/10 | Entrega revisada, si la extensión fue confirmada. | Versiones, smoke test Player, evidencia, notas y reversión; pendientes externos explicitados y acordados, sin etiquetarlos terminados. |
+| 27/10 | Entrega revisada, con extensión confirmada. | Versiones, smoke test Player, evidencia, notas y reversión; pendientes externos explicitados y acordados, sin etiquetarlos terminados. |
 
 Preparar desde hoy los assets y datos externos que requieran revisión; el 25/10
 no es una garantía de aprobación de la capa global o del video. La capa solicitada

@@ -1,0 +1,68 @@
+{
+  "weapon": {
+    "source": "Barra arma.png",
+    "file": "battle_weapon_bar.png",
+    "size": [
+      496,
+      120
+    ],
+    "crop": [
+      4,
+      270,
+      500,
+      390
+    ],
+    "fillRect": [
+      109,
+      59,
+      465,
+      79
+    ],
+    "iconRect": [
+      23,
+      30,
+      83,
+      90
+    ]
+  },
+  "hook": {
+    "source": "Barra gancho.png",
+    "file": "battle_hook_bar.png",
+    "size": [
+      496,
+      120
+    ],
+    "crop": [
+      4,
+      270,
+      500,
+      390
+    ],
+    "fillRect": [
+      109,
+      59,
+      465,
+      79
+    ],
+    "iconRect": [
+      23,
+      30,
+      83,
+      90
+    ]
+  },
+  "general": {
+    "source": "HUD GENERAL BATALLA.png",
+    "file": "battle_general_frame_full.png",
+    "size": [
+      1024,
+      341
+    ],
+    "originalSize": [
+      2172,
+      724
+    ],
+    "crop": null,
+    "renderer": "One complete ImageLabel, ScaleType.Fit; no slices or ImageRect crops"
+  }
+}

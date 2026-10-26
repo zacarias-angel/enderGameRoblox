@@ -1,10 +1,10 @@
 # ZERO BREACH — Reglas de desarrollo
 
-Actualizado: 2026-10-06. Estándar obligatorio del proyecto.
+Actualizado: 2026-10-26. Estándar obligatorio del proyecto.
 
 ## Documentación y fuente de verdad
 
-La documentación principal se mantiene en **seis archivos**:
+La documentación se mantiene en los archivos existentes:
 
 - [REGLAS.md](REGLAS.md): normas de código, seguridad y UI.
 - [DISENO.md](DISENO.md): resumen, mecánicas, balance, arquitectura y contratos.
@@ -13,7 +13,10 @@ La documentación principal se mantiene en **seis archivos**:
 - [UI_ASSETS.md](UI_ASSETS.md): catálogo y guía operativa de sustitución de imágenes,
   solicitada el 2026-10-06; rutas, nombres, medidas y cambios en ambos Places.
 - [SUGERENCIAS.md](SUGERENCIAS.md): pasos futuros de UI, cosméticos, monetización,
-  videos, publicidad y regalos de avatar; diferenciar rutas existentes de propuestas.
+   videos, publicidad y regalos de avatar; diferenciar rutas existentes de propuestas.
+- [PLAN_10_DIAS.md](PLAN_10_DIAS.md): alcance/entrega; extensión confirmada al 27/10.
+- [luces.md](luces.md): configuración visual, auditorías y etapas de iluminación.
+- [assets/ui/README.md](assets/ui/README.md): entrega local de imágenes y manifiestos.
 
 Actualizar estas páginas en lugar de crear una nueva por sesión. Separar siempre
 **implementado**, **verificado en Studio**, **validado en producción** y **propuesto**.
@@ -27,6 +30,25 @@ instrucciones de pegar o sincronizar archivos desde `src/` no describen el check
 actual. No afirmar que existe una copia local del código ni que se publicaron los
 Places sin comprobarlo. Mantener sincronizadas las mecánicas compartidas de Lobby
 y Match y registrar explícitamente cualquier Place pendiente.
+
+### Adaptación a cambios del equipo — corte 2026-10-26
+
+- Tomar el corte 26/10 de DISENO/UI_ASSETS como referencia actual. Las secciones
+  fechadas anteriores conservan evidencia histórica, no garantizan paridad presente.
+- Lobby tiene mochila completa `EditableEquipment=true`; Match conserva su
+  constructor anterior. Migrar plantilla, controlador y EquipmentDashboardLayout
+  juntos; mantener las responsabilidades de cada Place y verificar en Play.
+- El ranking físico vigente es Workspace.Rankings3D, alimentado por RankService →
+  Rankings3DAPI. No recrear Workspace.placas ni alimentar el ranking real con Config
+  de ejemplo. La API visual no sustituye persistencia ni métricas autoritativas.
+- No restaurar una copia completa de otro Place para resolver una diferencia.
+  Registrar objeto/fuente, cambio concreto, respaldo y pruebas afectadas.
+- Verificar **clase y jerarquía**, además de GetFullName: `Folder > server` y un
+  Script llamado literalmente `Nombre.server` producen rutas de puntos ambiguas.
+  En Match, MatchArenaPhysics/MatchModeBootstrap son Folders con Script server;
+  DataService es Folder vacío, mientras `DataService.server` es un Script aparte.
+- Registrar PlaceVersion con su alcance: no demuestra publicación de cambios Edit,
+  autoría del colaborador ni aceptación en servidores nuevos.
 
 ## Estructura y responsabilidades
 
@@ -155,8 +177,12 @@ end
 - Priorizar edición visual en Explorer/Properties: pantallas estáticas en StarterGui,
   componentes repetibles en ReplicatedStorage.UIAssets. Los controladores enlazan
   objetos y datos; no deben destruir y reconstruir una plantilla editable al iniciar.
-- `StarterGui.ZB_Intro` ya es una plantilla completa. No afirmar que el resto de
-  pantallas ya está migrado: el plan pendiente está en SUGERENCIAS.
+- Plantillas completas: ZB_Intro, ZB_DailyActivities en Lobby y, desde el corte
+  26/10, ZB_EquipmentDashboard **solo en Lobby**. Sus tarjetas de catálogo siguen
+  clonándose de Templates.CatalogCard; Match aún usa su constructor anterior.
+- Manual en FullArtIntro usa Artwork con texto incorporado; editar Title/Rows
+  ocultos no cambia la placa visible. Mochila editable usa su Artwork local,
+  no el PanelFrameSkin heredado. Rutas vigentes en UI_ASSETS.
 - Probar respawn, diferentes viewports, cierre de menú y conexiones duplicadas.
 
 ## Checklist de entrega

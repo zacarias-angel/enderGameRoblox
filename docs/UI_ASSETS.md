@@ -1,11 +1,229 @@
 # UI — Buscar en Explorer y reemplazar
 
-Actualizado: **2026-10-19**, guía definitiva de reemplazo, marco 9-slice dedicado
-del manual y láser rojo/aviso de protección. Aplica a Lobby `125075465377023` y
-Match `108298899371591`.
+Actualizado: **2026-10-26**, contrastado en Edit de Lobby `125075465377023` y
+Match `108298899371591`. El corte siguiente prevalece sobre el historial.
 
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
 para cambiar una imagen, un texto del manual o sus esquinas.**
+
+## HUD de batalla con las imágenes nuevas — integración posterior del 26/10
+
+**Corrección posterior al reporte del usuario:** la composición por segmentos
+introducía cortes verticales visibles. Esa aceptación visual quedó rechazada.
+El marco vigente usa **el PNG original completo**, reducido proporcionalmente a
+1024×341, sin recortar el lienzo ni retirar píxeles del original. Un ImageLabel
+Fit por control, ImageRectOffset/Size en cero y sin hijos de segmentación.
+El marco anterior `104332063179973` queda solo como historial/respaldo.
+
+**Aplicado en Lobby y Match**, por pedido del usuario; HUD de las referencias:
+barras de arma/gancho, mochila, monedas, estado, tabla, cursor y salida/retorno.
+También TeamScore del HUD VS usa el marco general. Las ventanas de mochila/tienda,
+calendario y la placa completa del manual conservan sus fuentes independientes.
+
+| Arte del usuario | Archivo preparado | ID | Fuente editable en ambos Places |
+|---|---|---|---|
+| Barra arma.png | `assets/ui/battle_weapon_bar.png`, 496×120 | `91629418883833` | `ReplicatedStorage.UIAssets.BattleHud.WeaponBar.Image` |
+| Barra gancho.png | `assets/ui/battle_hook_bar.png`, 496×120 | `95575967228479` | `ReplicatedStorage.UIAssets.BattleHud.HookBar.Image` |
+| HUD GENERAL BATALLA.png | `assets/ui/battle_general_frame_full.png`, 1024×341 | `138592401278319` | `ReplicatedStorage.UIAssets.BattleHud.GeneralFrame.Image` |
+
+`prepare_battle_hud.py` conserva los originales y prepara recortes con alfa de
+**las barras**: retira su gran espacio vacío, trazos externos y mate rojo. No dibuja
+energía en el PNG. El marco general solo se reduce de tamaño, conservando el lienzo
+completo. Coordenadas/medidas en battle_hud_manifest.json; IDs en battle_hud_asset_ids.json.
+Las fuentes originales son 500×400 para cada barra y 2172×724 para el marco.
+
+### Contrato y edición
+
+- `Shared.BattleHudArtwork` enlaza el HUD existente. HudController conserva sus
+  referencias a los **Fill reales**; solo pasan a ser hijos de
+  `EnergyBar.ZBAtlas_BattleTrack` / `HookEnergyBar.ZBAtlas_BattleTrack`. No agrega
+  otro productor de energía ni cambia consumo, regeneración, máximos o daño.
+- Los títulos vienen incorporados en cada PNG. El icono se superpone en su hueco;
+  el Fill usa color cian/violeta y conserva la alerta existente de recurso bajo.
+- Hueco de relleno, en píxeles del recorte: (109,59)–(465,79). Attributes de
+  WeaponBar/HookBar: FillX, FillY, FillWidth y FillHeight en escala 0..1.
+  Al reemplazar arte con otra geometría, ajustar estos cuatro valores.
+- El marco general usa una sola imagen completa con ScaleType.Fit. PixelWidth/
+  Height=1024/341; RenderMode=FullImageFit. SliceCenter está vacío y no se usa.
+  Texto e iconos se colocan dentro del área realmente dibujada, incluidos sus
+  márgenes cuando el contenedor tiene otra proporción. Los accesos de escritorio
+  reservan más alto para conservar la imagen; su grupo se reduce proporcionalmente
+  en ventanas bajas para no superponerse al contador de monedas.
+- Texto vivo e iconos son hijos separados. Los botones originales conservan
+  Activated/atajos; se retira su UIFrameSkin anterior para evitar doble marco.
+  En TeamScore se preservan score, ronda, avatares y señales; solo cambia el fondo
+  y el orden visual de sus hijos. No copiar nombres/puntuaciones de una captura.
+- `CoinsLabel.Icon` se **reutiliza**, conservando FeedbackScale y el destino de
+  CoinBurstEffect. No sustituirlo por otro icono invisible para la lógica de monedas.
+- Configuration `UIAssets.BattleHud`: DesktopBarWidth=390, MobileBarWidth=250,
+  EdgeMargin=18. Desktop: barras abajo a la izquierda y accesos a la derecha;
+  móvil: barras arriba a la izquierda, navegación compacta superior y acciones
+  táctiles existentes libres. Los accesos interactivos móviles tienen 44 px de alto.
+- MobileHudLayout cede las posiciones de los controles marcados BattleHudArtwork
+  al módulo nuevo: no volver a ponerles el layout circular antiguo en cada evento.
+  AtlasUIController omite el estilizado viejo de las barras. Los dos módulos de
+  layout no deben alternar Position entre dos composiciones (ver BUGS B26).
+- Lobby tenía ZB_EquipmentDashboard.Enabled=false; queda true para que el acceso
+  MOCHILA pueda verse. Panel/Backdrop siguen cerrándose al arrancar por su controlador.
+  En el layout compacto del menú se añadieron guardas para el Logo editado como
+  ImageLabel: no exige Symbol/Brand si el diseñador los reemplazó.
+
+### Verificaciones y límites
+
+- Libre real solicitado por JoinMatchRequest: disparo con mouse, energía mínima
+  58.6/100 y Fill=.586; gancho con Q, mínimo 83.5875 y Fill=.835875. Regeneran.
+- Escritorio Lobby: captura final, B abre mochila, click en acceso de tabla abre
+  ScorePanel, click en salida vuelve a LOBBY y oculta ambas barras. El primer
+  intento de Tab no confirmó apertura; no presentarlo como validación del atajo.
+- iPhone 17 Pro: viewport 750×381, Sensor y DeviceSafeInsets; capturas de ambos
+  Places con tres acciones móviles sin superposición con las barras. B en el
+  simulador abre mochila y oculta acciones; no acredita dedos físicos.
+- Match: estado de combate **local de QA**, sin TeleportData válido. Captura de
+  50 % de arma / 25 % de gancho y prueba de 0/100 % con Fill=0/1. Header VS con
+  score/ronda visibles y marco nuevo, monedas separadas. No equivale a partida VS.
+- Respawn real en Libre conservó un ZB_HUD, dos adornos de barra y el Icon de monedas
+  visible. Las tres imágenes cargaron Success en ambos clientes.
+- Tras corregir la reentrada de layout, el arranque final móvil de Lobby no mostró
+  errores de estos controladores. Match aislado conserva REJECT_INVALID_TELEPORT_DATA
+  y fallos HTTP de retorno propios de esa entrada; no se eliminan para probar UI.
+- Fuente final tras retirar segmentos: BattleHudArtwork 13259 bytes / hash base31 1436495399;
+  MobileHudLayout 7955 / 345823333; HudController.client 13380 / 1468298979.
+  AtlasUIController conserva diferencias de Place; no se reemplazó por una copia global.
+
+**Reversión:** en cada Place `ServerStorage.ZB_BattleHudArtworkBackup_20261026`
+contiene las fuentes/plantillas originales por OriginalPath; Lobby también guarda
+EquipmentDashboardLayout, Match VersusHud. Restaurar con Play detenido y retirar
+Shared.BattleHudArtwork/UIAssets.BattleHud solo después de restaurar sus consumidores.
+Las copias Script/LocalScript del respaldo están deshabilitadas.
+Respaldo adicional de la composición rechazada: por Place
+`ServerStorage.ZB_BattleHudFullFrameBackup_20261026` (módulo y BattleHud previos).
+QA de la corrección: capturas Lobby escritorio/iPhone 17 Pro y Match escritorio
+con estado local; cero ZBAtlas_Horizontal, todos los textos vivos de accesos con
+TextFits=true y sin recorte interno. En Match de viewport bajo se comprobó además
+que el contador termina antes de que comience el acceso de tabla. Ver BUGS B27.
+Ambos Places quedan en Edit, simulador default y sin fixtures; servidor local de
+subida cerrado. **Sin publicación**. Falta aceptación visual del usuario, teléfono
+físico y recorrido VS publicado con estos cambios.
+
+## Corte de edición actual — 2026-10-26
+
+Esta auditoría describe el estado anterior a la integración del HUD de arriba.
+Sus diferencias de mochila/armas entre Places siguen pendientes salvo lo indicado
+expresamente en esa integración.
+
+**Lobby y Match no tienen la misma mochila.** Lobby usa la plantilla completa
+`EditableEquipment=true`; Match mantiene el panel generado por su controlador.
+Los marcos compartidos MarcoHUD siguen en UIAssets.Skins de ambos, pero ya no son
+la fuente de arte del Panel nuevo del Lobby. No volver al constructor antiguo para
+que una instrucción anterior de PanelFrameSkin vuelva a surtir efecto.
+
+### Mochila/tienda editable de Lobby
+
+```text
+StarterGui.ZB_EquipmentDashboard  [EditableEquipment=true, ViewportMargin=18]
+├─ OpenInventory
+├─ OpenWeaponOffer (BindableEvent)
+├─ Backdrop
+├─ Panel (Frame, 1360×720; Visible=true para vista de edición)
+│  ├─ Artwork / Interior / ResponsiveScale
+│  ├─ Sidebar
+│  │  ├─ Artwork / Interior / Logo / PlayerProfile
+│  │  ├─ Navigation.Resumen / Armas / Láser / Gancho / Mejoras
+│  │  └─ Wallet.Artwork / Coin / Amount / Caption
+│  ├─ Header.Title / Subtitle
+│  ├─ Close (ImageButton con Caption)
+│  ├─ Summary (ScrollingFrame, Layout y Card1..Card4 prearmadas)
+│  ├─ Cards (ScrollingFrame con Layout; catálogo de runtime)
+│  └─ Status
+└─ Templates.CatalogCard (TextButton)
+   └─ Artwork / IconFrame / Icon / Title / Detail / Divider / Action / Interior
+```
+
+| Qué cambiar en Lobby | Instancia / propiedad | Valor observado |
+|---|---|---|
+| Marco principal | `Panel.Artwork.Image` | `rbxassetid://92094831612893` |
+| Marco lateral | `Panel.Sidebar.Artwork.Image` | Mismo ID; edición local independiente |
+| Marcos del resumen | `Panel.Summary.Card1..Card4.Artwork.Image` | Mismo ID |
+| Marco de nuevas fichas | `Templates.CatalogCard.Artwork.Image` | Mismo ID |
+| Arte de navegación | `Panel.Sidebar.Navigation.<categoría>.Artwork.Image` | `99022357719006`, Fit |
+| Fondo del saldo | `Panel.Sidebar.Wallet.Artwork.Image` | `99022357719006`, Slice |
+| Marco de avatar/iconos | `PlayerProfile.Frame` y `CardN.IconFrame.Image` | `95844709202495`, Fit |
+| Cierre | `Panel.Close.Image` | `95844709202495`, Crop; conservar Caption y Activated |
+| Logo local | `Panel.Sidebar.Logo.ImageLabel.Image` | `127685112771699` |
+| Moneda local del saldo | `Panel.Sidebar.Wallet.Coin.Image` | `119594247613582`; independiente de Icons.coin |
+| Títulos estáticos del resumen | `Panel.Summary.CardN.Title.Text` | Conservados por controlador |
+| Estilo de fichas del catálogo | `Templates.CatalogCard` y sus hijos | Clonado al cambiar categoría |
+| Miniatura de arma/láser/punta | `ReplicatedStorage.UIAssets.WeaponImages/LaserImages/HookTipImages.<id>` | El controlador copia Image/rect/color a CatalogCard.Icon |
+
+Estos IDs se leyeron de Studio; **no se identificó su PNG fuente en los manifiestos
+locales**. No asociar `92094831612893` con `marco_hud_roblox.png` sin evidencia.
+SliceCenter del arte principal/lateral/tarjetas: Rect(300,220,724,548); SliceScale
+respectivo .5/.2/.22. Wallet: Rect(180,70,840,125), escala .3. Son propiedades de la
+composición actual, no cortes recomendados para cualquier imagen de reemplazo.
+
+El controlador actualiza avatar, saldo, cantidades, equipado y acciones desde datos
+reales. La captura Edit muestra datos de ejemplo; al iniciar oculta Panel/Backdrop.
+`Shared.EquipmentDashboardLayout` conserva el escritorio Edit y adapta a 980×450
+horizontal bajo / 400×710 vertical estrecho. AtlasUIController respeta
+EditableEquipment. **PanelFrameSkin no cambia estos Artwork locales.**
+
+Respaldo en Lobby: `ServerStorage.ZB_EditableEquipmentBackup_20261023` (controlador,
+AtlasUIController y GUI anteriores; atributo CreatedLayoutModule identifica el módulo
+nuevo). Cualquier reversión debe emparejar fuentes y plantilla.
+**Match no tiene EditableEquipment, Panel persistente ni EquipmentDashboardLayout**:
+su migración conjunta y QA siguen pendientes. No copiar solo el LocalScript nuevo.
+
+### Rankings del mundo: dónde editar ahora
+
+- Lobby: `Workspace.Rankings3D.Monedas/Congelados/Victorias.Panel.RankingUI`.
+  SurfaceGui Face Front, CanvasSize 840×990; panel físico 21×24.75.
+  Ya no existe Workspace.placas. La guía anterior de RankGui/Face Right 220×275
+  corresponde a las placas retiradas, no a estos objetos.
+- MarcoPanel.Image=`92094831612893`; Cabecera/FilaN.Atlas usan
+  `119594247613582` con recortes. Conservar ImageRectOffset/Size al editar un atlas;
+  no aplicarles los cortes del MarcoHUD compartido.
+- Fila1..Fila4.Jugador/Valor son dinámicos: servidor RankService → Rankings3DAPI →
+  Rankings3DServer. Config es demo, no datos persistentes; DemoMode=false.
+- Monedas/Victorias contienen Cabecera y Estado. **Congelados no tiene esos dos
+  objetos**; documentado como diferencia de presentación pendiente (BUGS B25).
+- Movimiento/partículas/proyección: seleccionar `Rankings3D.HologramConfig` y editar
+  Attributes de grupos Movimiento_, Particulas_ y Proyeccion_. No confundir este
+  HologramMotion activo con el HoloLevitation antiguo retirado.
+- Respaldo del puente en Lobby: ZB_Rankings3DBridgeBackup_20261023. Match no tiene
+  Rankings3D ni necesita copiar estos paneles para conservar estadísticas VS.
+
+### Feedback de botones, música y protección
+
+- Lobby: `ReplicatedStorage.UIAssets.Motion` (Configuration), Enabled=true,
+  SoundEnabled=true, HoverScale=1.025, PressScale=.965, Duration=.1;
+  HoverSoundCooldown=.07, ClickSoundCooldown=.04. Sonidos hijos Hover
+  `119464366209531` (Volume≈4.516) y Click `84127928422864` (Volume=.3).
+  Editar SoundId/Volume en Properties y probar en una sesión nueva.
+- UIInteractionController crea tres voces por sonido, precarga asíncrona, limita
+  repetición y omite audio no cargado. Respeta Active/Interactable/UISkinDisabled,
+  UIInteractionEnabled en ancestros y UIInteractionSoundEnabled en botón.
+  Escala contenido de acciones móviles sin cambiar su hitbox; no crea el contorno
+  de hover retirado. **Match aún tiene la versión anterior, sin audio ni Sounds.**
+- Música en ambos: `SoundService.ZB_Music.Lobby` (`134069101231435`, .25) y
+  `.Battle` (`101240840700787`, .28), Looped. ZoneMusicController elige por estado
+  individual/Place; MusicFadeDuration=.6 en PresentationSettings. Los MP3 locales
+  no se reproducen directamente desde disco. Permisos y mezcla Player pendientes.
+- Protección en ambos: `ZB_SpawnProtection.Notice.Banner.PowerUpMessage` permite
+  presentar el azul sin afirmar que disparar lo cancela. `ProtectionType` es
+  PowerUp/Spawn; PowerUpShieldEndsAt tiene prioridad sobre SpawnProtectionEndsAt.
+  No retirar ese hijo al reemplazar Banner. La sección 0.8 describe el primer aviso;
+  su restricción antigua a aparición quedó superada.
+
+### Paridad de assets comprobada en Edit
+
+Icons, los cuatro Skins MarcoHUD, HookTipImages default/heavy y las cinco LaserImages
+coinciden en ambos Places. WeaponImages **solo tiene IDs en Lobby**: Match mantiene
+blaster/rifle/cannon vacíos. WeaponOffers también existe solo en Lobby. Esto sigue
+pendiente de adaptación y no debe registrarse como sincronización terminada.
+
+Alcance de esta revisión: lectura y captura Edit, sin Play, publicación ni carga de
+assets en Player. Las QA de abajo corresponden a sus fechas, no a la composición
+actual de Lobby. Respaldo de feedback: ZB_UIButtonFeedbackBackup_20261023 en Lobby.
 
 ## 0.9 Guía definitiva: cambiar CUALQUIER imagen sin equivocarse
 
@@ -120,6 +338,123 @@ imagen completa: no lleva TextLabel encima.
 Poner `StarterGui.ZB_Intro.Enabled = false` **no lo oculta al entrar**: el loading
 lo vuelve a encender. Para saltarlo hay que modificar ese flujo o eliminarlo; el
 botón de ayuda del HUD lo reabre si existe.
+
+### MarcoHUD y corrección de deformación — 2026-10-23
+
+**Sustituye la primera integración del panel ámbar de abajo**, rechazada por el
+usuario porque las franjas decoradas seguían alargándose. `ScaleType=Slice`
+protege las esquinas, pero estira los adornos que estén dentro de los bordes.
+
+Arte vigente: `assets/ui/MarcoHUD.png` (1329×1183), preparado sin cambiar proporción
+como `marco_hud_roblox.png` (1024×912). ID `rbxassetid://106613197873068`.
+Proceso reproducible: `assets/ui/prepare_marco_hud.py`; cortes y tamaño en
+`marco_hud_manifest.json`; ID en `marco_hud_asset_ids.json`.
+
+En ambos Places, `ReplicatedStorage.UIAssets.Skins.panel`, `card`,
+`panel_violet` y `panel_warning` usan este arte. Se cubren panel principal,
+tarjetas, lateral de mochila/tienda, calendario y ranking. Las claves se conservan
+para mantener los enlaces de las pantallas. Selección del panel principal:
+`StarterGui.ZB_EquipmentDashboard.PanelFrameSkin="panel_warning"`; calendario:
+`StarterGui.ZB_DailyActivities.ActivitiesPanel.UIFrameSkin="panel_warning"`.
+
+| Propiedad de las cuatro plantillas | Valor |
+|---|---|
+| Image | `rbxassetid://106613197873068` |
+| PixelWidth / PixelHeight | `1024` / `912` |
+| SliceCenter | `(276,246)–(748,666)` |
+| SliceScale | `.12` |
+| OriginalSourceFile | `MarcoHUD.png` |
+
+**Render compuesto:** `Shared.UIFrameSkins` delega en `Shared.UIFrameArtwork`.
+En vez de estirar el PNG completo con Slice, construye nueve zonas más cuatro
+adornos centrados. Esquinas y adornos tienen la misma escala X/Y; solo relleno y
+uniones de un píxel se extienden. Un degradado de transparencia funde el sombreado
+interior de los recortes. Cada fondo reutiliza 13 ImageLabels; no hay un bucle de
+actualización por frame. Los offsets se calculan en espacio local, compensando
+UIScale para que el arte no reciba escalado móvil dos veces.
+
+`ZBAtlas_Background` es ahora el contenedor ImageLabel del conjunto: su propia
+imagen tiene `ImageTransparency=1`; las piezas hijas presentan el arte mediante
+`ImageRectOffset/Size`. No volver a mostrar la imagen estirada del contenedor.
+Las mismas reglas se aplican a los estados de botones.
+
+**Borde fino celeste adicional:** el render deshabilita los UIStroke del objeto
+enlazado, incluidos botones compactos y strokes insertados después del primer
+enlace. `UIInteractionController` ya no crea `ZBAtlas_Motion/ZB_MotionOutline` ni
+su tween: el hover anima únicamente la escala del arte y no dibuja otro rectángulo.
+Si falla la imagen, se conserva el fondo nativo. El foco dorado de una oferta
+(`ZBAtlas_OfferFocus`) es una indicación independiente de selección.
+También se deshabilitan los diez UIStroke de las plantillas de miniaturas en
+`UIAssets.WeaponImages`, `HookTipImages` y `LaserImages` de cada Place; quedan
+respaldadas en `ZB_MarcoHUDBackup_20261023`.
+
+**Ranking:** `AtlasUIController` hace coincidir CanvasSize con la cara física del
+SurfaceGui. Las placas actuales tienen cara Right de 20×25: canvas 220×275,
+en vez de 220×160. El error anterior deformaba también textos e iconos. La
+corrección de proporción está en ambos controladores; las placas de Lobby también
+quedan corregidas en Edit.
+
+Respaldos por Place: `ServerStorage.ZB_FrameUndistortedBackup_20261023` (antes
+del render compuesto) y `ServerStorage.ZB_MarcoHUDBackup_20261023` (antes del arte
+nuevo y retiro de strokes). Para volver a la versión inicial, restaurar los
+scripts y plantillas del primer respaldo, y las propiedades de las placas.
+Para volver solo al arte anterior, restaurar Skins del segundo respaldo.
+
+QA final: mochila en ambos Places, hover y cambio real a Armas en Lobby; tienda
+y calendario en simulador iPhone 17 Pro horizontal (750×381). La inspección de
+mochila/tienda confirma cero UIStroke extra activos (se excluye el foco dorado de
+oferta) y cero objetos de contorno de hover. Las miniaturas se regeneraron en
+runtime con la misma propiedad Enabled=false luego persistida en sus plantillas.
+Sin errores nuevos de UI en Output; Match aislado mantiene el rechazo de
+TeleportData y los errores HTTP de retorno. No se hicieron compras/cobros.
+Ambos Places quedan en Edit, simulador restablecido y servidor local de subida
+cerrado. Sin publicación; aceptación visual definitiva pendiente del usuario.
+
+Paridad final en ambos Places (bytes / hash base31 módulo 2³²): UIFrameArtwork
+3939 / 1007664111; UIFrameSkins 7517 / 2558559060; UIInteractionController
+3890 / 3701533704.
+
+### Primera integración del panel ámbar — 2026-10-23 (historial)
+
+Se reutiliza `assets/ui/ui_panel_warning.png`, ya subido como
+`rbxassetid://113491494447703`. No hace falta volver a subirlo.
+
+| Propiedad | Valor |
+|---|---|
+| Plantilla editable en ambos Places | `ReplicatedStorage.UIAssets.Skins.panel_warning` |
+| `ScaleType` | `Slice` |
+| Fuente `PixelWidth` / `PixelHeight` | `512` / `456` |
+| `SliceCenter` | `Rect.new(120, 110, 392, 346)` |
+| `SliceScale` | `0.24` (el controlador puede reducirlo para que quepa) |
+| Selector mochila/tienda, ambos Places | `StarterGui.ZB_EquipmentDashboard` → atributo `PanelFrameSkin="panel_warning"` |
+| Selector calendario, Lobby | `StarterGui.ZB_DailyActivities.ActivitiesPanel` → `UIFrameSkin="panel_warning"` |
+
+Mochila y tienda comparten el `Panel` dinámico de `EquipmentDashboard`. El
+controlador le asigna `UIFrameSkin` **antes de parentarlo** a la GUI para que
+el primer enlace del tema use el marco seleccionado. La imagen visible en Play
+es `PlayerGui.ZB_EquipmentDashboard.Panel.ZBAtlas_Background`; en calendario,
+`PlayerGui.ZB_DailyActivities.ActivitiesPanel.ZBAtlas_Background`.
+
+Match tiene mochila; tienda y calendario siguen siendo funciones de Lobby.
+Los selectores afectan al marco principal, no a las tarjetas internas.
+El manual conserva su placa completa. Para editar el marco, cambiar la plantilla
+`Skins.panel_warning` en Properties. Los cambios de StarterGui se comprueban en
+una sesión Play nueva.
+
+Verificación: capturas Play de mochila en ambos Places y calendario en escritorio;
+tienda y calendario en iPhone 17 Pro horizontal (viewport 750×381), más calendario
+vertical. El recurso carga al hacerse visible y conserva Slice/cortes/escala.
+Las aperturas de tienda y calendario usaron BindableEvent/propiedades del cliente:
+esto valida presentación, no compras, cobros ni touch físico. Output mostró avisos
+de espera de plantillas durante el arranque; Match también rechazó TeleportData
+ausente y registró errores de retorno en la prueba aislada.
+
+Respaldo por Place: `ServerStorage.ZB_WarningPanelsBackup_20261023`, con
+`OriginalPath` en cada clon. Ambos Places terminaron en Edit, simulador de Lobby
+restablecido al viewport normal. Sin publicación.
+
+Referencia: <https://create.roblox.com/docs/es-es/ui/9-slice>. Los cortes dejan
+esquinas fijas, bordes escalados en un eje y centro escalado en ambos ejes.
 
 ### Si algún día usás un marco 9-slice en vez de la placa
 
@@ -326,7 +661,7 @@ anteriores al inicio del registro no se pintan de rojo para no inventar historia
 No hay historial completo de misiones; seleccionar una fecha no autoriza cobrarla.
 Pruebas en CHECKLIST.
 
-## 0.1 Controles táctiles — actualizado 2026-10-19
+## 0.1 Controles táctiles — vigente 21/10, contrastado 26/10
 
 **Lobby y Match:** `StarterGui.ZB_MobileControls`, atributo `MobileControls=true`
 (no lo reestiliza AtlasUIController). Contiene `Actions` con botones redondos;
@@ -335,28 +670,30 @@ Pruebas en CHECKLIST.
 StarterGui.ZB_MobileControls
 └─ Actions
    ├─ Fire  (Caption "DISPARAR", Icon weapon, AbilityRing)
-   └─ Hook  (Caption "GANCHO" / "IMPULSO", Icon hook, ReleaseIcon grab, AbilityRing)
+   ├─ Hook  (Caption "GANCHO", independiente del agarre)
+   └─ Grab  (Caption "AGARRE" / "IMPULSO", icono grab)
 ```
 
-**Up/Down retirados por pedido del usuario.** Dos botones de acción, con anillos
-circulares y distribución escalonada a la derecha. Fire: 112 px, o 96 px en área
-segura de altura menor a 350; Hook: 96/84 px. Los tamaños anteriores 76/68 px ya
-no describen la versión actual. El joystick nativo permanece independiente.
+**Up/Down retirados por pedido del usuario.** Tres acciones: Fire rojo a la derecha,
+Hook verde a la izquierda y Grab azul encima del disparo. Fire: 112/96 px;
+Hook y Grab: 80/68 px en vista normal/baja. El joystick nativo permanece independiente.
 
 Mientras se mantiene el disparo se puede arrastrar ese mismo dedo para apuntar,
-incluso fuera del círculo, o usar otro dedo en la zona derecha libre. Al estar
-sujeto, Hook pasa a **IMPULSO**, anillo dorado e icono de agarre: una pulsación
-suelta e impulsa con la física existente. No aparece un tercer botón.
+incluso fuera del círculo, o usar otro dedo en la zona derecha libre. Grab inicia
+agarre de una cobertura cercana priorizando la mira; levantar el dedo mantiene
+la sujeción. Grab pasa a **IMPULSO** y la siguiente pulsación libera/impulsa.
+Hook no cambia de función. El comportamiento de dos botones del 19/10 es histórico.
 
 | Cambio visual | Seleccionar | Propiedad |
 |---|---|---|
-| Tamaños normales | ZB_MobileControls | Attributes: FireSize=112, HookSize=96 |
-| Tamaños en pantalla baja | ZB_MobileControls | SmallFireSize=96, SmallHookSize=84 |
+| Tamaños normales | ZB_MobileControls | Attributes: FireSize=112, HookSize=80, GrabSize=80 |
+| Tamaños en pantalla baja | ZB_MobileControls | SmallFireSize=96, SmallHookSize=68, SmallGrabSize=68 |
 | Márgenes seguros de acciones | ZB_MobileControls | ActionEdgeMargin=22, ActionBottomMargin=26 |
-| Sensibilidad de arrastre | ZB_MobileControls | TouchAimSensitivity=0.0045; radianes/píxel, ajustados por altura |
-| Forma / anillo interior | Actions.Fire / Hook y AbilityRing | UICorner / UIStroke; MobileControls actualiza colores de estado |
-| Estilo de etiqueta | <botón>.Caption | Font / TextSize; Hook.Text cambia por estado |
-| Iconos de acción / liberación | <botón>.Icon / Hook.ReleaseIcon | Image; UIAssets.Icons.weapon/hook/grab como plantillas |
+| Sensibilidad de arrastre | ZB_MobileControls | TouchAimSensitivity=0.005625; +25 % sobre la versión del 19/10 |
+| Cámara sobre hombro | ZB_MobileControls | TouchCameraShoulderOffset=2.6; TouchCameraHeightOffset=.8 |
+| Forma / anillo interior | Actions.Fire / Hook / Grab y AbilityRing | UICorner / UIStroke; MobileControls actualiza colores de estado |
+| Estilo de etiqueta | <botón>.Caption | Font / TextSize; Grab cambia por estado |
+| Iconos de acción | <botón>.Icon | Image; UIAssets.Icons.weapon/hook/grab como plantillas |
 
 Accesos de menú y HUD móvil los distribuye `ReplicatedStorage.Shared.MobileHudLayout`
 en tiempo de ejecución, tomando `UIAssets.Icons` para iconos redondos (bag, calendar,
@@ -370,7 +707,7 @@ en la cámara orbital de combate también en touch. `launch` es intención local
 existente al liberar. No modifica autoridad del servidor, daño, energía ni precios.
 Los controles solo aparecen con `TouchEnabled` en landscape y combate activo.
 
-QA Studio 19/10: iPhone 17 Pro (viewport 750×381), Fire/Hook 112/96; Galaxy A06
+Historial QA Studio 19/10 (versión anterior de dos botones): iPhone 17 Pro (viewport 750×381), Fire/Hook 112/96; Galaxy A06
 (705×338), 96/84, capturas sin superposición de acciones y leyendas completas.
 Disparo+arrastre comprobado con eventos Touch del simulador; liberación del botón
 IMPULSO comprobada con impulso 90 studs/s. Múltiples dedos también se comprobaron
@@ -378,6 +715,11 @@ con intenciones simuladas, no con dedos físicos. Match usa estado local de QA a
 no disponer de TeleportData; no es una partida VS real. Ambos Places en Edit y
 simuladores restablecidos al viewport default; publicación/teléfono real pendientes.
 Respaldo por Place: `ServerStorage.ZB_MobileAimReleaseBackup_20261019`.
+
+QA del ajuste de tres botones/cámara del 21/10: ver CHECKLIST. Respaldos por Place
+ZB_MobileThreeActionsBackup_20261021 y BattleCameraController_BeforeMobileShoulder_20261021.
+El 26/10 se verificaron atributos y paridad de MobileControls/BattleCameraController/
+GrabController; no se repitió input ni se probó teléfono físico.
 
 ## 0.2 Accesos del HUD editables en StarterGui — 2026-10-14
 
@@ -423,7 +765,7 @@ En `StarterGui.ZB_EquipmentDashboard`, editar estos **Attributes** en ambos Plac
 | `MobileButtonSize` | 52 | Diámetro de mochila, tabla y salida/retorno |
 | `MobileEdgeMargin` | 20 | Margen derecho de esos accesos |
 | `MobileGap` | 16 | Separación horizontal entre ellos |
-| `MobileNavY` | 128 | Posición vertical del grupo durante batalla |
+| `MobileNavY` | 16 (ajuste 21/10) | Posición vertical del grupo durante batalla |
 
 `Shared.MobileHudLayout` adapta los accesos a círculos en dispositivos táctiles;
 reinicia el padding rectangular de la copia y coloca iconos/leyendas. Los cambios
@@ -653,8 +995,8 @@ recomprar. Para probar la compra real hace falta una **cuenta que no posea el
 pase**. `AutoGrantPasses=true` (valor de producción) hace que los dueños del pase
 reciban el arma al entrar (ven LA TENÉS); el creador del pase siempre lo posee.
 
-**Interruptor de pruebas `AutoGrantPasses` (16/10):** `ReplicatedStorage.Monetization.AutoGrantPasses`
-(BoolValue, **hoy `false`**) controla si `MonetizationService` concede el arma del
+**Interruptor `AutoGrantPasses`:** `ReplicatedStorage.Monetization.AutoGrantPasses`
+(BoolValue, **true en Lobby al inspeccionar el 26/10**) controla si `MonetizationService` concede el arma del
 pase al entrar. En `false` no concede al entrar (para probar la compra); la compra
 confirmada sigue concediendo. Ausente = `true`. **Subirlo a `true` antes de lanzar**
 para que los dueños del pase recuperen el arma al reentrar.
@@ -825,7 +1167,7 @@ Avisos CorePackages y rechazo de TeleportData de Match son del entorno, no del c
 Sin fixtures; ambos Places en Edit. Respaldo `ServerStorage.ZB_DailyHistoryBackup_20261016`.
 Falta validación publicada de medianoche/reconexión y el gasto real del cobro.
 
-## 0.8 Láser rojo y aviso de protección — 2026-10-19
+## 0.8 Láser rojo y aviso de protección — 19/10, contrato contrastado 26/10
 
 Aplicados en Lobby y Match, sin publicar desde esta sesión.
 
@@ -845,13 +1187,15 @@ Manifiesto en `extra_ui_images_manifest.json`; IDs en `laser_asset_ids.json`
 - `ZB_SpawnProtection` es una plantilla persistente de StarterGui. `Notice`
   contiene `Banner`, `Timer` y texto `Fallback`. Reemplazar el PNG en Banner.Image,
   sin editar código ni reutilizar el fondo 9-slice de un botón.
-- `SpawnProtectionController` usa `SpawnProtectionEndsAt` del servidor y
+- `SpawnProtectionController` usa `SpawnProtectionEndsAt` y `PowerUpShieldEndsAt` del servidor y
   `BattleParticipant`; oculta al quedar el plazo en cero o expirar, al salir,
   eliminarse, cambiar personaje o abrir menús. El HUD omite temporalmente su
   MatchStatus para que no se superponga. La cuenta atrás se actualiza a 10 Hz.
-- **Solo escudo de aparición:** el texto de la imagen indica que disparar lo
-  cancela. No se usa para el power-up azul, cuya protección tiene otra regla.
-  Instalar la UI en Match no agrega ni concede un escudo nuevo allí.
+- **Aparición y azul:** la imagen base indica que disparar cancela aparición;
+  `Banner.PowerUpMessage` presenta ESCUDO ACTIVO para el azul y evita esa indicación
+  incorrecta. El azul tiene prioridad si ambos plazos están activos; `Notice`
+  expone ProtectionType=PowerUp/Spawn. Instalar UI no concede protección: el azul
+  depende de PowerUpShield.grant y su duración de cinco segundos.
 - En Lobby, FreeSpawnTransitionController conserva únicamente la confirmación
   del traslado del personaje. Ya no crea el antiguo TextLabel/ScreenGui en runtime.
 - Attributes de `ZB_SpawnProtection`: `DesktopWidth=620`, `MobileWidth=520`,
@@ -923,7 +1267,11 @@ para cambios permanentes. Reiniciar Play tras modificar una plantilla; las copia
 ya creadas no se sincronizan automáticamente. Publicar ambos Places cuando se
 quiera desplegar; editar en Studio no publica.
 
-## 2. El manual está armado en Studio
+## 2. Estructura clásica del manual (fallback, no arte visible actual)
+
+En FullArtIntro=true se muestran Artwork y Continue (ImageButton); los textos
+Logo/Title/Subtitle/Rows de abajo quedan ocultos. Este árbol y sus instrucciones
+de Text corresponden al fallback clásico. Para la presentación actual usar 0.9.
 
 ```text
 StarterGui
