@@ -1,9 +1,41 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-26. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-27. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### Marco nuevo del calendario — 27/10
+
+- [x] Sustituir marco antiguo y botones violetas en ZB_DailyActivities de Lobby
+  por Artwork locales del estilo azul/dorado de mochila: panel, calendario,
+  recompensa, tres misiones y ocho botones. Caption sigue datos reales del botón.
+- [x] Conservar slots/colores de historial, fechas UTC, remotes y cobros existentes.
+  Match no tiene calendario; no se agregó UI de Lobby a combate.
+- [x] QA desktop 1045×572: siguiente mes, volver a hoy, textos completos;
+  14 Artwork y cero ZBAtlas_Background antiguos en la pantalla.
+- [x] iPhone 17 Pro 750×381 y 401×778: capturas, scroll vertical a las tres
+  misiones y cierre. Sensor/DeviceSafeInsets conservados; sin errores de UI.
+- [x] Respaldo Lobby ZB_CalendarArtworkBackup_20261027; Edit/default al terminar.
+- [ ] Aceptación visual y prueba publicada/touch físico. Sin publicación ni
+  cobros de QA en esta tarea. Rutas e imágenes en UI_ASSETS.
+
+### Accesos Alt/Tab/salida compactos y cartel Libre retirado — 27/10
+
+- [x] Aplicar en Lobby `125075465377023` y Match `108298899371591`:
+  plantillas 180×60, fuente 11, margen inferior/derecho 12 y gap 2; textos cortos.
+  Match conserva su retorno L. BattleHudArtwork sostiene el layout en ejecución.
+- [x] Ocultar y vaciar MatchStatus en Libre, conservando mensajes de cola/VS.
+- [x] Capturas Play desktop de ambos Places y TextFits=true en los tres accesos.
+  Lobby: Libre real, Alt alterna texto, Tab mantenido abre tabla y click en salida
+  retorna a LOBBY/BattleParticipant=false; cartel Libre permanece oculto.
+- [x] Match con estado visual local de QA; sin TeleportData válido. Los errores
+  de rechazo/retorno de su Play aislado coinciden con el comportamiento documentado.
+  No se registraron errores de UI en Lobby.
+- [x] Respaldos por Place ZB_CompactBattleAccessBackup_20261027; Play detenido
+  en ambos. Detalle de rutas/atributos en UI_ASSETS.
+- [ ] Aceptación visual del usuario y comprobación publicada. Sin publicación;
+  no se repitió QA móvil ni se validó una partida VS real en esta tarea.
 
 ### Corrección del marco tras la captura del usuario — 26/10, B27
 

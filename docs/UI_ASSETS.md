@@ -1,10 +1,81 @@
 # UI — Buscar en Explorer y reemplazar
 
-Actualizado: **2026-10-26**, contrastado en Edit de Lobby `125075465377023` y
+Actualizado: **2026-10-27**, contrastado en Edit de Lobby `125075465377023` y
 Match `108298899371591`. El corte siguiente prevalece sobre el historial.
 
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
 para cambiar una imagen, un texto del manual o sus esquinas.**
+
+## Calendario con marcos de la mochila actual — 27/10
+
+**Aplicado y verificado en Studio en Lobby `125075465377023`; sin publicar.**
+Match `108298899371591` no contiene ZB_DailyActivities; el calendario sigue siendo
+una función del Lobby. No se agregó esa pantalla al Place de combate.
+
+La plantilla `StarterGui.ZB_DailyActivities` conserva EditableCalendar y ahora
+CalendarArtwork=true. Se retiró UIFrameSkin=panel_warning del panel y el skin
+violeta de los botones de cobro. Las imágenes locales Artwork son editables:
+
+| Instancia relativa a ZB_DailyActivities | Imagen / presentación |
+|---|---|
+| ActivitiesPanel.Artwork | `92094831612893`, panel azul/dorado de la mochila, SliceScale=.08 |
+| ActivitiesPanel.Content.Calendar.Artwork | Mismo panel, SliceScale=.05 |
+| Content.Details.RewardSection.Artwork | Mismo panel, SliceScale=.05 |
+| Content.Details.MissionList.Row01..Row03.Artwork | Mismo panel, SliceScale=.04 |
+| TodayButton / ClaimDailyButton / RowNN.Claim, hijo Artwork | `99022357719006`, SliceCenter=(180,70)–(840,125), SliceScale=.12 |
+| PreviousMonth / NextMonth / CloseButton, hijo Artwork | `95844709202495`, Fit |
+
+Los paneles usan SliceCenter=(300,220)–(724,548), como las fuentes actuales de
+mochila. Cada marco es un ImageLabel nativo, sin composición ZBAtlas antigua.
+Los botones originales conservan Activated/Active; su hijo Caption presenta el
+texto real. DailyActivities enlaza texto, FontFace, TextSize y disponibilidad;
+no cambia fechas, historial, remotes ni condiciones de cobro. Los slots de días
+conservan sus colores de estado y el borde semántico de selección/fecha actual.
+
+**QA:** captura desktop 1045×572; siguiente mes mostró NOVIEMBRE 2026 y se probó
+VOLVER A HOY. Ocho Caption con TextFits=true, 14 Artwork y cero ZBAtlas_Background
+en la pantalla. Simulador iPhone 17 Pro horizontal 750×381 y vertical 401×778:
+marcos presentes, navegación/scroll vertical hasta las tres misiones y cierre
+por botón oculta Panel/Backdrop y restablece CalendarButton. Sensor y
+DeviceSafeInsets conservados. Output sin errores de UI; no se ejecutaron cobros.
+Play detenido y simulador restablecido a default. No certifica touch físico.
+
+Respaldo: `ServerStorage.ZB_CalendarArtworkBackup_20261027`, plantilla y
+DailyActivities originales con OriginalPath; LocalScript del respaldo deshabilitado.
+
+## Accesos compactos y retiro del cartel Libre — 27/10
+
+Aplicado en **ambos Places en Studio; sin publicación**. Este ajuste sustituye
+las medidas grandes de accesos de escritorio descritas en las secciones históricas.
+
+- Tabla, cursor y salida/retorno: **180×60 px**, fuente máxima **11 px**,
+  esquina inferior derecha, margen **12 px**, separación vertical **2 px**.
+  El marco conserva la imagen completa con Fit y proporción 3:1; el grupo se
+  reduce proporcionalmente si la ventana es muy baja.
+- Textos: `TAB: CONGELAMIENTOS`, `ALT: LIBERAR CURSOR` / `ALT: VOLVER A APUNTAR`,
+  `X: SALIR DE BATALLA` en Lobby y `L: VOLVER AL LOBBY` en Match.
+- Plantillas: `StarterGui.ZB_BattleScoreboard.ScoreAccess`,
+  `ZB_BattleCursor.CursorAction`, `ZB_BattleExit.LeaveButton` (Lobby),
+  `ZB_ReturnToLobby.ReturnButton` (Match). Fuente: TextSize=11; texto alternativo
+  del cursor: atributo FreeCursorText. El texto vivo del arte respeta TextSize.
+- Layout en `Shared.BattleHudArtwork`; atributos editables de
+  `ReplicatedStorage.UIAssets.BattleHud`: DesktopAccessWidth=180,
+  DesktopAccessMargin=12, DesktopAccessGap=2.
+- `HudController.client` deja MatchStatus vacío y oculto para Libre, tanto por
+  payload como por el formato del participante. Se conservan avisos de cola,
+  cuenta atrás, tiempo y resultado VS. El layout táctil conserva su distribución.
+
+**QA Studio:** entrada real a Libre por JoinMatchRequest; captura sin cartel,
+los tres accesos 180×60 y TextFits=true. Alt alternó el texto y Tab abrió el panel
+al mantenerlo; click en salida devolvió GameMode=LOBBY y BattleParticipant=false.
+Match: captura con estado visual local VS, tres accesos 180×60 y TextFits=true;
+no equivale a teleport/VS real. Su Play aislado mantiene los rechazos esperados
+REJECT_INVALID_TELEPORT_DATA y Request Context Failure al intentar retornar.
+Lobby no registró errores de UI. Ambos quedaron con Play detenido.
+
+Respaldo por Place: `ServerStorage.ZB_CompactBattleAccessBackup_20261027`, con
+OriginalPath en módulo, controlador, configuración y tres ScreenGui originales.
+No se publicaron los Places ni se repitió QA móvil en esta tarea.
 
 ## HUD de batalla con las imágenes nuevas — integración posterior del 26/10
 
