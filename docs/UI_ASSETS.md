@@ -1,12 +1,165 @@
 # UI — Buscar en Explorer y reemplazar
 
-Actualizado: **2026-10-27**, contrastado en Edit de Lobby `125075465377023` y
+Actualizado: **2026-10-28**, contrastado en Edit de Lobby `125075465377023` y
 Match `108298899371591`. El corte siguiente prevalece sobre el historial.
 
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
 para cambiar una imagen, un texto del manual o sus esquinas.**
 
-## Calendario con marcos de la mochila actual — 27/10
+## Calendario: ajuste al estilo de mochila confirmado por el usuario — 28/10
+
+**Aplicado en Lobby y comprobado en Studio; sin publicar.** El usuario eligió
+«Mismo estilo de mochila». La inspección inicial confirmó que la integración del
+27/10 ya tenía las imágenes correctas; esta revisión ajusta sus marcos, botones
+y legibilidad, conservando el trabajo existente. Match sigue sin calendario.
+
+Fuente permanente: `StarterGui.ZB_DailyActivities`, con
+`CalendarStyleRevision="BackpackPolish_20261028"`.
+
+### Misiones más angostas, botones y fuentes mayores — ajuste posterior del 28/10
+
+Pedido del usuario sobre el bloque de misiones: reducir ancho, ampliar botones y
+tipografía. Las tres tarjetas quedan alineadas a la izquierda:
+
+| Medida | Escritorio | Teléfono vertical | Horizontal bajo |
+|---|---|---|---|
+| Ancho del grupo | Hasta 350 (antes 414) | Hasta 310 (antes 338) | Hasta 350 |
+| Alto de tarjeta | 72 | 72 | 46 |
+| Botón de premio | 56×56; el arte anterior se veía de 36 | 56×56 | 40×40; antes 24 de alto |
+| Fuente del título | 16 | 16 | 13 |
+| Fuente del progreso | 13 | 13 | 11 |
+| Fuente del premio | 16 | 16 | 14 |
+
+El título reserva espacio separado del premio y admite dos líneas si hace falta;
+el progreso queda debajo. La lógica de disponibilidad y el ✓ de HECHA siguen en
+el botón existente. Atributos editables de ZB_DailyActivities:
+MissionMaxWidth=350, MissionPortraitWidth=310, MissionButtonSize=56 (44–60),
+MissionFontSize=16 (12–18), MissionProgressFontSize=13 (11–15).
+DailyActivities reacomoda al cambiar esos atributos en la copia activa.
+
+Para alojar el bloque ampliado, el panel horizontal bajo mide 840×400 y el área
+del calendario 390×288. En vertical el contenido desplazable llega a Y=916 y los
+detalles tienen 480 px. Los botones principales de hoy/recompensa mantienen sus
+medidas de la revisión anterior.
+
+### Cierre y flechas grandes, misiones alineadas a la izquierda — 28/10
+
+Segundo ajuste pedido por el usuario sobre la misma captura:
+
+| Control | Antes | Ahora |
+|---|---|---|
+| Botón cerrar (X) | 44×44, esquina | **56×56 centrado** en (1,−36; 36) |
+| Flechas anterior/siguiente | 36×34, posición de esquina | **52×52** escritorio/vertical; **44×44** horizontal bajo |
+| Glifo X / `<` / `>` | 14 px | **26 px** (≤55 % del botón) |
+| Título del mes | 48 px desde el borde | entre las flechas, centrado, alto 44 |
+| MIS IONES / fila / progreso | desplazados según el ancho | **alineados a la izquierda a 12 px**, mismo eje X |
+
+Los botones usan `CenteredArtworkButton=true`: el Caption y el Artwork se centran
+en el botón con AnchorPoint (.5,.5) y escala .68 para el texto. Su Activated no
+cambia. El encabezado del calendario reserva espacio para las flechas grandes antes
+de los días de semana; el título del mes mantiene TextFits=true en las tres vistas.
+Atributos nuevos de ZB_DailyActivities: CalendarCloseSize=56, CalendarNavSize=52,
+CalendarControlFontSize=26; se reacomodan al cambiarlos en la copia activa.
+
+QA: escritorio 1087×629, iPhone 17 Pro 750×381 y 401×778. Centros de X/`<`/`>`
+coinciden con su botón (desvío ≤0,000002 px en escritorio). Título NOVIEMBRE 2026
+navegable en ambos sentidos y días de semana debajo de las flechas. Título de
+misiones, título de cada fila y progreso comparten el mismo X (569,1 en escritorio).
+Cerrar por click dejó Panel=false, Backdrop=false, ZB_MenuOpen=false y el acceso
+DIARIO visible. Sin errores de UI en Output; sin cobros ni cambios de datos.
+Respaldo adicional: ZB_CalendarNavigationBackup_20261028.
+Fuente final DailyActivities: **25936 bytes / hash base31 3206220172**.
+
+### Cierre dentro del panel y misiones a ancho completo — 28/10
+
+Ajuste posterior pedido sobre la misma captura:
+
+- **X:** sale del borde superior derecho y pasa **dentro** del panel, en la zona
+  marcada en verde. Atributos `CalendarCloseInsetX=108`, `CalendarCloseInsetY=58`
+  (centro desde el borde derecho y superior). En vertical se limita a 56 px para
+  no invadir el título. Tamaño 56×56 y glifo 26 se conservan.
+- **Misiones de hoy:** dejan de tener tope de 350/310 px y ocupan **todo el ancho
+  de la columna de detalles** (414 escritorio, 384 horizontal bajo, 338 vertical),
+  de modo que su borde derecho coincide con el marco de RECOMPENSA DIARIA.
+  `MissionMaxWidth` y `MissionPortraitWidth` en 0 significan «ancho completo»;
+  un valor mayor los limita. Tamaño de botón (56, 40 en compacto) y fuentes
+  (16/13/16) no cambian.
+- Textos de misión siguen alineados a la izquierda; el importe queda a la derecha.
+  No se alteran fechas, cobros, remotes ni estados.
+
+QA: escritorio 1087×629, iPhone 17 Pro horizontal 750×381 y vertical 401×778.
+X visible y centrado dentro del panel en las tres vistas (en horizontal móvil se
+reduce a 44 px junto con las flechas). Misiones alineadas al borde derecho del
+panel; títulos, progreso y premios con TextFits=true. Cerrar por click dejó
+Panel=false, Backdrop=false, ZB_MenuOpen=false y el acceso DIARIO visible.
+Sin errores de UI en Output; sin cobros ni cambios de datos.
+Respaldo: `ZB_CalendarRightAlignBackup_20261028`.
+Fuente final DailyActivities: **26453 bytes / hash base31 2003019411**.
+
+QA del ajuste: captura desktop 1087×629 e iPhone 17 Pro 750×381 / 401×778;
+las nueve etiquetas de título/progreso/premio caben en las tres composiciones.
+Scroll vertical hasta la última misión y presentación de ✓ comprobados. No se
+enviaron cobros; saldo de QA 500. Output sin errores de UI y simulador default al
+terminar. Respaldo adicional: ZB_CalendarMissionLayoutBackup_20261028, con GUI y
+DailyActivities previos. La captura del usuario motivó este ajuste; su aceptación
+visual final y la prueba en teléfono físico siguen pendientes.
+
+| Objeto relativo a ActivitiesPanel | Imagen | Ajuste vigente |
+|---|---|---|
+| Artwork | `92094831612893` | Slice nativo, SliceScale=.22; mismo arte de mochila con borde más visible |
+| Content.Calendar.Artwork | Mismo panel | SliceScale=.10 |
+| Content.Details.RewardSection.Artwork | Mismo panel | SliceScale=.10 |
+| Content.Details.MissionList.Row01..Row03.Artwork | Mismo panel | SliceScale=.055 |
+| Calendar.TodayButton.Artwork / RewardSection.ClaimDailyButton.Artwork | `99022357719006` | **Fit**, imagen completa y sin ImageRect |
+| CloseButton / PreviousMonth / NextMonth / RowNN.Claim, hijo Artwork | `95844709202495` | **Fit**, marco compacto completo |
+
+Los paneles conservan SliceCenter=(300,220)–(724,548), como la mochila. Los ocho
+botones usan imagen completa: no Slice, recortes ni composición por segmentos.
+`TodayButton.ActionIcon` usa el icono compartido calendar y
+`ClaimDailyButton.ActionIcon` usa coin; ambos se editan como ImageLabels.
+El icono de recompensa se oculta si el botón queda estrecho en horizontal bajo.
+
+- Volver a hoy y reclamar: centrados, hasta 240×44 en escritorio/vertical.
+  En horizontal bajo: hoy 168×32 y recompensa 130×40. No cambiar sus nombres.
+- Las tres acciones de misión usan `CompactArtworkButton=true`: el texto real del
+  botón conserva importe/estado y el Caption muestra **✓** cuando es HECHA.
+  La disponibilidad sigue viniendo del controlador y del servidor; el arte y el
+  texto se atenúan cuando Active/Interactable no permiten la acción.
+- Caption es de una sola línea. DailyActivities ajusta su ancho, icono y fuente
+  al cambiar Size, Text, FontFace y disponibilidad; no añade callbacks de compra/cobro.
+- `ZB_DailyActivities.ShortDayMarkers=true`: **—** para sin datos y **×** para
+  pasado sin cobrar. ✓, COBRAR, colores y atributos ClaimState/ConfirmedClaim se
+  conservan. El detalle al seleccionar fecha sigue mostrando la explicación completa.
+  Desactivar el atributo recupera los textos largos, que requieren más ancho.
+- En horizontal bajo se muestra solo el número y el color de cada fecha; el
+  microtexto de estado queda oculto para no encimar las seis semanas. En escritorio
+  y vertical se ven los marcadores. Permanecen los 42 slots y la fecha UTC real.
+- Vertical: calendario de 404 px, detalles desde Y=420 y CanvasSize.Y=916 para
+  alcanzar las tres misiones por scroll. El pie de reinicio queda separado del borde.
+
+**Verificación:** apertura/cierre por click en escritorio; siguiente mes pasó a
+NOVIEMBRE 2026 y volver a hoy regresó a OCTUBRE 2026. Captura final desktop
+1087×629 y simulador iPhone 17 Pro 750×381 / 401×778, Sensor y DeviceSafeInsets.
+Ocho Caption con TextFits=true; en vertical, cero estados de fecha fuera de su texto.
+14 Artwork, dos ActionIcon y cero ZBAtlas_Background en el calendario.
+Scroll vertical comprobado hasta las tres misiones. Los estados RECLAMADA/deshabilitado
+y HECHA/✓ se comprobaron con cambios **locales de presentación**, restaurados después;
+no se enviaron remotes de cobro. Saldo de QA permaneció en 500.
+Cerrar dejó Panel/Backdrop=false, CalendarButton=true y ZB_MenuOpen=false.
+Output final sin errores de UI; esto no certifica touch físico ni publicación.
+
+Respaldo Lobby: `ServerStorage.ZB_CalendarBackpackPolishBackup_20261028`, GUI
+completa y DailyActivities previos con OriginalPath; la copia LocalScript está
+deshabilitada. Para revertir, restaurar ambos con Play detenido.
+Fuente final tras ampliar misiones: **24342 bytes / hash base31 2078309751**.
+La revisión posterior de cierre/flechas/alineación deja 25936 / 3206220172.
+Lobby termina en Edit y simulador default. No se modificaron los servicios de
+datos, fechas, historial, misiones ni pagos. Confirmación visual del usuario pendiente.
+
+## Calendario con marcos de la mochila — 27/10 (primera integración)
+
+Sus imágenes se conservan; escalas, botones y presentación de estados fueron
+ajustados en la revisión del 28/10 de arriba.
 
 **Aplicado y verificado en Studio en Lobby `125075465377023`; sin publicar.**
 Match `108298899371591` no contiene ZB_DailyActivities; el calendario sigue siendo
@@ -43,7 +196,32 @@ Play detenido y simulador restablecido a default. No certifica touch físico.
 Respaldo: `ServerStorage.ZB_CalendarArtworkBackup_20261027`, plantilla y
 DailyActivities originales con OriginalPath; LocalScript del respaldo deshabilitado.
 
-## Accesos compactos y retiro del cartel Libre — 27/10
+## Área segura del HUD: MOCHILA y accesos superiores — 28/10
+
+**Corrección aplicada en ambos Places; sin publicar.** El usuario reportó que la
+MOCHILA quedaba cortada arriba. Causa medida en Play: `OpenInventory` con
+`Position.Y.Offset=16` aparecía en `AbsolutePosition.Y=-42` porque el ScreenGui
+combina `IgnoreGuiInset=true` con `ScreenInsets=DeviceSafeInsets` y eso desplaza
+el contenido 58 px hacia arriba. El contador de monedas sufría lo mismo
+(`offset=100 → abs=42`).
+
+- `Shared.BattleHudArtwork.pinTop` mide el desplazamiento real de cada control
+  (`AbsolutePosition.Y − Position.Y.Offset`) y coloca la Y visible pedida; se
+  recalcula en cada layout y converge en un paso, sin depender de un inset fijo.
+  Se usa en mochila, monedas y en la fila táctil de TABLA/SALIR.
+- En móvil, los accesos circulares DIARIO y AYUDA se movieron bajo el contador
+  (Y=102) en `Shared.MobileHudLayout`, porque chocaban con MOCHILA/monedas.
+  `safeTop` compensa el mismo desplazamiento para esos botones.
+- Nada de esto cambia funciones, atajos, datos ni la lógica de menús; solo posición.
+
+Medidas verificadas (sin intersecciones): escritorio 1087×629 → mochila 16–96,
+monedas 100–166; iPhone 17 Pro horizontal 750×381 → mochila 6–50, monedas 56–94,
+DIARIO/AYUDA 102–154; vertical 401×778 con todo dentro del viewport. Match con
+estado local de QA: SALIR/TABLA/MOCHILA en Y=6 y monedas debajo. Cero solapes.
+Capturas de ambos Places y Output sin errores de UI; fixture retirado al detener.
+Paridad: BattleHudArtwork 14015 bytes/hash 4142698161; MobileHudLayout
+8652 / 3734122656. Respaldo por Place: `ZB_HudSafeAreaBackup_20261028`.
+Falta aceptación del usuario y prueba en teléfono físico con notch.
 
 Aplicado en **ambos Places en Studio; sin publicación**. Este ajuste sustituye
 las medidas grandes de accesos de escritorio descritas en las secciones históricas.

@@ -2,12 +2,218 @@
 
 > La gravedad desapareció. La estrategia no.
 
-Consolidado el 2026-10-02. **Contrastado con ambos Studios el 2026-10-26**.
+Consolidado el 2026-10-02. **Revisión de cambios y calendario el 2026-10-28**.
 El corte siguiente prevalece sobre las descripciones históricas de abajo.
 Normas en [REGLAS](REGLAS.md), pruebas en [CHECKLIST](CHECKLIST.md) e
 incidentes en [BUGS](BUGS.md).
 
-## 0. Estado real tras los cambios del equipo — 2026-10-26
+## 0. Estado real y cambios del equipo
+
+### Correr con Shift en el Lobby — 28/10
+
+Implementado solo en Lobby `125075465377023`: mantener Shift izquierdo o derecho
+solicita velocidad 26; soltar vuelve a caminar a 16. Sin consumo de energía.
+`ReplicatedStorage.LobbyMovementSettings` expone WalkSpeed=16 / SprintSpeed=26
+(valores finitos acotados a 8–40). El cliente `LobbySprintController` envía intención
+booleana por `RemoteEvents.LobbySprintIntent`; `ServerScriptService.LobbySprintService`
+elige la velocidad, valida avatar vivo, sin PlatformStand/ragdoll, modo LOBBY o sin
+modo inicial y BattleParticipant distinto de true. Publica LobbySprinting.
+
+Menú, caja de texto, pérdida de foco, cambio de modo/avatar y muerte cancelan la
+intención; requiere volver a pulsar Shift. Soporta los dos Shift mantenidos a la vez.
+Al cancelar, restaura solo la velocidad aplicada por sprint; no sobreescribe una
+velocidad diferente impuesta por congelamiento. No modifica la física 0g de Libre
+ni añade este sistema a Match/VS. Nuevos scripts/config/remote, sin sustituir fuentes.
+
+QA Studio: entrada real de teclado para ambos Shift confirmó en servidor 16→26→16;
+menú canceló a 16, BattleParticipant=true canceló/rechazó sprint incluso mediante
+remote directo, argumentos no booleanos rechazados, respawn real a 16 sin sprint.
+La prueba de participación fue con atributo controlado, no una entrada real a Libre.
+Output sin errores del sistema; Play detenido. Sin publicar; aceptación visual y
+recorrido real Lobby→Libre→Lobby pendientes.
+
+### Efectos de combate: boca del arma, daño, FOV y estela del gancho — 28/10
+
+Aplicado en Lobby y Match, solo presentación; no cambia daño, energía, alcance,
+autoridad ni remotes.
+
+- **Partículas al disparar:** `ShootingService` crea en `ZB_Blaster.Barrel.Muzzle` la
+  carpeta `ZB_FiringFx` (ParticleEmitter `Sparks` + PointLight `Flash`) y la enciende
+  en `start`/`update`, la apaga en `stop` y emite chispas al inicio; se replica a todos.
+  En **primera persona** el arma real está oculta, así que `FirstPersonArms` añade un
+  emisor local (`ZB_FPMuzzleFx`) en la boca del arma visible, con chispas grandes
+  aceleradas hacia la mirada y luz, activado por `ZB_Firing`.
+- **Feedback para el tirador:** al confirmarse daño, `ShootingService` envía
+  `TargetFreezeProgress` con `damage`; `CombatFeedback` muestra un **hitmarker** en la
+  cruz y un **“+ N%”** flotante sobre la mira, visibles al instante y desvanecidos en
+  ~1.5 s. El feedback de recibir daño (borde rojo existente) queda igual: se retiró el
+  flash/sacudida extra que se había añadido en esta sesión.
+- **FOV del gancho (`HookSpeedCamera`):** base y aumento configurables
+  (`HookFovBase=70`, `HookFovBoost=14`, `HookFovResponse=9`); admite boost negativo
+  para bajar FOV, acotado a 40–110. Suavizado por velocidad de tracción.
+- **Líneas de velocidad al ganchear (revisión 28/10):** las chispas azuladas del
+  emisor `ZB_HookSpeedEmitter` se sustituyen por un overlay local
+  `PlayerGui.ZB_HookSpeedLines`. Dibuja 28 trazos blancos con extremos degradados,
+  animados radialmente hacia los bordes y dejando libre el centro. Comparte con
+  el FOV el objetivo de intensidad por velocidad y el suavizado HookFovResponse;
+  aparece incluso al inicio de la tracción y se desvanece al soltar. Oculto con
+  ZB_MenuOpen, sin avatar vivo o al retirar personaje; limpia GUI/binding al destruir.
+  Funciona en primera y tercera persona; solo lo ve el dueño.
+- Atributos de `ReplicatedStorage.PresentationSettings`: MuzzleFxRate,
+  HookFovBase/Boost/Response, HookSpeedParticles, HookSpeedParticleFactor.
+  Nuevos: HookSpeedLines=true, HookSpeedLineCount=28 (8–32),
+  HookSpeedLineOpacity=.8 (0–1), HookSpeedLineWidth=1.8 (.5–4 px).
+  HookSpeedParticles conserva su función de interruptor; ParticleFactor ajusta
+  ahora la cantidad relativa de trazos. Se reutilizan hasta 32 Frames sin crearlos
+  por frame. Ambos Places: 5563 bytes / hash base31 3468477806.
+
+QA de la revisión: atributos locales controlados en Play de ambos Places activaron
+28 trazos blancos y FOV ≈74.886; ausencia del emisor antiguo. Match verificó el
+desvanecido y retorno a 70, y ocultación por menú. Captura de Libre con velocidad
+simulada 70 confirma trazos periféricos; el boost temporal de captura se retiró.
+Libre terminó con una GUI, líneas ocultas y FOV 70. No es una prueba de gancho real
+ni de una partida VS; Match aislado mantiene rechazo de TeleportData/retorno HTTP.
+Fuentes/configuración iguales en Edit, boost final 14. Respaldo por Place:
+`ServerStorage.ZB_HookWhiteLinesBackup_20261028`. Ambos en Edit, sin publicar.
+
+QA Studio previa (Libre, anterior a sustituir la estela): `FireWeapon start/stop` encendió y apagó Sparks y Flash del arma
+real; el emisor local de primera persona quedó visible en la boca (Rate 85); FOV pasó
+de 70 a 74.9/78.9 con `Hooking` y volvió a 70; con velocidad 45 la estela del gancho
+quedó activa y visible delante de la cámara (Rate 99, aceleración inversa); un
+`TargetFreezeProgress` con `damage=23` mostró “+ 23%” sobre la cruz y el hitmarker
+(números verificados; la captura tarda más que el desvanecido normal). Sin errores.
+Pendiente: VS real, observador remoto, teléfono físico y ajuste fino de intensidades.
+
+### Primera persona con brazos y arma — prototipo 28/10
+
+Implementado en ambos Places, **en prueba**. La cámara de combate admite primera
+persona en escritorio y un viewmodel local con brazos y arma; no cambia daño,
+energía, alcance, remotes ni la cámara de terceros.
+
+- `BattleCameraController`: con `FirstPersonMode=true`, sin touch y en batalla,
+  coloca la cámara en la cabeza (Altura configurable) usando el mismo yaw/pitch,
+  centra la mira y publica `FirstPersonActive`. Tercera persona sigue intacta y es
+  el valor de vuelta. No altera FOV del gancho.
+- `FirstPersonArms` (LocalScript compartido): **solo el arma**, sin brazos (pedido del
+  usuario). Oculta el avatar solo para el dueño y monta el arma del `WeaponId` actual
+  escalada al **70 %** (`FirstPersonWeaponScale`) abajo a la derecha, inclinada 16°
+  hacia la mira y −2° de cabeceo, a 2.35 studs del ojo. Balanceo por velocidad y
+  retroceso por `ZB_Firing`; **sin animación de caminar** (se detienen pistas walk/run).
+- Alternar con **V** (escritorio, fuera de cajas de texto). Valor inicial:
+  `PresentationSettings.FirstPersonDefault=true`; atributo del jugador
+  `FirstPersonMode`. `PresentationSettings` también expone FirstPersonScale=.8
+  (tamaño de brazos) y FirstPersonEyeHeight=.35.
+- **Corrección de dirección del rayo:** `LocalCombatInput.aimOffsets()` devolvía los
+  offsets de la mira de tercera persona (+40,−110), así que el rayo salía del centro
+  desplazado y apuntaba a otro lado. En primera persona ahora devuelve **(0,0)**: el
+  rayo de cámara pasa por la cruz centrada y el beam, que nace en `Barrel.Muzzle` del
+  arma visible, termina exactamente en ese punto. Tercera persona conserva sus offsets.
+- Móvil: primera persona desactivada; conserva cámara sobre el hombro.
+
+**Estado de QA:** cámara en la cabeza, cuerpo oculto, cruz centrada, viewmodel de
+brazos bloque + arma desde abajo a la derecha, disparo con consumo de energía y
+retroceso, y V alterna. Se corrigió un arrastre del personaje provocado por Motor6D
+clonados en la primera versión (deriva 0,09 studs/1,5 s tras el arreglo).
+**Limitación:** el encuadre exacto (altura/inclinación del arma y grosor del brazo)
+sigue siendo ajustable a ojo; comparar con la referencia y afinar. Sin teléfono
+físico ni VS publicado.
+
+Respaldo por Place `ZB_FirstPersonBackup_20261028` (cámara, PresentationSettings).
+Las constantes de encuadre están en el código (`shoulderR/handR/shoulderL/handL`) y
+se pueden exponer a atributos cuando se fije la pose final.
+
+### Plan de precios vigente — 28/10
+
+Definido y aplicado en Studio por pedido del usuario. **Monedas** solo para mejoras
+y colores de láser; **Robux** para armas (salvo la base), puntas y cuerdas de gancho
+(salvo las base). No se crearon pases nuevos: los IDs se generan en Creator Dashboard.
+
+**Mejoras con monedas** (pago único por nivel, sin reembolso). **Revisión ×10 del
+28/10 por pedido del usuario:** los precios anteriores permitían maximizar todo en
+una sesión; se multiplicaron por diez.
+
+| Mejora | Precio/nivel | Incremento | Tope | Coste total para maximizar |
+|---|---:|---|---:|---:|
+| Capacidad del arma | 800 | +20 por nivel | 300 | 8000 (10 niveles) |
+| Recarga rápida del arma | 1400 | +6/s por nivel | 48/s | 7000 (5 niveles) |
+| Capacidad del gancho | 1000 | +20 por nivel | 260 | 8000 (8 niveles) |
+| Recarga del gancho | 1600 | +4/s por nivel | 42/s | 12800 (8 niveles) |
+
+Total ≈ **35 800 monedas** (×10 respecto del primer plan de 3580). Con el ingreso
+actual (200/h pasivo + 15 jugar, 30 ganar, 8 por eliminación, 2 por extremidad +
+misiones/daily) la progresión completa requiere muchas sesiones; los 500 iniciales
+no alcanzan para el primer nivel (800), por lo que la primera mejora exige jugar.
+Los colores de láser mantienen 0/100/100/200/300 monedas.
+Respaldo del estado ×1: `ZB_PricingPlanX1Backup_20261028` por Place.
+
+**Armas y cosméticos con Robux** (catálogo editable en Studio):
+
+| Artículo | Categoría | Pase | Precio | Estado |
+|---|---|---:|---:|---|
+| SDR-Mk2 `blaster` | Arma | — | Gratis | Activo |
+| Rifle `rifle` | Arma | por crear | 10 R$ | PASE PRÓXIMAMENTE |
+| Cañón `cannon` | Arma | 2039918698 | 10 R$ | Conectado |
+| Punta Base `default` | Gancho | — | Gratis | Activo |
+| Punta Spike `spike` | Gancho | por crear | 10 R$ | PASE PRÓXIMAMENTE |
+| Punta Heavy `heavy` | Gancho | por crear | 15 R$ | PASE PRÓXIMAMENTE |
+| Cable Base `default` | Cuerda | — | Gratis | Activo |
+| Cuerda Plasma `plasma` | Cuerda | por crear | 10 R$ | PASE PRÓXIMAMENTE |
+| Cuerda Dorada `gold` | Cuerda | por crear | 15 R$ | PASE PRÓXIMAMENTE |
+
+- Catálogo nuevo: `ReplicatedStorage.HookOffers` con un Configuration por cosmético
+  (`ItemId`, `Category`, `DisplayName`, `SaleMode=GamePass`, `PassId=0`,
+  `PassPriceRobux`, `PurchaseIntegrationReady=false`). Mismo contenido en Lobby y
+  Match; Match no vende.
+- `WeaponOffers.rifle` pasa a `SaleMode=GamePass`, `PassPriceRobux=10`,
+  `PurchaseIntegrationReady=false`. `cannon` conserva su pase y precio.
+- Servidor: `WorkshopService` rechaza comprar con monedas armas/cosméticos de pase y
+  expone `grantHook/ownsHook/isPassHook`; `MonetizationService` resuelve pases de
+  armas y de gancho (concede y guarda `profile.passes`). Al crear cada pase en el
+  Dashboard basta poner su `PassId` y `PurchaseIntegrationReady=true`: no requiere código.
+- Cliente (Lobby): la tienda lee `WeaponOffers`/`HookOffers`, muestra
+  DESBLOQUEAR · N R$ con `PromptGamePassPurchase` cuando el pase está listo y
+  PASE PRÓXIMAMENTE mientras no exista ID. Nunca declara propiedad.
+- QA Studio: Rifle/Cañón y Spike/Dorada rechazados sin cobrar; Punta Base se equipa
+  gratis; mejora de capacidad de arma descontó 500→420 y subió 100→120 en el plan ×1;
+  con el plan ×10 y 500 monedas la compra responde «No tenés monedas suficientes» y
+  la tienda muestra FALTAN 300/500/900/1100. Los cinco pases pendientes muestran
+  PASE PRÓXIMAMENTE. Sin errores de MonetizationService; compra real pendiente.
+- Respaldo por Place `ZB_PricingPlanBackup_20261028` (Config, Workshop, Monetización,
+  Dashboard y catálogos). Sin publicar.
+
+
+### Corte vigente: calendario y contraste documental — 28/10
+
+Inspeccionados ambos Places en Edit: Lobby `125075465377023`, PlaceVersion 811;
+Match `108298899371591`, PlaceVersion 217. Son versiones del DataModel abierto,
+no evidencia de publicación de cambios Edit. UI_ASSETS y CHECKLIST ya recogían
+la integración del calendario del 27/10; este corte la incorpora a diseño.
+
+- Ambos Places conservan accesos compactos de batalla: 180×60, fuente 11, margen
+  12 y separación 2, editables en UIAssets.BattleHud. MatchStatus de Libre vacío
+  y oculto; avisos de cola/VS conservados. BattleHudArtwork coincide entre Places
+  (13579 bytes / hash 2392458212), al igual que HudController.client (13493 / 650916517).
+- Calendario **solo Lobby**, plantilla completa ZB_DailyActivities con CalendarArtwork
+  y ocho Caption. Antes de esta revisión ya usaba las imágenes de mochila.
+- El usuario confirmó ese estilo: se reforzaron los marcos azul/dorado, se pasaron
+  los ocho botones a imágenes completas Fit, se añadieron iconos de hoy/recompensa
+  y se ajustaron textos, filas y scroll. Rutas y valores actuales en UI_ASSETS 28/10.
+- ShortDayMarkers distingue sin datos (—), sin cobrar (×), cobrado (✓) y disponible,
+  manteniendo colores y atributos autoritativos. El detalle de fecha conserva su
+  explicación larga; no se reconstruye historial ni se cambia el cómputo de cobros.
+- Los cambios son de plantilla y presentación de DailyActivities. No se modificó
+  la lógica de servidor, perfil, UTC, misiones ni economía. Respaldo Lobby:
+  ZB_CalendarBackpackPolishBackup_20261028.
+- QA: navegación real de mes/hoy y cierre por click; desktop y simulador móvil
+  horizontal/vertical, ocho Caption que caben, 42 slots y scroll de misiones.
+  Estados de botones probados localmente sin cobrar; saldo 500 conservado.
+  No hay validación nueva de teléfono físico ni de publicación.
+
+Este corte sustituye las referencias anteriores a las medidas grandes de accesos
+y al calendario previo. Las diferencias de B24 sobre mochila, imágenes de armas y
+derechos entre Places no se consideran resueltas por este cambio visual.
+
+### Historial de inspección e integración — 26/10
 
 ### Integración posterior: nuevo arte del HUD (26/10)
 

@@ -1,9 +1,220 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-27. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-28. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### Correr con Shift en Lobby — 28/10
+
+- [x] Añadir LobbySprintController + LobbySprintService + LobbySprintIntent;
+  configuración LobbyMovementSettings, caminar 16 y correr 26 manteniendo Shift.
+- [x] Validación servidor: intención booleana, modo Lobby, no participante de batalla,
+  avatar vivo, sin PlatformStand/ragdoll. Velocidad elegida por servidor.
+- [x] Teclado real en Studio: Shift izquierdo/derecho activa 26 y soltar restaura 16,
+  confirmado desde el servidor. Menú cancela; respawn real vuelve a 16/sprint=false.
+- [x] Participación de combate simulada cancela/rechaza sprint; remote con número o
+  tabla rechazado. No equivale a una entrada real a Libre.
+- [x] Output limpio del sistema; Lobby en Edit, sin publicar. Solo objetos nuevos
+  del Lobby; Match no requiere carrera en su arena VS.
+- [ ] Aceptación de velocidad y prueba caminando/corriendo por el Lobby publicado;
+  recorrido real Lobby→Libre→Lobby y pérdida de foco/chat.
+
+### Líneas blancas de velocidad del gancho — revisión 28/10
+
+- [x] Sustituir chispas azules por overlay local radial en Libre y VS:
+  `HookSpeedCamera` → `PlayerGui.ZB_HookSpeedLines`, 28 líneas blancas degradadas
+  alrededor del centro despejado, sincronizadas con la transición del FOV.
+- [x] Configurar cantidad 28, opacidad .8 y grosor 1.8 px en PresentationSettings;
+  respetar HookSpeedParticles y añadir HookSpeedLines como interruptor.
+- [x] QA controlada en ambos clientes: 28 líneas blancas, FOV ≈74.886 al activar
+  Hooking y sin ZB_HookSpeedEmitter. Match: desvanecido, retorno FOV 70 y menú oculta.
+- [x] Captura Libre a velocidad simulada 70: trazos blancos periféricos. Al terminar,
+  una GUI, líneas ocultas y FOV 70. Fixtures solo runtime, retirados al detener Play.
+- [x] Paridad Edit: 5563 bytes/hash base31 3468477806, boost final 14 en ambos.
+  Respaldo por Place ZB_HookWhiteLinesBackup_20261028. Ambos en Edit, sin publicar.
+- [x] Output sin errores del efecto; Match aislado conserva rechazo de TeleportData
+  y errores HTTP de retorno documentados.
+- [ ] Aceptación visual del usuario con gancho real, VS publicado y teléfono físico.
+  Esta QA usa atributos/velocidad simulados, no acredita una partida real.
+
+### Efectos de combate: arma, daño, FOV y estela del gancho — 28/10
+
+- [x] Partículas + luz en la boca del arma al disparar: versión de servidor replicada
+  (`ZB_FiringFx`) y **emisor local en primera persona** (`ZB_FPMuzzleFx`) porque el
+  arma real está oculta. Encendido en start/update y apagado en stop; verificado.
+- [x] **Feedback para el tirador:** hitmarker en la cruz + “+ N%” del daño aplicado,
+  enviado desde `TargetFreezeProgress.damage`. Verificado con +23% en pantalla.
+  El feedback de recibir daño (borde rojo) queda como estaba; se retiró el flash
+  extra agregado en esta sesión.
+- [x] FOV del gancho configurable: HookFovBase=70, HookFovBoost=14 (admite negativo),
+  HookFovResponse=9; acotado 40–110 y suavizado por velocidad.
+- [x] Estela inicial (sustituida por líneas blancas en la revisión de arriba): emisor independiente 3.5 studs delante de la
+  cámara (visible en FP) mientras Hooking y velocidad >2; verificado visible con
+  Rate 99 y aceleración inversa.
+- [x] QA Libre: start/stop de boca, FOV 70→74.9/78.9→70, hitmarker/+23% y estela;
+  sin errores; Play detenido.
+- [ ] VS real, observador remoto, teléfono físico y ajuste de intensidades.
+  La estela del gancho es local del dueño; las partículas del arma sí se replican.
+
+### Primera persona con brazos/arma (prototipo) — 28/10
+
+- [x] `BattleCameraController`: cámara en la cabeza en batalla de escritorio con
+  `FirstPersonMode`, manteniendo yaw/pitch y publicando `FirstPersonActive`; tercer
+  persona y FOV del gancho intactos.
+- [x] `FirstPersonArms` en ambos Places: **brazos falsos en bloque** (estilo de la
+  referencia del usuario: manos/brazos postizos), oculta el avatar solo al dueño,
+  monta el arma del `WeaponId` y pose fija con balanceo/retroceso.
+- [x] Quitar animación de caminar/correr en primera persona: se detienen las pistas
+  walk/run y se bloquean las nuevas mientras el modo está activo.
+- [x] Alternar con V; valor inicial `PresentationSettings.FirstPersonDefault=true`;
+  `FirstPersonScale=.8` y `FirstPersonEyeHeight=.35` editables.
+- [x] Rayo local recolocado a la boca del viewmodel; servidor sin cambios.
+- [x] Sin brazos: solo el arma, abajo a la derecha, **escala 70 %**
+  (`FirstPersonWeaponScale`) e inclinación 16° (ángulo aprobado por el usuario).
+- [x] **Causa del rayo desviado corregida:** `LocalCombatInput.aimOffsets()` usaba
+  +40/−110 (mira de tercera) también en primera persona; ahora devuelve 0,0 con
+  `FirstPersonActive`, por lo que el rayo de cámara pasa por la cruz y el beam nace
+  en la boca del arma y termina en ese punto. Tercera persona intacta.
+- [x] QA Studio: cámara en cabeza, cuerpo oculto, cruz centrada, arma 70 % arriba
+  de la zona inferior derecha, aimOffsets=0,0 en FP, V alterna, sin errores.
+- [ ] Revisar visualmente el ancho del tramo rayo→cruz al disparar y confirmar
+  aceptación; VS real y teléfono físico pendientes.
+- [ ] Revisar en VS real, respawn, cambio de arma y que la animación detenida no
+  afecte la vista de terceros de forma no deseada.
+- [ ] Teléfono físico: primera persona está desactivada en táctil (cámara sobre hombro).
+- [x] Respaldo por Place ZB_FirstPersonBackup_20261028; Edit/default al terminar.
+
+### Plan de precios: monedas para mejoras, Robux para armas/ganchos — 28/10
+
+- [x] Definir y aplicar precios de mejoras: capacidad arma 80, recarga arma 140,
+  capacidad gancho 100, recarga gancho 160 monedas por nivel (total ≈3580).
+- [x] Mantener colores de láser con monedas (0/100/100/200/300).
+- [x] Rifle pasa a pase de 10 R$ (pendiente de ID); Cañón conserva su pase 2039918698
+  a 10 R$. SDR-Mk2 sigue gratis.
+- [x] Crear `ReplicatedStorage.HookOffers` en ambos Places con Spike 10 R$, Heavy
+  15 R$, Plasma 10 R$ y Dorada 15 R$; Punta Base y Cable Base gratis.
+- [x] WorkshopService: bloqueo de compra con monedas para cosméticos de pase y API
+  grantHook/ownsHook/isPassHook. MonetizationService resuelve pases de armas y gancho.
+- [x] Tienda Lobby: lee ambos catálogos, muestra DESBLOQUEAR · N R$ cuando el pase
+  está listo y PASE PRÓXIMAMENTE sin ID; no declara propiedad en cliente.
+- [x] QA Studio: rechazos sin cobro (Rifle, Spike, Dorada), Punta Base gratis,
+  mejora 500→420 y 100→120 (plan ×1), precios visibles, sin errores nuevos.
+- [x] **Precios ×10 (28/10):** capacidad arma 800, recarga arma 1400, capacidad
+  gancho 1000, recarga gancho 1600; total ≈35 800. Verificado en Play con 500
+  monedas: compra rechazada y tienda mostrando FALTAN 300/500/900/1100.
+  Respaldo del plan ×1: ZB_PricingPlanX1Backup_20261028.
+- [ ] Crear en Creator Dashboard los pases Rifle, Spike, Heavy, Plasma y Dorada;
+  pegar PassId y poner PurchaseIntegrationReady=true; compra real con cuenta sin pase.
+- [ ] Publicar y validar con Robux; confirmar propiedad tras reconexión y viaje.
+
+Respaldo por Place `ZB_PricingPlanBackup_20261028`. Detalle y tabla en DISENO.
+
+### Calendario: X dentro del panel y misiones a ancho completo — 28/10
+
+- [x] Mover la X de la esquina al punto marcado en verde: dentro del panel,
+  centrada a 108 px del borde derecho y 58 del superior (56 en vertical).
+  Tamaño/glifo conservados; ya no choca con el adorno de la esquina.
+- [x] Alinear las misiones al borde derecho: sin tope de 350/310 px, ocupan todo
+  el ancho de la columna de detalles (414/384/338) e igualan el marco de recompensa.
+  `MissionMaxWidth=0`/`MissionPortraitWidth=0` significan ancho completo.
+- [x] Mantener textos a la izquierda, importes a la derecha, botones 56 y fuentes
+  16/13/16; sin cambios en datos, fechas ni cobros.
+- [x] Capturas escritorio 1087×629, iPhone horizontal 750×381 y vertical 401×778:
+  X visible dentro del panel, misiones hasta el borde derecho y texto que cabe.
+- [x] Cerrar por click: Panel/Backdrop ocultos, ZB_MenuOpen=false, acceso visible.
+  Output sin errores de UI; sin cobros.
+- [x] Respaldo ZB_CalendarRightAlignBackup_20261028; Edit/default al terminar.
+  Fuente final 26453 bytes / hash base31 2003019411.
+- [ ] Aceptación visual del usuario, teléfono físico y publicación.
+
+### HUD: acceso MOCHILA cortado arriba en escritorio — 28/10
+
+- [x] Reproducido en Play de ambos Places: `OpenInventory` quedaba en
+  `AbsolutePosition.Y=-42` (offset 16 − 58 de área segura); el contador de monedas
+  también se desplazaba. Causa: `IgnoreGuiInset=true` + `ScreenInsets=DeviceSafeInsets`
+  aplican un desplazamiento superior que el layout no compensaba.
+- [x] `BattleHudArtwork.pinTop` mide el desplazamiento real (AbsolutePosition − offset)
+  y fija la Y visible; converge en un paso y no depende de un inset fijo.
+  Aplicado a mochila, monedas y a la fila táctil de tabla/salida.
+- [x] En móvil, MOCHILA/monedas del HUD nuevo se superponían con DIARIO/AYUDA.
+  MobileHudLayout las baja a Y=102 bajo el contador, compensando también el área
+  segura con `safeTop`; sin solapamientos.
+- [x] Verificado sin solapes: escritorio 1087×629 (mochila 16–96, monedas 100–166);
+  iPhone horizontal 750×381 (mochila 6–50, monedas 56–94, DIARIO/AYUDA 102–154);
+  vertical 401×778 (todo dentro del viewport). Match con estado local de combate:
+  fila SALIR/TABLA/MOCHILA en Y=6 y monedas debajo; cero intersecciones.
+- [x] Capturas de Lobby y Match; Output sin errores de UI. Fixtures de QA solo en
+  Play, restablecidos al detener. Ambos Places en Edit.
+- [x] Paridad de módulos: BattleHudArtwork 14015 bytes/hash 4142698161;
+  MobileHudLayout 8652 / 3734122656 en Lobby y Match.
+- [x] Respaldo por Place ZB_HudSafeAreaBackup_20261028.
+- [ ] Aceptación visual del usuario, teléfono físico (notch real) y publicación.
+
+### Cierre y flechas grandes, misiones a la izquierda — 28/10
+
+- [x] Agrandar y centrar el botón X: 44×44→**56×56**, glifo 14→26, AnchorPoint
+  centrado en (1,−36, 36). Verificado: texto y arte centrados (desvío ≈0 px).
+- [x] Agrandar y centrar `<` y `>`: 36×34→**52×52** (44 en horizontal bajo),
+  glifo 26. El título del mes queda entre ambos, centrado y con TextFits=true.
+- [x] Alinear a la izquierda MIS IONES DE HOY, el título de cada fila y su progreso
+  al mismo margen X=12; botones de premio conservan su tamaño de 56×56.
+- [x] Exponer CalendarCloseSize/CalendarNavSize/CalendarControlFontSize y
+  reacomodar al cambiarlos; reservar alto para no montar los días sobre las flechas.
+- [x] Navegación real de mes en ambos sentidos, capturas desktop 1087×629 y
+  iPhone 17 Pro 750×381 / 401×778; sin recortes ni superposiciones.
+- [x] Cerrar por click: Panel/Backdrop ocultos, ZB_MenuOpen=false, acceso visible.
+  Output sin errores de UI; saldo 500 y sin cobros.
+- [x] Respaldo ZB_CalendarNavigationBackup_20261028; Edit/default al terminar.
+  Fuente final 25936 bytes / hash 3206220172.
+- [ ] Aceptación visual del usuario, teléfono físico y versión publicada. Sin publicar.
+
+Guía exacta en UI_ASSETS, sección de cierre/flechas del 28/10.
+
+### Misiones: menor ancho y mayor tamaño de botones/fuente — 28/10
+
+- [x] Responder al área señalada por el usuario: filas hasta 350 px en escritorio
+  (antes 414), 310 en vertical; tarjetas de 72 px de alto y premios de 56×56.
+- [x] Aumentar títulos a 16, progreso a 13 y premio a 16. Horizontal bajo:
+  tarjeta 46, premio 40×40, fuentes 13/11/14. Separar texto y botón.
+- [x] Exponer atributos MissionMaxWidth/MissionPortraitWidth/MissionButtonSize/
+  MissionFontSize/MissionProgressFontSize; adaptar alto compacto y scroll vertical.
+- [x] Capturas desktop 1087×629, iPhone 17 Pro 750×381 y 401×778; las nueve
+  etiquetas de las tres misiones tienen TextFits=true. Comprobar scroll hasta la
+  tercera y ✓ con estado de presentación local, restaurado sin cobrar.
+- [x] Saldo de QA 500 conservado, Output sin errores de UI; Edit/default al cerrar.
+  Respaldo ZB_CalendarMissionLayoutBackup_20261028; fuente 24342 bytes/hash 2078309751.
+- [ ] Aceptación visual del usuario y teléfono físico. Sin publicación.
+
+Medidas y propiedades de edición: UI_ASSETS, ajuste de misiones del 28/10.
+
+### Revisión de cambios y calendario estilo mochila — 28/10
+
+- [x] Leer el corte del 27/10 y contrastar ambos Studios: Lobby versión 811,
+  Match 217; calendario solo Lobby. Accesos compactos/cartel Libre retirado ya
+  coinciden con UI_ASSETS/CHECKLIST. Actualizar DISENO, que aún encabezaba el 26/10.
+- [x] Usuario confirma «Mismo estilo de mochila». Respaldar GUI y DailyActivities
+  en ZB_CalendarBackpackPolishBackup_20261028 antes de cambiar presentación.
+- [x] Reforzar marcos de panel/calendario/recompensa/misiones y usar imágenes
+  completas Fit en ocho botones. Añadir iconos de hoy y monedas; preservar Activated.
+- [x] Ajustar anchura/fuente de Caption y estado ✓ de misión reclamada. En compacto,
+  recompensa 130×40; hoy 168×32. En escritorio/vertical, botones principales 240×44.
+- [x] Conservar 42 slots, ClaimState/ConfirmedClaim, colores e información por fecha.
+  ShortDayMarkers=—/× y ocultar microtexto en horizontal bajo para evitar solapamientos.
+- [x] Click real abrió calendario, siguiente mes mostró NOVIEMBRE y volver a hoy
+  regresó a OCTUBRE. Cierre por botón recuperó acceso y dejó ZB_MenuOpen=false.
+- [x] Desktop 1087×629 e iPhone 17 Pro 750×381 / 401×778: capturas, scroll hasta las
+  tres misiones; ocho Caption con TextFits=true y cero estados de fecha desbordados
+  en vertical. Sensor y DeviceSafeInsets conservados; no equivale a touch físico.
+- [x] QA local y reversible de deshabilitado/RECLAMADA y HECHA/✓, sin enviar cobros;
+  saldo 500 conservado. Output final sin errores de UI. 14 Artwork y cero fondos
+  ZBAtlas_Background duplicados.
+- [x] DailyActivities final 22933 bytes / hash 370268479. Lobby en Edit, simulador
+  default y respaldo preservado; Match no se modificó en esta revisión del calendario.
+- [ ] Aceptación visual del usuario, teléfono físico y versión publicada. Sin publicar.
+
+Guía exacta de edición y revisión del contraste: UI_ASSETS y DISENO, corte 28/10.
+Las verificaciones del 27/10 de abajo conservan sus fechas y diseños anteriores.
 
 ### Marco nuevo del calendario — 27/10
 

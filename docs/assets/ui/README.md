@@ -2,6 +2,14 @@
 
 Guía completa y catálogo: [../../UI_ASSETS.md](../../UI_ASSETS.md).
 
+## Calendario estilo mochila — revisión 28/10/2026
+
+Reutiliza los assets existentes de Studio, sin nueva subida:
+panel `92094831612893`, botones principales `99022357719006` y marcos compactos
+`95844709202495`. Edición en `StarterGui.ZB_DailyActivities` de Lobby, hijos
+Artwork y ActionIcon. Los ocho botones usan Fit completo; el panel usa Slice nativo
+como la mochila. Rutas, escalas, respaldo y QA en UI_ASSETS 28/10.
+
 ## HUD nuevo — integración posterior del 26/10/2026
 
 - `battle_weapon_bar.png` y `battle_hook_bar.png`, 496×120: marco/título del arma
