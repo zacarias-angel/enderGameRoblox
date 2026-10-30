@@ -5,7 +5,92 @@ Sprint: **11–20 de octubre**, diez días naturales, incluida la entrega.
 Base: [CHECKLIST](CHECKLIST.md), [BUGS](BUGS.md) y [SUGERENCIAS](SUGERENCIAS.md).
 Este documento planifica trabajo; no certifica correcciones ni implementaciones.
 
-## Corte vigente — 26/10/2026: adaptación al Studio actual
+## Salida vigente — 30/10/2026: publicar lo disponible e iterar
+
+**Decisión del usuario:** salir hoy, **30 de octubre**, con lo que tenemos y
+continuar con updates. Este corte reemplaza las fechas operativas de 20/27 de
+octubre conservadas abajo como historial. Los pendientes originales pasan al
+backlog explícito; no se consideran entregados por este cambio de alcance.
+
+### Orden del deploy
+
+**Ajuste económico posterior del 30/10:** ambos Places preparados con 0 monedas
+iniciales para perfiles nuevos, misiones30/40/20, bonus único60 y calendario
+25/37/50/62/75/100/150. Publicar ambos con estos valores compatibles; conservar
+saldos e historial existentes. QA local y respaldo en CHECKLIST/DISENO, corte de
+economía del 30/10. La corrección no retira monedas ya guardadas.
+
+1. **Candidata:** conservar `ServerStorage.ZB_ReleaseBackup_20261030` en ambos
+   Places. Ranking de tiempo y presentación FPS ya integrados y probados de forma
+   local; detalle y límites en CHECKLIST 30/10. Revisar visualmente las manos/arma.
+2. **Publicar Match `108298899371591` y luego Lobby `125075465377023`**, en una
+   misma ventana de entrega: ambos deben conservar `stats.playtimeSeconds`.
+   Registrar las versiones efectivamente publicadas y hora UTC. Este documento
+   no acredita publicación; los Studios quedaron en Edit.
+3. **Smoke test en servidores nuevos:** entrar, caminar/correr, cerrar manual,
+   mochila/equipado, entrar a Libre, disparar, gancho, congelar, respawn y salir.
+   Comprobar carga de imágenes/audio, centro de mira despejado y ningún bloqueo.
+4. **Tiempo + VS:** registrar total antes de viajar; completar VS, ver resultado
+   y regresar; reconectar y comprobar tiempo no decreciente, saldo/equipado y
+   premio único. Contar también espera/Lobby/menús, no tiempo desconectado.
+   La prueba VS/datos reportada por el usuario el 21/10 conserva su aceptación;
+   aquí se verifica el campo nuevo y los cambios posteriores.
+5. **Teléfono físico:** disparo+arrastre+joystick, gancho, agarre/impulso, menús y
+   salida. La primera persona sigue siendo exclusiva de escritorio.
+6. **Abrir y observar:** anotar versiones, dispositivo, errores y reportes reales.
+   Corregir primero pérdida de datos, entrega de compras, bloqueo de partida o
+   controles. Preparar hotfix corto y repetir el caso afectado.
+
+### Alcance de esta salida y próximos updates
+
+| Área | Estado al preparar salida | Siguiente cierre |
+|---|---|---|
+| Rankings | Monedas, Victorias VS y Tiempo de juego; Congelados reemplazado visualmente | Publicación conjunta, viaje/reconexión y ranking histórico real |
+| Arma FPS | Solo arma por decisión posterior: sin manos, inclinación −2°/18° conservada, offsets por arma y encuadre casi completo | Aceptación visual, otros viewports/FOV y observador/disparo en partida real |
+| Power-ups como objetos | Tres modelos reales; emisores editables de contorno y consulta de gancho. Q real→escudo→recogida comprobado en Libre con punto de QA | Aceptar partículas/visual y validar publicados/móvil |
+| Bloques de arena | Disparos aceptados aplican impulso de servidor a roblox_bloques, con masa/cadencia/velocidad acotadas; QA local en ambos | Aceptar fuerza, observador remoto y VS real |
+| Monedas recolectables | Lobby: disco, levitación/giro y sonido tras confirmación; recogida real 500→501 y un sonido | Validar mezcla/permisos publicados y teléfono físico |
+| Ambiente Lobby | Cuatro astronautas adicionales con cuatro rutas de ida/vuelta; regreso y caminar comprobados | Aceptación de recorridos, observador remoto y rendimiento móvil |
+| Paridad Lobby/Match B24 | Diferencias de mochila/miniaturas/Grip documentadas | Migración por componentes y QA; no declarada resuelta por los cambios FPS |
+| Compras | Cañón y Heavy conectados; pases restantes pendientes | Compra/cancelación con cuenta sin pase, derechos al reconectar/viajar |
+| Contenido adicional | Colección premium, capa global, video e informe de anuncios pendientes | Updates separados según assets, Dashboard y disponibilidad |
+| Limpieza | Procedimiento abajo; no borrado masivo | Inventario de dependencias y retirada incremental tras estabilizar salida |
+
+### Limpieza posterior a salida
+
+- **Antes de publicar:** confirmar ausencia de fixtures `ZB_QA_*`, DemoMode=false,
+  ejemplo de rankings deshabilitado y copias de respaldo sin scripts ejecutables.
+- **Inventariar:** duplicados de la plantilla FPS (`Blaster` y copia en
+  `ZeroBreachProjectileWeapons`), sistema de proyectiles deshabilitado, UI legacy,
+  referencias antiguas a `placas`, funciones sin uso en FirstPersonArms y backups.
+  Registrar consumidores mediante búsquedas de código antes de retirar algo.
+- **Conservar:** `ReplicatedStorage.PowerUpModels` es dependencia activa de pickups.
+  `Shared.AvatarFirstPersonArms` y `WeaponAssets.FirstPersonHands` quedan para
+  reversión; dejaron de ser fuentes activas al descartar las manos.
+  DataService/RankService conservan métricas históricas de congelamientos aunque
+  ya no tengan panel. No borrar stores ni perfiles para limpiar presentación.
+- **Dependencias nuevas:** UIAssets.PowerUpImages y CoinCollected/CoinPickup se
+  consumen en ejecución. LobbyAstronautRoutes y LobbyAstronauts sostienen las cuatro
+  patrullas; no eliminarlos como «marcadores invisibles» durante la limpieza.
+- **Retirar por lote pequeño:** guardar copia/versionado, quitar un componente sin
+  consumidores, probar arranque, combate, equipado, respawn y retorno en ambos
+  Places; registrar qué se retiró, dónde y cómo revertir.
+- **Respaldos:** mantener el de esta salida hasta validar producción. Luego archivar
+  copias antiguas fuera del árbol distribuido, con ruta original y fecha; no activar
+  una copia completa de Lobby sobre Match para revertir un componente.
+- **Reversión:** restaurar solo fuentes/plantillas afectadas desde el respaldo y
+  publicar ambos Places compatibles. Si se revierte el ranking, mantener lectura
+  y escritura de `stats.playtimeSeconds` para no perder tiempo ya guardado. Volver
+  a probar en servidor nuevo. La reversión de código no revierte datos persistidos.
+
+### Registro de publicación — completar al ejecutar
+
+| Place | Versión publicada | Hora UTC | Smoke test Player |
+|---|---|---|---|
+| Match `108298899371591` | Pendiente | Pendiente | Pendiente |
+| Lobby `125075465377023` | Pendiente | Pendiente | Pendiente |
+
+## Corte anterior — 26/10/2026: adaptación al Studio actual
 
 La entrega confirmada sigue siendo **27/10/2026**. Se inspeccionaron ambos Places
 en Edit (Lobby PlaceVersion 784, Match 205), sin iniciar Play ni publicar.

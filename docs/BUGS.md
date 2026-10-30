@@ -1,11 +1,34 @@
 # ZERO BREACH — Bugs, correcciones y regresiones
 
-Consolidado: 2026-10-02; auditado/actualizado: **2026-10-29**.
+Consolidado: 2026-10-02; auditado/actualizado: **2026-10-30**.
 Leer [DISENO](DISENO.md) para comportamiento vigente y
 [CHECKLIST](CHECKLIST.md) para aceptación. **Reproducir antes de corregir** y
 buscar el primer error de Output, no el último warning.
 
 ## 1. Seguimiento abierto
+
+**Power-ups sin partículas visibles/gancho, 30/10:** CanQuery=false hacía que el
+gancho ignorara los modelos. Emisores solo runtime, tamaño mínimo y origen sobre/en
+la malla dificultaban verlos. Corregido en ambos: emisores de contorno editables en
+PowerUpModels, consulta ligada a disponibilidad, seguimiento local de superficie y
+cancelación por recogida/generación. Q real hasta escudo con recogida confirmado
+en Libre con ubicación de QA. Aceptación visual/Player pendiente; no afirmar que
+un objeto en ReplicatedStorage deba renderizarse dentro del mundo.
+
+**Decisión posterior a B31, 30/10:** el usuario descarta las manos del arma. La
+vista vigente es solo arma, misma inclinación, offsets por modelo para mostrarla
+casi completa. No continuar el pulido de manos como tarea activa. Nuevos modelos
+3D sustituyen BillboardGui de power-ups; QA/respaldos en CHECKLIST/UI_ASSETS,
+corte «Modelos 3D, partículas pequeñas y arma sola».
+
+**B31 — agarre FPS del avatar, 30/10:** usuario rechaza el visual por manos enormes
+y apoyo izquierdo antinatural; captura mirando hacia arriba. Causa: escala global .8
+sin límite para manos de paquetes heterogéneos y pose izquierda basada en el centro
+de la pieza. Corregido en Studio en ambos Places: brazos .6, mano máxima .42,
+attachments escalados y palma alineada a GripAttachment, apoyo y hombro izquierdo
+reubicados. Capturas horizontal/55° arriba, tres armas y limpieza pasan. **Aceptación
+visual del usuario y Player pendientes**. Respaldo ZB_AvatarGripPolishBackup_20261030;
+no dar por aceptada la primera implementación por sus pruebas geométricas.
 
 | ID | Prioridad | Estado / siguiente acción |
 |---|---|---|
@@ -33,7 +56,7 @@ buscar el primer error de Output, no el último warning.
 | B22 | Alta / corregido Studio | Versión vigente de tres botones: Grab inicia agarre y pasa a IMPULSO; Hook independiente. QA runtime del 21/10 registrada; teléfono físico/cuerpos publicados pendientes |
 | B23 | Media / corregido Studio | Manual actual con placa Artwork y Continue ImageButton aplicado el 19/10; Skins.intro queda como alternativa. Texto incorporado requiere nueva imagen al cambiar controles; aceptación final/teléfono pendientes |
 | B24 | Integración pendiente / comprobada Edit | Divergencia Lobby/Match: mochila editable solo Lobby, tres WeaponImages vacías y WeaponOffers ausente en Match, Rifle Grip sin corrección y feedback de botones anterior. No corregido en esta auditoría |
-| B25 | Presentación incompleta / comprobada Edit | Nuevo Rankings3D.Congelados no tiene Cabecera ni Estado; los otros dos paneles sí. Filas/API presentes; revisar y completar sin recrear placas antiguas |
+| B25 | Resuelto estructuralmente 30/10 / Player pendiente | Congelados reemplazado por TiempoJugado por decisión del usuario. Cabecera y Estado recuperados desde Monedas; API/renderer/animación migrados. Verificar aceptación del nuevo panel publicado |
 | B26 | Corregido / QA Studio | Integración del HUD nuevo: dos layouts alternaban Position y agotaban reentrada en móvil; el layout anterior ahora cede los controles marcados. Guardas del logo compacto aceptan ImageLabel sin Symbol/Brand. Arranque final limpio de esos errores; Player pendiente |
 | B27 | Corregido / QA Studio | Usuario rechaza cortes verticales del marco general: los introducía la composición por segmentos. Sustituida por el PNG original completo, Fit y sin ImageRect; textos ajustados al área real. Aceptación visual del usuario y Player pendientes |
 | B28 | Corregido / QA Studio | Texto de equipar no volvía siempre a celeste: dependía del color del artículo o de callback ausente. Action ahora es dorado seleccionado / celeste sin seleccionar en ambos layouts. Cinco alternancias reales rojo/cyan en Lobby y snapshots en Match verificadas el 29/10; Player pendiente |

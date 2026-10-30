@@ -1,5 +1,273 @@
 # UI — Buscar en Explorer y reemplazar
 
+## Power-ups: emisores editables y gancho — actualización posterior 30/10
+
+**Fuente vigente:** `ReplicatedStorage.PowerUpModels.Boost/Shield/Freeze`.
+Cada PrimaryPart tiene `SparkleEdge01..04.SmallSparkles` (Attachment > ParticleEmitter).
+Ya no se crea un emisor separado por PowerUpService.
+
+- Cuatro puntos fuera del contorno: izquierda/derecha/arriba/abajo al 56 % del
+  ancho/alto desde el centro. Así las partículas no quedan tapadas por la malla.
+- Cada emisor: Rate5, Size .12→.45→0, Lifetime .8–1.3, Speed .4–.9, ZOffset .25,
+  LightEmission1, LightInfluence0, Brightness2. Total20/s por modelo; colores por tipo.
+- Editar propiedades en estos templates con Play detenido. **ReplicatedStorage no
+  renderiza sus objetos:** para verlos, iniciar Play y observar los PickupModel de
+  Workspace, o usar una copia temporal del modelo en Workspace y retirarla después.
+- Las copias disponibles tienen CanQuery=true para permitir apuntar el gancho;
+  ocultas tienen CanQuery=false y emisores desactivados/limpios. CanCollide/CanTouch
+  de la malla siguen desactivados; la recogida la decide el trigger del servidor.
+- HookController cancela el anclaje cuando se recoge/renueva el power-up; no
+  transporta al jugador al nuevo punto de aparición. Q real→escudo→recogida probado.
+
+### Fuerza de disparo sobre roblox_bloques
+
+Configuración compartida en `ReplicatedStorage.WorldInteractionSettings`:
+
+| Atributo | Valor | Uso |
+|---|---:|---|
+| BlockShotPushEnabled | true | Habilitar empuje de disparos |
+| BlockShotDeltaSpeed | 10 | Incremento de velocidad por impulso, escalado por masa |
+| BlockShotMaxSpeed | 45 | Límite para acumular empujes |
+| BlockShotCooldown | .18 | Intervalo mínimo por ensamblaje |
+
+Solo el servidor aplica impulso tras un world hit aceptado por ShootingService.
+No cambia premios, daño, barreras de spawn ni modelos anclados. Módulo:
+`ServerScriptService.BlockShotImpulse`. QA y pendientes en CHECKLIST, respaldo
+`ZB_WorldInteractionsBackup_20261030` de ambos Places. Sin publicación aquí.
+
+## Power-ups 3D y arma sin manos — corte posterior 30/10, vigente
+
+Reemplaza los BillboardGui de power-ups y descarta las manos FPS por pedido del
+usuario. **Implementado/QA Studio en ambos Places; sin publicar.**
+
+### Modelos reales
+
+| Fuente original de Lobby | Template activo | Mesh ID | Texture ID |
+|---|---|---|---|
+| Workspace.speed up | ReplicatedStorage.PowerUpModels.Boost | 134088446641897 | 109621971464095 |
+| Workspace.escudo | ReplicatedStorage.PowerUpModels.Shield | 88591327263780 | 127845312361737 |
+| Workspace.hielo powerup | ReplicatedStorage.PowerUpModels.Freeze | 126526517376148 | 106631191247803 |
+
+Los originales se respaldaron y trasladaron a los templates: ya no están como
+ejemplos sueltos en el piso del Lobby. Cada Model tiene PrimaryPart, pivote centrado,
+altura8, partes ancladas y sin colisión/query/touch. Match reconstruye las mismas
+mallas/texturas y dimensiones. Editar estos templates para reemplazos posteriores.
+
+En Play: `Workspace.PowerUpBoost/Shield/Freeze.PickupModel` se mueve con el trigger,
+se oculta al recoger y reaparece según los timers existentes. No hay BillboardGui
+en estos pickups. Las imágenes UIAssets.PowerUpImages se conservan como recursos
+de catálogo/rollback; ya no son el visual del mundo.
+
+Partículas: PickupModel.PrimaryPart.PickupSparkles.SmallSparkles. 6/s, tamaño
+.06→.16→0 studs, vida .55–.9 s, Speed .4–1.2. Emisor a +3.4Y sobre el centro.
+Color por tipo; luz del trigger .65/rango10. Se limpia/apaga al ocultarse.
+
+### Encuadre de arma sola
+
+FirstPersonArms ya no usa AvatarFirstPersonArms ni FirstPersonHands; conserva sus
+nombres técnicos de arma/muzzle y deja vacío `Camera.ZB_FirstPersonView`.
+PresentationSettings:
+
+- FirstPersonWeaponScale=.6, inclinación en código intacta −2°/18°.
+- FirstPersonWeaponOffset=(.65,−.75,−1.8), antes (.98,−1.22,−2.35).
+- FirstPersonWeaponOffset_rifle=(.5,−.55,−2.5).
+- FirstPersonWeaponOffset_cannon=(.65,−.65,−2.05).
+
+Offsets por arma permiten mostrar culata/agarre. Medición neutra Lobby a 824×361:
+las tres cajas proyectadas quedan dentro de la pantalla; aceptación del usuario y
+otros tamaños/FOV pendientes. FirstPersonScale/HandMaxSize ya no afectan esta vista.
+
+Backup por Place: ZB_ModelPowerupsWeaponOnlyBackup_20261030. Restaurar las fuentes
+y settings afectados para revertir; originales de modelos en backup Lobby con ruta
+OriginalPath. QA/limitaciones en CHECKLIST. Sin publicación desde esta tarea.
+
+## Ajuste de manos tras captura rechazada — 30/10, vigente
+
+Usuario rechaza la presentación anterior por manos enormes y apoyo izquierdo
+antinatural. En ambos Places, PresentationSettings queda:
+
+- `FirstPersonScale=.6` para brazos (antes .8).
+- `FirstPersonHandMaxSize=.42` studs: máximo de la mayor dimensión de cada mano;
+  reducción uniforme conservando malla/textura y ajustando attachments.
+- Arma: FirstPersonWeaponScale=.6 y offset sin cambios.
+
+AvatarFirstPersonArms usa GripAttachment para colocar las palmas, gira la izquierda
+hacia el apoyo y desplaza su hombro hacia la zona inferior central. Capturas finales
+horizontal/55° arriba, tres armas y limpieza comprobadas en Play. Pendiente aceptación
+visual; la prueba anterior de coincidencia de mallas no es aceptación del primer
+resultado. Respaldo ZB_AvatarGripPolishBackup_20261030. Sin publicar.
+
+## FPS con brazos del avatar — revisión posterior 30/10
+
+- Fuente actual: miembros del **Character del jugador**. Nuevo módulo
+  `ReplicatedStorage.Shared.AvatarFirstPersonArms`, consumido por FirstPersonArms
+  en ambos Places. Ya no clona WeaponAssets.FirstPersonHands.
+- R15: seis piezas anatómicas copiadas, mallas/texturas/colores propios y Shirt
+  clásica; pose de codos/muñecas con attachments. R6: brazos completos del avatar.
+- `PresentationSettings.FirstPersonScale` controla escala de brazos (valor actual .6
+  tras la corrección superior; .8 fue el primer valor rechazado);
+  FirstPersonWeaponScale=.6 y FirstPersonWeaponOffset se conservan.
+- Se reconstruye tras carga de apariencia y respawn. Accesorios y ropa en capas
+  no incluidos; validar esos casos antes de prometer mangas/guantes idénticos.
+- QA local: mallas y texturas coincidentes, captura de mano robótica del jugador,
+  tres armas y respawn único en ambos. Sin publicación ni partida VS real.
+- Respaldo por Place: `ServerStorage.ZB_AvatarArmsBackup_20261030`. Restaurar el
+  controlador anterior recupera el uso de FirstPersonHands, conservado para reversión.
+
+## Power-ups integrados, monedas animadas y astronautas — 30/10
+
+**Implementado y verificado en Play local; sin publicación.** Sustituye el estado
+«imágenes pendientes de generar» del bloque de prompts de abajo. Se recibieron
+`escudo.png`, `hieloneón.png` y `Módulo_impulso.png`: los tres originales tienen
+alfa real 0–255. Se conservaron intactos; `prepare_powerup_images.py` prepara PNG
+RGBA 1024×1024, imagen centrada hasta 900×900 y margen transparente. Manifiestos
+locales: `powerup_images_manifest.json` y `powerup_asset_ids.json`.
+
+| Tipo | Archivo preparado | ID | Plantilla en ambos Places |
+|---|---|---|---|
+| Shield | powerup_shield.png | 116511041295140 | ReplicatedStorage.UIAssets.PowerUpImages.Shield |
+| Boost | powerup_boost.png | 137847212880966 | ReplicatedStorage.UIAssets.PowerUpImages.Boost |
+| Freeze | powerup_fullfreeze.png | 106877549514910 | ReplicatedStorage.UIAssets.PowerUpImages.Freeze |
+
+PowerUpService clona la imagen correcta en `PowerUpBoost/Shield/Freeze.PickupArtwork.Icon`
+durante Play: BillboardGui de 18×18 studs, Fit, fondo transparente, distancia 200,
+AlwaysOnTop=false. La pieza física anterior queda transparente; no se sustituyó por
+una malla 3D. PowerUpAvailable gobierna imagen/luz/recogida. Mantiene tipos, efectos,
+vida y respawn de 10 s. Los tres recursos cargan Success en ambos clientes; captura
+con tres copias locales inertes confirma alfa sobre el escenario.
+
+### Monedas recolectables — solo Lobby, donde existe CurrencyService
+
+- `CurrencyService` genera discos Cylinder, grosor .28 y diámetro del Config
+  existente. Recogida/importe/misión permanecen en servidor. Nuevo remote de salida
+  `ReplicatedStorage.RemoteEvents.CoinCollected`: posición/importe tras acreditar.
+- `StarterPlayerScripts.CoinPickupVisuals` mantiene la zona de recogida fija y
+  anima una copia local no colisionable por moneda en `Workspace.ZB_CoinVisuals`.
+  Oculta el original localmente y elimina la copia al retirar la moneda real.
+  Un solo RenderStepped administra las monedas. Ángulo módulo 2π evita perder
+  precisión al usar el reloj absoluto del servidor.
+- Ajustes en `PresentationSettings`: CoinFloatHeight=.45 studs,
+  CoinFloatPeriod=2.4 s, CoinSpinDegreesPerSecond=95. La levitación no altera el
+  CFrame autoritativo ni aumenta el volumen de recogida.
+- Audio editable: `Shared.GameplaySounds.CoinPickup`, SoundId
+  `113730061669739` («Coin Pickup», Creator Store, Narplox), volumen .4, sin loop.
+  Cuatro voces locales reutilizadas en `SoundService.ZB_CoinPickupSounds`, disparadas
+  únicamente por confirmación del servidor. No suena por saldo inicial, premios,
+  equipar o un contacto local rechazado.
+- QA: sonido Success y duración 1.465 s; recogida real mediante navegación a una
+  moneda recolocada temporalmente: 500→501, una confirmación, un Played y moneda
+  retirada. Giro dot≈.675 en .5 s, altura −.318 studs, hitbox fijo y pool visual
+  correspondiente a las monedas reales. No se añadió un generador de monedas a Match.
+
+### Cuatro astronautas adicionales — solo Lobby
+
+`Workspace.LobbyAstronauts.space_man_mark_01..04` son clones del Character de
+`Workspace.space_man_mark`. El original se conserva. No se clona el modelo `arm`
+separado que estaba en el suelo ni la configuración ajena al paseo.
+
+- Rutas editables: `Workspace.LobbyAstronautRoutes.Route01..04.Point01..03`.
+  Marcadores invisibles, sin colisión; moverlos en Edit cambia los destinos.
+  Recorrido 1→2→3→2→1, repetido, con pausas.
+- `ServerScriptService.LobbyAstronautPatrol`: PathfindingService calcula cada tramo;
+  raíz anclada movida con TweenService y animación R15 de caminar `507777826`.
+  Los NPC no colisionan, no reciben raycasts ni activan Touched de recolectables.
+  Si no hay camino, esperan y reintentan; no atraviesan paredes por fallback.
+- Attributes por NPC: PatrolRoute, PatrolSpeed (7.4/7.8/8.2/8.6 studs/s),
+  PatrolPause (1.8/2.1/2.4/2.7 s), PatrolFloorOffset. Diagnóstico runtime:
+  PatrolTarget, PatrolStopsReached y PatrolError.
+- Rutas finales X/Z: R1 (−100,45)→(−100,0)→(−100,−50);
+  R2 (−45,55)→(−15,55)→(10,55);
+  R3 (−140,40)→(−140,5)→(−140,−30);
+  R4 (10,−70)→(35,−70)→(35,−100). Y de marcadores=0.
+- QA final: los cuatro completaron ida/vuelta; 12/16/12/15 paradas,
+  sin PatrolError. Animación cargada y reproduciéndose; captura del NPC caminando.
+  Las primeras rutas R3/R4 dieron NoPath y se corrigieron antes del cierre.
+
+Respaldo por Place: `ServerStorage.ZB_PickupsPatrolBackup_20261030`. Las rutas y
+clones nuevos se retiran al revertir el paseo; restaurar CurrencyService y
+CoinPickupVisuals juntos para revertir monedas. Conservar las plantillas nuevas
+si PowerUpService todavía las requiere. Ambos Studios quedan en Edit, fixtures
+retirados y servidor local de subida cerrado. Pendiente aceptación visual/mezcla,
+teléfono físico, observador remoto y publicación.
+
+## Objetos de power-ups: tres prompts de imagen — 30/10
+
+**Referencia de preparación:** reemplazar la representación de los power-ups por
+objetos reconocibles con icono propio. Las imágenes se recibieron e integraron
+después de redactar estos prompts; estado actual en el bloque superior. Usarlas como
+icono individual de UI/Billboard; una imagen por sí sola no crea un objeto 3D.
+
+Estética común: ZERO BREACH, sci-fi estilizado Roblox, formas robustas/facetadas,
+metal azul oscuro, bordes dorados discretos, luz neón controlada y símbolo grande.
+Exportar **PNG 1024×1024 RGBA**, transparencia real, objeto centrado con margen
+12 %, legible a 64×64. Sin textos, letras, números, logos ni marca de agua. No
+incluir un damero pintado. Conservar idéntica cámara, escala y luz en los tres.
+
+### 1. Escudo — `powerup_shield.png`
+
+> Genera una imagen de un único objeto recolectable para ZERO BREACH, juego de
+> combate espacial en gravedad cero de estética Roblox sci-fi estilizada. Objeto:
+> un compacto generador de escudo físico, silueta de escudo hexagonal ancho,
+> carcasa facetada de metal azul marino con pequeños biseles dorados y núcleo
+> luminoso azul cian. En el centro, un gran símbolo de escudo simple, nítido e
+> integrado en el objeto; que se reconozca de inmediato incluso como icono pequeño.
+> Volumen 3D limpio, vista frontal con perspectiva suave de tres cuartos, acabado
+> de juguete tecnológico premium, iluminación suave y brillo neón moderado sin
+> ocultar la silueta. Un solo objeto aislado, centrado, margen libre del 12 %.
+> PNG cuadrado 1024×1024 con fondo realmente transparente, sin suelo ni escenario,
+> sin texto, letras, números, logos, marco exterior ni marca de agua.
+
+### 2. Impulso / flechas — `powerup_boost.png`
+
+> Genera una imagen de un único objeto recolectable para ZERO BREACH, de la misma
+> colección visual que un generador de escudo sci-fi azul marino, biseles dorados
+> y núcleo neón. Objeto: módulo propulsor compacto de carcasa facetada y dos pequeñas
+> salidas de energía; su símbolo principal son tres flechas grandes tipo chevrón
+> apuntando en una misma dirección hacia arriba, expresando impulso y aceleración.
+> Símbolo verde neón y turquesa muy legible; metal azul oscuro y detalles dorados
+> discretos. Estética Roblox sci-fi estilizada, volumen 3D limpio, vista frontal
+> con perspectiva suave de tres cuartos, acabado de juguete tecnológico premium.
+> Misma escala e iluminación que el escudo, brillo controlado, sin estelas largas.
+> Un solo objeto aislado, centrado, margen libre del 12 %. PNG cuadrado 1024×1024
+> con fondo realmente transparente, sin suelo ni escenario, sin texto, letras,
+> números, logos, marco exterior ni marca de agua.
+
+### 3. Congelamiento total — `powerup_fullfreeze.png`
+
+> Genera una imagen de un único objeto recolectable para ZERO BREACH, de la misma
+> colección visual que un generador de escudo y un módulo de impulso sci-fi de
+> metal azul marino con biseles dorados discretos. Objeto: cápsula criogénica
+> tecnológica compacta con núcleo de cristal de hielo azul claro. Símbolo central
+> grande: silueta simple de un avatar de bloque completamente encerrado en un
+> cristal hexagonal de hielo, con un copo de nieve pequeño integrado; debe comunicar
+> congelamiento de cuerpo entero y distinguirse claramente del escudo. Luz blanca
+> helada y azul eléctrico con acento violeta suave, caras facetadas y contorno
+> limpio. Estética Roblox sci-fi estilizada, vista frontal con perspectiva suave
+> de tres cuartos, acabado de juguete tecnológico premium. Misma escala e iluminación
+> que los otros dos objetos. Un solo objeto aislado, centrado, margen libre del 12 %.
+> PNG cuadrado 1024×1024 con fondo realmente transparente, sin suelo ni escenario,
+> sin texto, letras, números, logos, marco exterior ni marca de agua.
+
+**Procedimiento de integración (ya aplicado a los PNG recibidos):** comprobar alfa y legibilidad; guardar fuentes en
+`docs/assets/ui/` con esos nombres, subir y registrar IDs; enlazar iconos con Fit
+en ambos Places. Aprobar el volumen/objeto 3D y sustituir solo su visual, conservando
+el tipo, recogida, validación y timers del PowerUpService. «Congelamiento total»
+describe aquí el icono pedido; no autoriza convertirlo en congelación global ni
+modificar alcance/objetivos/duración sin revisar la mecánica existente.
+
+## Edición FPS y ranking de tiempo — 30/10
+
+- Ambos Places: `ReplicatedStorage.PresentationSettings` Attributes
+  `FirstPersonWeaponScale=.6` y `FirstPersonWeaponOffset=(.98,-1.22,-2.35)`.
+  `WeaponAssets.FirstPersonHands.LeftArm/RightArm` son las partes originales
+  reutilizadas de la plantilla FPS. FirstPersonArms las clona/coloca en runtime;
+  cambiar el arma no requiere copiar el sistema de disparo de aquella plantilla.
+- Lobby: `Workspace.Rankings3D.TiempoJugado.Panel.RankingUI` reemplaza la ruta
+  Congelados. Editar `Cabecera.Titulo` para el título; Fila1..Fila4 siguen datos
+  autoritativos y Valor se presenta como horas/minutos. API usa `TiempoJugado`.
+- QA y pendientes en CHECKLIST 30/10. Respaldo de presentación y fuentes por Place:
+  `ServerStorage.ZB_ReleaseBackup_20261030`. Sin publicar desde esta tarea.
+
 Actualizado: **2026-10-29**, contrastado en Edit de Lobby `125075465377023` y
 Match `108298899371591`. El corte siguiente prevalece sobre el historial.
 

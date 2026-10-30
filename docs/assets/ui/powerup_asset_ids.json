@@ -1,0 +1,17 @@
+{
+  "shield": {
+    "source": "escudo.png",
+    "prepared": "powerup_shield.png",
+    "assetId": "rbxassetid://116511041295140"
+  },
+  "freeze": {
+    "source": "hieloneón.png",
+    "prepared": "powerup_fullfreeze.png",
+    "assetId": "rbxassetid://106877549514910"
+  },
+  "boost": {
+    "source": "Módulo_impulso.png",
+    "prepared": "powerup_boost.png",
+    "assetId": "rbxassetid://137847212880966"
+  }
+}

@@ -2,12 +2,258 @@
 
 > La gravedad desapareció. La estrategia no.
 
-Consolidado el 2026-10-02. **Revisión de cambios el 2026-10-29**.
+Consolidado el 2026-10-02. **Revisión de cambios el 2026-10-30**.
 El corte siguiente prevalece sobre las descripciones históricas de abajo.
 Normas en [REGLAS](REGLAS.md), pruebas en [CHECKLIST](CHECKLIST.md) e
 incidentes en [BUGS](BUGS.md).
 
 ## 0. Estado real y cambios del equipo
+
+### Interacciones del mundo: partículas, gancho y empuje por disparo — 30/10
+
+**Aplicado en ambos Places; verificado en Studio, sin publicar.** Sustituye el
+CanQuery=false de los modelos y el emisor tenue del corte anterior.
+
+- Partículas ahora editables dentro de cada `PowerUpModels` template: cuatro
+  attachments SparkleEdge01..04 alrededor del contorno, cada uno con SmallSparkles.
+  5/s por emisor (20/s por pickup), tamaño .12→.45→0 studs, vida .8–1.3 s,
+  velocidad .4–.9. Luz/emisión altas con partículas pequeñas fuera de la malla,
+  para no ocultarlas dentro del objeto. ReplicatedStorage guarda plantillas y no
+  las renderiza; se ven en sus copias de Workspace durante Play.
+- PowerUpService clona los emisores de la plantilla, sin crear otro emisor en
+  ejecución. CanQuery=true solo en el modelo disponible; recogida/ocultación lo
+  desactiva junto con todos los emisores y limpia partículas existentes.
+- HookController admite el modelo como superficie del gancho. Conserva el punto
+  local del impacto para seguir superficies móviles. Para power-ups registra el
+  trigger/SpawnGeneration y suelta si se recoge, expira, desaparece o cambia de
+  generación, evitando que arrastre al jugador al siguiente punto de aparición.
+  El gancho lleva al jugador hacia el pickup; no convierte el pickup en un objeto
+  arrastrable ni concede la recompensa por enviar una intención del cliente.
+- Nuevo `ServerScriptService.BlockShotImpulse`, llamado desde el impacto mundial
+  de ShootingService después de validación y gasto de energía, en beam/pulse.
+  Solo acepta ensamblajes no anclados de Models `roblox_bloques` con cubrirce=true;
+  excluye personajes y SpawnCover. ApplyImpulseAtPosition aplica impulso escalado
+  por masa en dirección del rayo real del servidor, con propiedad física de servidor.
+- `ReplicatedStorage.WorldInteractionSettings`: BlockShotPushEnabled=true,
+  BlockShotDeltaSpeed=10 studs/s, BlockShotMaxSpeed=45, BlockShotCooldown=.18 s por
+  ensamblaje. Rechaza vectores/velocidades no finitos, impactos fuera de alcance,
+  actor fuera de combate y spam por encima de la frecuencia. No hay nuevo remote
+  de fuerza ni premios/daño por empujar bloques.
+
+QA: entrada real a Libre y beam real contra un bloque existente recolocado: cinco
+impactos mundiales registrados y desplazamiento/velocidad del ensamblaje observados.
+Llamada controlada a la API en ambos Places produce Δv X≈10; cooldown, NaN y barrera
+SpawnCover rechazados; cap45 y fuera de combate rechazados en Lobby. Q real hacia
+escudo detecta PickupModel.default, consume energía (≈82.43 al finalizar), mueve al
+jugador hasta (−20,102,−324.31) y termina por recogida. Ubicación de pickup controlada
+con fixture; no es recorrido multijugador publicado. Intentos iniciales de fixture
+con raíz anclada/teleport de servidor se descartaron por masa infinita/ownership;
+la evidencia válida usa raíz sin anclar y colocación desde el cliente dueño de red.
+
+Captura de partículas de contorno en preview local inerte; arranque final en ambos
+confirma cuatro emisores activos/20 por segundo por pickup y modelo consultable.
+Match mantiene su rechazo habitual de TeleportData al entrar aislado. Ambos en Edit,
+fixtures retirados. Pendientes: aceptación de brillo/fuerza, VS real, otro cliente,
+móvil físico y publicación. Respaldo ZB_WorldInteractionsBackup_20261030 por Place.
+
+### Power-ups 3D y vuelta a arma sin manos — corte posterior 30/10
+
+**Decisión vigente del usuario:** sustituir los BillboardGui de power-ups por los
+tres modelos que agregó al Workspace y descartar las manos FPS. Este corte
+prevalece sobre las integraciones de imágenes/manos anteriores.
+
+**Power-ups, ambos Places:**
+
+- Fuentes de Lobby `speed up`, `escudo`, `hielo powerup` respaldadas y trasladadas
+  a `ReplicatedStorage.PowerUpModels.Boost/Shield/Freeze`, centradas, altura 8 studs,
+  sin colisión/contacto/consulta. Match tiene las mismas mallas y texturas.
+- PowerUpService clona `PickupModel` dentro del trigger de cada tipo, sin BillboardGui.
+  El modelo sigue la posición del trigger al cambiar de punto; al recogerlo se
+  oculta y se limpia/apaga el emisor. Expiración y respawn mantienen sus 10 s.
+  No se modificaron el tamaño del hitbox ni los efectos de recogida.
+- Un emisor por modelo: 6 partículas/s, tamaño .06→.16→0 studs, vida .55–.9 s,
+  velocidad .4–1.2. Color verde impulso, azul escudo, hielo/cian congelación.
+  Luz discreta .65/rango10. Emisor pequeño por encima del modelo; no explosiones.
+
+**Arma de primera persona, ambos Places:**
+
+- FirstPersonArms mantiene su nombre técnico pero ya no requiere AvatarFirstPersonArms
+  ni crea brazos/manos. `ZB_FirstPersonView` es un contenedor vacío de ciclo de vida;
+  el arma y muzzle local siguen siendo los existentes.
+- Inclinación aprobada intacta: pitch −2° y yaw 18°; escala .6. Encuadre más atrás
+  hacia la cámara y hacia dentro/arriba para mostrar el arma casi completa:
+  FirstPersonWeaponOffset=(.65,−.75,−1.8), rifle=(.5,−.55,−2.5),
+  cannon=(.65,−.65,−2.05), dos últimos mediante atributos con sufijo del ID.
+  Los modelos largos requieren su propia distancia para mostrar la culata.
+- QA de proyección a viewport 824×361: caja proyectada de cada arma completamente
+  dentro de pantalla en pose neutra; no es una medida exacta de píxeles de malla ni
+  garantía para cualquier viewport/FOV. Captura de blaster sin manos y agarre visible.
+
+QA: seis recursos mesh/textura cargan Success en ambos; tres modelos sin billboards
+y alineados a sus triggers. Recolocación tras expiración comprobada en ambos.
+Recogida efectiva de escudo en Lobby: modelo transparente/emisor apagado/CanTouch
+false; reaparece con un solo modelo y emisor activo en otro punto. Tres armas en
+ambos clientes, ausencia de manos y limpieza; muzzle FX y rotación conservados en
+Lobby mediante estado local controlado. Captura 3D con copias locales inertes.
+No acredita una ronda VS real ni observador remoto. Ambos en Edit, sin publicar.
+
+Respaldo: `ServerStorage.ZB_ModelPowerupsWeaponOnlyBackup_20261030` por Place;
+Lobby incluye originales con OriginalPath. Guía de modelos/IDs en UI_ASSETS.
+
+### Economía de salida: sin regalo inicial y diarios a la mitad — 30/10
+
+Aplicado en ambos Places bajo The Bermuda Lab; verificado en Studio, sin publicar.
+Este corte sustituye los valores anteriores de 500 iniciales y recompensas diarias.
+
+| Concepto | Antes | Ahora |
+|---|---:|---:|
+| Perfil nuevo, Config.Currency.STARTING_COINS | 500 | 0 |
+| Misión jugar una partida | 60 | 30 |
+| Misión recolectar 25 monedas | 80 | 40 |
+| Misión reclamar premio diario | 40 | 20 |
+| Logro único de completar todas las misiones diarias | 120 | 60 |
+| Calendario, racha 1–7 | 50/75/100/125/150/200/300 | 25/37/50/62/75/100/150 |
+
+Monedas enteras: mitades fraccionarias redondeadas hacia abajo (75→37, 125→62).
+Los valores de catálogo se reducen una sola vez, no en cada cobro. Cambios en
+Shared.Config, DailyMissionCatalog y DailyClaimHistory de ambos Places; servicios
+de cobro/UI siguen consumiendo esas fuentes. Las misiones existentes del día
+conservan progreso y estado claimed, mientras normalizeEntries usa el premio nuevo.
+
+No se descuentan saldos existentes ni se reabren premios reclamados. El historial
+claimedDays conserva importes ya pagados; DailyClaimHistory usa LEGACY_REWARDS solo
+para reconstruir el último cobro de un perfil antiguo sin mapa de historial.
+Recompensas de combate, recogida de monedas, precios y objetivos no cambian.
+
+QA Studio: Lobby inicia con 0; Match InventoryCoins=0. Calendario/normalización de
+historial coinciden en ambos. Cobros reales por remotes Lobby: 0→25 calendario→45
+misión diaria→75 jugar→175 recolectar + logro único. Progreso de jugar/recolectar
+suministrado por fixture servidor para probar pago, no una partida real. Repetidas
+no pagan de nuevo; histórico 75 conservado y racha nueva con 37 registrada sin duplicar.
+DataStore omitido por política de Studio: pendiente publicar y comprobar perfiles
+nuevos/existentes y viaje reales. Respaldo ZB_DailyEconomyBackup_20261030 por Place.
+
+### Corrección tras rechazo visual del agarre — 30/10
+
+El usuario rechaza la primera integración de brazos del avatar: manos voluminosas
+tapan el arma y apoyo izquierdo poco natural, especialmente visible en su captura
+mirando hacia arriba. La QA anterior de mallas/uniones no acreditaba aceptación visual.
+
+Aplicado en ambos Places, conservando mallas/texturas del jugador:
+
+- FirstPersonScale=.6 en vez de .8 (brazos 25 % menores). El arma conserva su
+  escala .6 y su offset aprobado.
+- FirstPersonHandMaxSize=.42 studs: límite de la mayor dimensión de cada mano,
+  reducción uniforme por pieza con sus attachments. Evita que paquetes con manos
+  mecánicas o palmas grandes dominen la vista; no cambia el avatar real.
+- Palma alineada mediante GripAttachment de la mano. Mano izquierda girada 90°
+  sobre Z, más adelantada y elevada bajo el arma; hombro izquierdo hacia el borde
+  inferior central en lugar de extenderse desde el lado izquierdo de la pantalla.
+- Mano derecha ajustada ligeramente respecto de Grip; codos siguen solución
+  segmentada con muñecas conectadas. Mallas de manos siguen siendo estáticas,
+  no se añadió animación de dedos ni una pose de puño nueva al paquete del avatar.
+
+Capturas finales Lobby en horizontal y mirando 55° arriba muestran menor ocupación
+y el arma visible. QA de las tres armas y limpieza en ambos clientes; manos ≤.4201
+studs y separación máxima de articulaciones ≈.000011 studs. Sin errores nuevos
+del sistema; no es aceptación del usuario ni prueba VS real. Ambos en Edit, sin
+publicar. Respaldo por Place: ZB_AvatarGripPolishBackup_20261030 (módulo y settings).
+
+### Brazos del propio avatar en primera persona — 30/10, revisión posterior
+
+**Implementado en Lobby y Match; verificado en Play local, sin publicar.** Sustituye
+los brazos genéricos de la plantilla FPS de las secciones anteriores.
+
+- Nuevo `Shared.AvatarFirstPersonArms`: copia UpperArm/LowerArm/Hand de cada lado
+  del avatar actual, conservando mallas, texturas/PBR, colores y proporciones.
+  Copia también Shirt/BodyColors para ropa clásica. Son copias visuales locales,
+  ancladas, sin colisión/contacto/consulta ni joints hacia el personaje real.
+- Pose de dos segmentos guiada por Shoulder/Elbow/WristRigAttachment. Mano derecha
+  al Grip del arma, izquierda de apoyo; codos/muñecas coinciden sin estirar las
+  mallas. R6 tiene una ruta de brazo entero, sin inventar manos separadas.
+- FirstPersonArms conserva escala/offset del arma (.6 y .98/−1.22/−2.35), muzzle,
+  retroceso y cámara existentes. `FirstPersonScale=.8` escala los miembros copiados.
+  CharacterAppearanceLoaded reconstruye la apariencia; CharacterRemoving retira
+  el modelo y restaura visibilidad. Reaparecer usa los miembros nuevos.
+- La copia no incluye accesorios/ropa en capas: mangas o guantes de accesorios
+  requieren un ajuste adicional. La copia de Shirt se comprobó por su ID, no se
+  certifica que todo paquete de avatar/ropa sea visualmente equivalente.
+
+QA: seis MeshParts del avatar coinciden en MeshId/TextureID/Color en ambos clientes;
+captura Lobby conserva la mano robótica dorada del jugador. Cambios entre las tres
+armas, unión de muñecas/codos (error máximo <.00001 studs), salida FP con restauración
+de visibilidad y respawn real con un solo modelo por cliente comprobados. R6 probado
+con fixture local de dos brazos, no con un jugador R6 completo. Estados de combate
+locales para QA; no acredita una partida VS real ni observador remoto.
+
+Respaldo del controlador anterior en ambos Places:
+`ServerStorage.ZB_AvatarArmsBackup_20261030.FirstPersonArms`. La plantilla
+WeaponAssets.FirstPersonHands se conserva para reversión, pero ya no es dependencia
+del controlador activo. Ambos Studios terminan en Edit, fixtures retirados.
+
+### Ampliación de presentación para salida — 30/10
+
+- Power-ups: imágenes reales de escudo, impulso y hielo recibidas e integradas
+  en ambos Places; BillboardGui transparente por tipo, pieza antigua oculta,
+  mismo gameplay/timers. Son imágenes de objetos, no mallas 3D nuevas. IDs/rutas
+  y captura de transparencia en UI_ASSETS 30/10.
+- Lobby: monedas físicas ahora discos con copia visual local que levita y gira.
+  Servidor conserva recogida y acredita; CoinCollected envía confirmación al dueño
+  para el sonido `113730061669739`. Un sonido por recogida real comprobado.
+- Lobby: cuatro clones adicionales del Character de space_man_mark patrullan
+  rutas independientes de ida y vuelta mediante navegación. Raíz anclada, sin
+  colisión/consulta/contacto, animación de caminar. El astronauta original se
+  conserva. Son decoración, no jugadores/participantes ni fuentes de recompensas.
+- QA Studio y límites en CHECKLIST: cuatro rutas con regreso comprobado; tres
+  imágenes y sonido cargados. Respaldos ZB_PickupsPatrolBackup_20261030. Sin
+  publicación; no se validó otro cliente ni rendimiento de teléfono físico.
+
+Este corte sustituye la nota «imágenes/modelos finales e integración visual
+pendientes» del corte previo para las **imágenes y su representación actual**.
+
+### Corte de salida — 30/10: tiempo acumulado y manos FPS
+
+Decisión confirmada: salir hoy con la base disponible y continuar por updates.
+Plan operativo, pendientes y limpieza en PLAN_10_DIAS 30/10. Este corte prevalece
+sobre el ranking de Congelados y la presentación sin brazos descritos más abajo.
+
+**Implementado en ambos Places; QA local Studio:**
+
+- `ServerScriptService.PlaytimeService` mide segundos con reloj monotónico de
+  servidor por conexión. Incluye Lobby, Libre, VS, espera y menús; también tiempo
+  conectado sin actividad. No cuenta tiempo desconectado ni de carga entre servidores.
+- `DataService.server` normaliza, aplica y captura `stats.playtimeSeconds` en el
+  perfil existente `ZeroBreach_PlayerData_v1`. Perfiles sin ese campo comienzan en
+  cero; no se inventan horas históricas. Reaplicar el perfil no reinicia el reloj;
+  PlayerRemoving detiene el cómputo conservando snapshot para el guardado.
+- `RankService.server` conserva sus responsabilidades por Place e incorpora
+  `ZeroBreach_Rank_PlaytimeSeconds_v1`; segundos enteros, orden descendente y
+  actualización con máximo para evitar que una escritura antigua reduzca el índice.
+  El índice no sustituye al perfil ni añade bloqueo de sesión distribuido al
+  DataService existente. Ambos Places deben publicarse compatibles.
+- Lobby: `Workspace.Rankings3D.TiempoJugado` reemplaza físicamente a Congelados;
+  API/renderer/Config.Rank apuntan a la categoría `playtimeSeconds`. Top cuatro,
+  presentación `Hh MMm`, cabecera restaurada «TIEMPO DE JUEGO». Monedas y Victorias
+  continúan. Las estadísticas/stores de congelación y Tab de combate se conservan.
+- FPS: `PresentationSettings.FirstPersonWeaponScale=.6` (antes .7) y nuevo
+  `FirstPersonWeaponOffset=Vector3.new(.98,-1.22,-2.35)` (antes Y −1.02).
+  `WeaponAssets.FirstPersonHands` contiene los dos brazos originales clonados de
+  `ReplicatedStorage.Blaster.ViewModels.Blaster`, sin joints/controladores de armas.
+  FirstPersonArms los coloca respecto de Handle.Grip y los escala con el arma;
+  conserva color de piel, muzzle local, balanceo y retroceso. Son brazos de bloque
+  de esa plantilla, no manos anatómicas con dedos ni un rig de animación nuevo.
+
+**Verificado:** tiempo avanza, reapply no lo baja, captura de perfil conserva el
+campo; tres armas y limpieza de viewmodel en ambos clientes. Captura Lobby con
+brazos/arma bajos. Match se probó con estado local controlado, sin TeleportData ni
+encuentro real. **Pendiente:** reconexión/teleport con DataStore real, aceptación
+visual, disparo y respawn multijugador. Sin publicación desde esta tarea.
+Respaldo por Place: `ServerStorage.ZB_ReleaseBackup_20261030`.
+
+**Power-ups:** el usuario pidió símbolos de escudo, flechas de impulso y
+congelamiento total. Los PNG recibidos posteriormente quedaron integrados en
+BillboardGui transparentes según la ampliación de arriba. Prompts conservados
+en UI_ASSETS 30/10 como referencia de arte; gameplay conservado.
 
 ### VS: retratos mayores y cierre de partida — 29/10
 

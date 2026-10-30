@@ -35,6 +35,12 @@ y Match y registrar explícitamente cualquier Place pendiente.
 
 - Tomar el corte 26/10 de DISENO/UI_ASSETS como referencia actual. Las secciones
   fechadas anteriores conservan evidencia histórica, no garantizan paridad presente.
+- Actualización 30/10: aplicar los cortes de salida de DISENO/CHECKLIST/UI_ASSETS
+  sobre aquella base. El panel Congelados fue sustituido por TiempoJugado y los
+  manos FPS se descartaron por pedido del usuario: vista actual solo arma, con
+  inclinación aprobada y offsets por arma. PowerUpModels reemplaza billboards del
+  mundo. Módulos/plantillas de brazos quedan para reversión. Plan de
+  publicación y limpieza vigente en PLAN_10_DIAS, corte 30/10.
 - Lobby tiene mochila completa `EditableEquipment=true`; Match conserva su
   constructor anterior. Migrar plantilla, controlador y EquipmentDashboardLayout
   juntos; mantener las responsabilidades de cada Place y verificar en Play.

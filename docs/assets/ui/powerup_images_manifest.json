@@ -1,0 +1,53 @@
+[
+  {
+    "source": "escudo.png",
+    "file": "powerup_shield.png",
+    "original_alpha": [
+      0,
+      255
+    ],
+    "background_pixels_removed": 0,
+    "alpha": [
+      0,
+      255
+    ],
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  {
+    "source": "hieloneón.png",
+    "file": "powerup_fullfreeze.png",
+    "original_alpha": [
+      0,
+      255
+    ],
+    "background_pixels_removed": 0,
+    "alpha": [
+      0,
+      255
+    ],
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  {
+    "source": "Módulo_impulso.png",
+    "file": "powerup_boost.png",
+    "original_alpha": [
+      0,
+      255
+    ],
+    "background_pixels_removed": 0,
+    "alpha": [
+      0,
+      255
+    ],
+    "size": [
+      1024,
+      1024
+    ]
+  }
+]

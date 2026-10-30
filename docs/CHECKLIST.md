@@ -1,9 +1,205 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-29. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-30. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### Partículas visibles, power-ups con gancho y bloques empujables — 30/10
+
+- [x] Identificar CanQuery=false en modelos: impedía raycast del gancho. Los
+  emisores anteriores solo existían en Play y quedaban demasiado tenues/ocultos.
+- [x] Respaldar PowerUpService, ShootingService, HookController y PowerUpModels en
+  ZB_WorldInteractionsBackup_20261030 de ambos Places.
+- [x] Cuatro emisores por template en SparkleEdge01..04: pequeños (.45 máximo),
+  alrededor del contorno, total20/s. Copias de Workspace heredan el efecto; ocultar
+  pickup limpia/apaga todos. Captura del preview local con emisores de contorno.
+- [x] CanQuery ligado a disponibilidad; gancho conserva punto local y cancela por
+  desaparición/recogida/cambio de SpawnGeneration. Mismas fuentes en ambos Places.
+- [x] Q real en Libre a escudo recolocado de QA: raycast a PickupModel.default,
+  movimiento hasta pickup, energía≈82.43 y cancelación automática por recogida.
+  Los fixtures iniciales con raíz anclada/teleport por servidor no se toman como
+  evidencia de movimiento: se repitió sin anclaje y con el cliente dueño de red.
+- [x] Beam real Lobby contra roblox_bloques existente: cinco world hits en Output,
+  ensamblaje se desplaza. No se otorgaron congelaciones por esos impactos de entorno.
+- [x] BlockShotImpulse aplica Δv X≈10 en ambos; rechaza cooldown inmediato, NaN y
+  SpawnCover. Lobby comprueba cap45 y rechazo con CombatActive=false.
+- [x] Impulso calculado por servidor, masa/cadencia/velocidad limitadas, ownership
+  de servidor y ningún remote nuevo que acepte fuerzas del cliente.
+- [x] Arranque final de ambos: cuatro emisores activos por modelo, total20/s,
+  CanQuery=true mientras disponible y módulos sin errores nuevos. Match conserva
+  rechazos TeleportData/HTTP esperados en Play aislado. Ambos terminan en Edit.
+- [ ] Aceptación visual de partículas y fuerza; VS real, observador remoto,
+  teléfono físico y publicación de ambos Places.
+
+### Modelos 3D, partículas pequeñas y arma sola — corte posterior 30/10
+
+- [x] Respaldar fuentes/settings y modelos originales de Lobby en
+  ZB_ModelPowerupsWeaponOnlyBackup_20261030; respaldo de fuentes/settings en Match.
+- [x] Reutilizar `speed up`, `escudo`, `hielo powerup` como Boost/Shield/Freeze en
+  ReplicatedStorage.PowerUpModels; normalizar a altura8 y replicar mallas/texturas a Match.
+- [x] Retirar BillboardGui del constructor y clonar PickupModel por tipo; preservar
+  trigger y efectos. Partículas 6/s, pico .16 studs, limpieza/visibilidad con disponibilidad.
+- [x] Carga Success de tres mallas y tres texturas en ambos clientes; captura de
+  tres modelos reales en preview local inerte, partículas discretas.
+- [x] Expiración10 s en ambos: generación avanza y modelo sigue el trigger.
+  Revisar duplicados por cantidad de Models, no por total de hijos: TouchInterest
+  es un TouchTransmitter normal y no un segundo visual.
+- [x] Recogida efectiva de escudo Lobby mediante navegación: disponible=false,
+  modelo transparente, partículas apagadas y CanTouch=false; posterior respawn
+  con un solo modelo visible/emisor activo y posición sincronizada.
+- [x] Ambos: quitar manos y dependencia activa de AvatarFirstPersonArms; conservar
+  inclinación −2°/18° y escala .6. Ajustar offsets general/rifle/cannon.
+- [x] Tres armas: ausencia de brazos y limpieza comprobadas en ambos clientes.
+  Lobby 824×361: cajas proyectadas 100 % dentro en pose neutra, captura sin manos;
+  muzzle FX local sigue la boca y rotación aprobada confirmada por producto escalar.
+- [x] Output sin errores nuevos del sistema; Match conserva rechazos de entrada
+  aislada/HTTP. Fixtures solo runtime y ambos Studios en Edit al terminar.
+- [ ] Aceptación de tamaños/partículas/encuadre por usuario; diferentes viewports/FOV,
+  VS real, observador remoto, teléfono físico y publicación de ambos Places.
+
+El «90 % visible» es objetivo de encuadre, no nueva escala del arma. Se descarta la
+versión con manos por decisión del usuario; no seguir ajustándola como feature activa.
+
+### Economía: cero inicial y diarios ×0.5 — 30/10
+
+- [x] Respaldar Config, DailyMissionCatalog y DailyClaimHistory en ambos Places:
+  ServerStorage.ZB_DailyEconomyBackup_20261030.
+- [x] STARTING_COINS 500→0; tres misiones 60/80/40→30/40/20 y logro único 120→60.
+- [x] Calendario 25/37/50/62/75/100/150, mitades enteras redondeadas hacia abajo.
+  Conservar importes históricos y fallback legacy con tarifas antiguas.
+- [x] Play Lobby: perfil nuevo 0. Play Match: InventoryCoins=0. Catálogos y calendario
+  devuelven los mismos valores en ambos Places.
+- [x] Historial en ambos: 75 conocido y legacy siguen en 75; nuevo record de 37
+  se conserva y record repetido se rechaza.
+- [x] Cobros reales por remotes Lobby: 0→25→45→75→175; pagos de calendario,
+  tres misiones y bonus correctos. Calendario/misiones repetidos no vuelven a pagar.
+  Progreso jugar/recolectar controlado con fixture, no partida/recogida efectiva.
+- [x] Snapshot cliente muestra calendario25 y misiones30/40/20. No cambio de saldo
+  guardado deliberado ni reset de historial/misiones/entitlements.
+- [x] Output sin errores nuevos; Match conserva rechazo de TeleportData y retorno
+  HTTP de Play aislado. Fixtures solo runtime, ambos Studios en Edit al terminar.
+- [ ] Publicar ambos Places; verificar nuevo jugador con 0 y jugador existente
+  con su saldo conservado, recompensas en Player y después de viajar/reconectar.
+
+Sin publicación desde esta tarea. DataStore omitido en Studio; no acredita guardado
+entre sesiones ni elimina las 500 monedas que un perfil ya hubiera recibido.
+
+### Agarre del avatar rechazado: manos demasiado grandes — 30/10
+
+- [x] Registrar rechazo del usuario y captura; no considerar aceptada la primera
+  presentación por haber pasado comparación de mallas y prueba de articulaciones.
+- [x] Ambos Places: FirstPersonScale .8→.6, límite individual de manos .42 studs,
+  escalado de sus attachments y alineación de palma por GripAttachment.
+- [x] Reorientar apoyo izquierdo bajo el arma y bajar/centrar origen del brazo.
+  Conservar arma .6/offset y apariencia de las mallas del jugador.
+- [x] Capturas Lobby mirando horizontal y 55° arriba; comparar con ocupación del
+  arma en la captura rechazada. Iteración visual realizada antes de sincronizar.
+- [x] Ambos clientes: blaster→rifle→cannon→blaster, manos ≤.4201, MeshId original,
+  codos/muñecas con separación <.00002 studs y limpieza al desactivar FP.
+- [x] Respaldar módulo/settings en ZB_AvatarGripPolishBackup_20261030; Play detenido,
+  cámara y estado QA únicamente runtime. Sin publicación.
+- [ ] Aceptación visual del usuario, otros avatares y partida real; ajuste por arma
+  si la forma de una mano del catálogo requiere una pose específica.
+
+### Brazos/manos del jugador en FPS — revisión posterior 30/10
+
+- [x] Ambos Places: reemplazar los brazos FPS genéricos por copias de los seis
+  miembros R15 del avatar actual, mediante Shared.AvatarFirstPersonArms.
+- [x] Conservar MeshId/TextureID/Color y Shirt; quitar juntas/constraints/scripts,
+  anclar y desactivar colisión/contacto/query. No montar el viewmodel al avatar real.
+- [x] Pose segmentada con attachments; mano derecha al Grip e izquierda de apoyo.
+  Arma mantiene escala .6/offset aprobado; miembros usan FirstPersonScale=.8.
+- [x] QA cliente Lobby/Match: seis mallas coincidentes con avatar, sin vínculos
+  físicos; blaster→rifle→cannon→blaster y uniones con error <.00001 studs.
+- [x] Captura Lobby: mano robótica dorada y brazo del avatar visibles en el arma.
+  ShirtTemplate copiado coincide; no equivale a QA de todos los tipos de ropa.
+- [x] Desactivar FP elimina modelo y restaura brazos reales; respawn real en ambos
+  reconstruye un único viewmodel con manos del nuevo Character.
+- [x] R6: fixture local de dos brazos pasa pose y escala; no es QA con jugador R6.
+- [x] Output sin errores nuevos del sistema; Match conserva rechazo de TeleportData
+  y errores HTTP de retorno aislado. Respaldos ZB_AvatarArmsBackup_20261030.
+- [ ] Aceptación visual del usuario, otros paquetes de avatar/ropa, disparo y VS real.
+- [ ] Ropa en capas/guantes como accesorios: no copiados por esta implementación;
+  evaluar soporte si forman parte del aspecto que se quiere mostrar.
+- [ ] Publicar ambos Places y verificar observador remoto. Sin publicación aquí.
+
+Sustituye los brazos de bloque documentados más abajo. Plantilla FPS antigua
+conservada para reversión; ambos Studios en Edit al terminar.
+
+### Imágenes de objetos, monedas y cuatro astronautas — 30/10
+
+- [x] Recibir los tres PNG; verificar alfa real y preparar derivados RGBA 1024²
+  sin alterar originales. Subir recursos y registrar manifiestos en assets/ui.
+- [x] Ambos Places: UIAssets.PowerUpImages y BillboardGui transparente, imagen por
+  tipo y visibilidad ligada a PowerUpAvailable; pieza antigua invisible. Efectos
+  y temporizadores de PowerUpService conservados.
+- [x] Carga Success de las tres imágenes en ambos clientes; captura de copias
+  locales inertes confirma transparencia sobre el Lobby.
+- [x] Lobby: monedas con silueta de disco, levitación .45/2.4 s y giro 95°/s,
+  copias locales con hitbox autoritativo fijo y limpieza al desaparecer.
+- [x] Sonido CoinPickup `113730061669739`, volumen .4, precarga Success. Confirmación
+  del servidor tras acreditar; cuatro voces reutilizadas y sin pago en cliente.
+- [x] Recogida real de moneda temporalmente recolocada y navegación: 500→501,
+  un CoinCollected y un Sound.Played, moneda retirada. Prueba sin DataStore real.
+- [x] Detectar/corregir pérdida de precisión del ángulo usando reloj absoluto:
+  reducir módulo 2π. QA final dot=.675/medio segundo, altura −.318 studs y hitbox fijo.
+- [x] Clonar cuatro Character de space_man_mark, conservar original y preparar
+  cuatro rutas editables de tres puntos. No duplicar `arm` separado ni scripts ajenos.
+- [x] Pathfinding + tweens sin colisión + animación caminar; pausa y regreso.
+  Corregir NoPath inicial de R3/R4 moviendo destinos a sectores alcanzables.
+- [x] QA final de cuatro NPC: 12/16/12/15 paradas, sin PatrolError, ida/vuelta y
+  animación cargada. Captura del astronauta caminando por el Lobby.
+- [x] Respaldos ZB_PickupsPatrolBackup_20261030 en ambos; fixtures solo runtime,
+  Play detenido y servidor HTTP local cerrado. Guía exacta en UI_ASSETS 30/10.
+- [ ] Publicar ambos Places y validar permisos/sonido, móvil físico y otro cliente.
+- [ ] Aceptación de tamaño de power-ups, mezcla de sonido y recorridos; medir
+  rendimiento de las cuatro patrullas en dispositivo objetivo.
+
+Monedas/patrullas solo Lobby: Match no tenía CurrencyService ni CoinPickupVisuals;
+no se añadió economía de Lobby al Match. Presentación de power-ups sí en ambos.
+
+### Salida de hoy, tiempo y arma FPS — 30/10
+
+- [x] Usuario confirma salida 30/10 con updates posteriores; ambos Places y tiempo
+  total conectado (Lobby + Libre + VS), reemplazando el panel Congelados.
+- [x] Respaldar fuentes/config/presentación en `ZB_ReleaseBackup_20261030` por Place.
+- [x] Integrar PlaytimeService + `stats.playtimeSeconds` en DataService y RankService
+  de ambos Places. Mantener perfiles/stores históricos y Tab de congelaciones.
+- [x] Lobby: panel TiempoJugado, API/renderer/Config, cabecera/estado recuperados;
+  segundos para ordenar y horas/minutos para mostrar; DemoMode=false conservado.
+- [x] Play servidor: Lobby 21→24 s y Match 28→30 s; reaplicar cero no reduce el
+  reloj. Fixture Script real comprueba captura de perfil y getStats con el campo.
+  `_G` no es compartido con el comando MCP: primer intento directo del fixture
+  no accedió a DataService; se repitió mediante Script en contexto normal.
+- [x] Arma FPS .7→.6 y Y −1.02→−1.22 en ambos; reutilizar brazos de plantilla
+  Roblox desde Blaster.ViewModels.Blaster en WeaponAssets.FirstPersonHands.
+- [x] QA cliente en ambos: blaster→rifle→cannon→blaster, dos brazos, escala .6 y
+  limpieza al desactivar primera persona. Comparación de escala con tolerancia
+  por representación float (.6000000238). Captura Lobby confirma presentación.
+  Match usa estado visual y binding de cámara aislado temporalmente; no es VS real.
+- [x] Output sin errores nuevos de estos sistemas. Match aislado conserva rechazo
+  de TeleportData y tres errores HTTP de retorno. Fixtures solo runtime.
+- [x] Segundo Play Lobby tras migrar referencias de HologramMotion/Config/ejemplo:
+  API real con fila temporal de 3661 s muestra `1h 01m`; movimiento del panel
+  TiempoJugado confirmado (delta .2004 studs en .4 s); datos restaurados.
+- [x] Paridad de fuentes compartidas: PlaytimeService 1589 bytes/hash base31
+  4143756095; FirstPersonArms 10981 bytes/hash 2030803666 en ambos Places.
+  Ambos Studios terminan en Edit y fixtures retirados. Versiones observadas del
+  DataModel: Lobby 852, Match 243; no certifican publicación de cambios Edit.
+- [x] Plan de deploy/pendientes/limpieza en PLAN_10_DIAS y tres prompts en UI_ASSETS.
+- [ ] Aceptar visual de manos/arma; verificar disparo, mira, cambio y respawn en
+  combate real. Modelo original FPS tiene brazos de bloque, sin dedos.
+- [x] Recibir e integrar tres imágenes transparentes de power-ups posteriormente
+  en esta misma fecha; aceptación visual del usuario pendiente (bloque superior).
+- [ ] Publicar Match y Lobby; registrar versiones/hora, servidores nuevos y smoke test.
+- [ ] Tiempo persiste tras Lobby→Match→Lobby y reconexión; comprobar orden con
+  jugadores offline y totales mayores a una hora, sin escrituras regresivas.
+- [ ] Teléfono físico, compras con cuenta sin pase y casos abiertos B15/B19/B24.
+- [ ] Ejecutar limpieza incremental posterior al deploy; conservar respaldo de salida.
+
+La prueba de persistencia de Studio sigue omitiendo DataStore: este corte no
+certifica el guardado entre servidores. Plan vigente sustituye fechas históricas.
 
 ### VS: fotos pequeñas y final demasiado brusco — 29/10
 
