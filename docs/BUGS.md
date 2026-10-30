@@ -1,6 +1,6 @@
 # ZERO BREACH — Bugs, correcciones y regresiones
 
-Consolidado: 2026-10-02; auditado/actualizado: **2026-10-26**.
+Consolidado: 2026-10-02; auditado/actualizado: **2026-10-29**.
 Leer [DISENO](DISENO.md) para comportamiento vigente y
 [CHECKLIST](CHECKLIST.md) para aceptación. **Reproducir antes de corregir** y
 buscar el primer error de Output, no el último warning.
@@ -36,6 +36,9 @@ buscar el primer error de Output, no el último warning.
 | B25 | Presentación incompleta / comprobada Edit | Nuevo Rankings3D.Congelados no tiene Cabecera ni Estado; los otros dos paneles sí. Filas/API presentes; revisar y completar sin recrear placas antiguas |
 | B26 | Corregido / QA Studio | Integración del HUD nuevo: dos layouts alternaban Position y agotaban reentrada en móvil; el layout anterior ahora cede los controles marcados. Guardas del logo compacto aceptan ImageLabel sin Symbol/Brand. Arranque final limpio de esos errores; Player pendiente |
 | B27 | Corregido / QA Studio | Usuario rechaza cortes verticales del marco general: los introducía la composición por segmentos. Sustituida por el PNG original completo, Fit y sin ImageRect; textos ajustados al área real. Aceptación visual del usuario y Player pendientes |
+| B28 | Corregido / QA Studio | Texto de equipar no volvía siempre a celeste: dependía del color del artículo o de callback ausente. Action ahora es dorado seleccionado / celeste sin seleccionar en ambos layouts. Cinco alternancias reales rojo/cyan en Lobby y snapshots en Match verificadas el 29/10; Player pendiente |
+| B29 | Corregido / QA Studio, producción pendiente | Shift activa cámara e impide correr en producción (reporte del usuario). Lobby tenía Shift Lock habilitado y sprint descartaba entrada procesada. EnableMouseLockOption=false y sprint con prioridad 3020; ambos Shift, velocidad 16/26, menú/texto y devolución de tecla en batalla comprobados. Falta publicar Lobby y validar Roblox Player |
+| B30 | Corregido / QA de presentación Studio | VS: fotos/marco pequeños y final brusco. Layout único amplía fotos52→88 en escritorio; guardas evitan reducción móvil. Ganador/perdedor reciben plantilla de resultado, tiempo final10 s y guardia de retorno; resumen con freeze final diferido. Snapshots/capturas laptop/iPhone y guardia aislada comprobados; VS multicuenta, premios/retorno real y publicación pendientes |
 
 La estabilización base de Libre/VS fue validada en producción el 2026-09-14.
 Las verificaciones locales posteriores no cierran automáticamente estos pendientes.

@@ -1,9 +1,96 @@
 # ZERO BREACH — Checklist, pruebas y progreso
 
-Actualizado: 2026-10-28. Diseño en [DISENO](DISENO.md), normas en
+Actualizado: 2026-10-29. Diseño en [DISENO](DISENO.md), normas en
 [REGLAS](REGLAS.md), incidentes en [BUGS](BUGS.md).
 
 ## 1. Estado y prioridad inmediata
+
+### VS: fotos pequeñas y final demasiado brusco — 29/10
+
+- [x] Match: VersusScoreLayout concentra el tamaño del HUD; marco 560×150/fotos88
+  en escritorio amplio, 420×112/fotos64 en compacto 1v1/2v2; 3v3/4v4 en fila o 2×2.
+  Ronda dentro del marco y PNG completo sin deformar.
+- [x] Guardas VersusLayoutOwned en MobileHudLayout (ambos Places) y AtlasUIController
+  de Match para evitar que vuelvan a achicar/posicionar el marcador.
+- [x] Plantilla editable ZB_VsMatchResult + controlador de Match: victoria/derrota,
+  marcador, retratos, congelaciones, destacado y retorno con progreso; entrada .4 s.
+  Cancelación diferenciada y resultado modal incluido en AtlasUIController.
+- [x] MatchRuntime: FINALIZE_TIME=10 s, returnAt sincronizado; guardia impide regreso
+  prematuro. Cancelación 3 s. Resumen diferido incluye el último freeze confirmado;
+  no cambia la concesión idempotente ni el destino de retorno.
+- [x] QA de presentación en Play: 1v1/4v4, victoria, derrota, cancelación,
+  reintento, cuenta agotada y limpieza al COUNTDOWN; capturas de marcador/final.
+  Laptop 1365×768: foto88 y marco560×150. iPhone17 Pro horizontal 750×381: 4v4
+  foto44 y resultado visible. Sensor/DeviceSafeInsets; simulador restaurado.
+- [x] Función real de guardia de retorno extraída en fixture aislado con grupo vacío:
+  no consulta grupo antes del plazo y sí después. No ejecuta teleport ni premios.
+- [x] Respaldos ZB_VersusFinalFeedbackBackup_20261029 (Match) y
+  ZB_VersusScoreLayoutBackup_20261029 (guarda Lobby), Play detenido, fixtures retirados.
+- [ ] Publicar Match y validar cierre VS multicuenta real, premios únicos,
+  retorno al Lobby, aceptación visual y teléfono físico.
+
+### Shift cambia cámara en producción e impide sprint — 29/10
+
+- [x] Inspeccionar conflicto: Shift Lock nativo habilitado y sprint ignorando
+  InputBegan procesado. Lobby: EnableMouseLockOption=false.
+- [x] Acción ZB_LobbySprintShift prioridad 3020 con ambos Shift; Sink en Lobby,
+  Pass fuera de Lobby; conservar guardas de menú/chat y servidor de velocidad.
+- [x] Teclado Studio: izquierdo 16→26, derecho mantiene 26 al soltar izquierdo,
+  soltar ambos 16. MouseBehavior.Default y DevEnableMouseLock=false.
+- [x] B y TextBox cancelan/bloquean sprint; acción competidora prioridad 2000 no
+  recibe Shift en Lobby y sí con participación de batalla simulada, sin sprint.
+- [x] Respaldo ZB_SprintShiftLockBackup_20261029, Lobby en Edit, fixtures retirados.
+  Match no requiere sprint y no se modificó.
+- [ ] Publicar Lobby y comprobar Shift con preferencias de cámara en Roblox Player.
+
+### Audio de compra/gancho, color de equipado y velocidad — 29/10
+
+- [x] Ambos Places: Action dorado si equipado y celeste si no; no conservar el
+  color del artículo ni gris por ausencia de callback. Mantener los dos layouts.
+- [x] GameplayAudioFeedback + plantillas editables: compra `10066947742`, lanzamiento
+  del usuario `115384381235257`, enrollado del usuario `78607765579739`.
+  IDs finales cargan en ambos clientes; volumen .5/.45/.24, PlaybackSpeed=1.
+- [x] Carrete tras aceptación de energía, una voz sin reiniciar en update/drain;
+  parar al soltar/cancelar/menú/salir/respawn e invalidar arranques pendientes.
+- [x] WorkshopResult.purchased (tercer argumento booleano) diferencia adquisición
+  pagada de equipado/gratis/rechazo. Pase: PurchaseConfirmed solo tras éxito y
+  concesión; no suena por propiedad al iniciar sesión. Compra Robux real pendiente.
+- [x] Compra real Studio de rojo: 500→400, un sonido; reequipar no repite e ID
+  inválido no suena. DataStore omitido en Studio; sin gasto de Robux.
+- [x] Cinco equipados reales cyan/red/cyan/red/cyan en Lobby: atributo y Action
+  correctos, un seleccionado. Match: snapshots rojo→cyan, color correcto.
+- [x] Q real en fixture Lobby con audios del usuario: lanzamiento/carrete una vez,
+  loop detenido al soltar. Match: confirmación de energía simulada prueba el loop.
+- [x] FOV Boost 14→24, base 70; líneas Count32, Width3, Opacity1, Length1.45.
+  Velocidad controlada 70 dio FOV≈94 en ambos; retorno a 70/overlay oculto.
+  Captura Lobby confirma trazos periféricos mayores y centro libre.
+- [x] Paridad de los dos controladores compartidos y respaldo
+  ZB_PurchaseHookFeedbackBackup_20261029; ambos en Edit, fixtures retirados.
+- [ ] Escucha/mezcla del usuario, recorrido de gancho real en VS, móvil y publicar.
+
+### Números flotantes de daño — 29/10
+
+- [x] Ambos Places: sustituir el «+ N%» de mira y los dos carteles de porcentaje
+  por `Shared.FloatingDamageNumbers`, enlazado en CombatFeedback.
+- [x] Números en punto de impacto con pop/ascenso/fade; normal crema, cabeza roja
+  más grande con `!`/CABEZA, cierre celeste con CONGELADO. Puntos de congelación
+  reales, sin sufijo `%`; balance y autoridad del servidor conservados.
+- [x] Pool fijo 24, agrupación por objetivo/tipo durante 0.14 s y vida de 1.05 s;
+  una conexión de render solo con efectos activos, sin tweens/tareas por impacto.
+  Limpieza al reaparecer/salir; marcador de impacto con temporizador único.
+- [x] ShootingService (beam/pulse) y adaptador legado de proyectiles envían delta
+  aplicado, hitPosition, headshot y completedFreeze. Servicio de proyectiles
+  permanece deshabilitado. Sin carteles duplicados en los otros controladores.
+- [x] QA beam real contra clon R15 en ambos Places: 18 torso, 54 cabeza y 28 final
+  hasta 100; posición Vector3 y completedFreeze confirmados desde el cliente.
+- [x] QA controlada de presentación: 18+18=36; cabeza y congelado diferenciados;
+  ráfagas de 100/60 mantienen pool 24, efectos expiran; cero, negativos, NaN e
+  infinito rechazados; detrás de cámara oculto. Captura del Lobby confirmada.
+- [x] Paridad de módulo y controladores, respaldo ZB_FloatingDamageBackup_20261029
+  por Place, fixtures retirados, modo final beam, ambos Studios en Edit sin publicar.
+  Match aislado conserva errores de retorno TeleportData/HTTP y esperas de GUI;
+  sin errores del nuevo feedback. Pulse/proyectil sin prueba efectiva de disparo.
+- [ ] Aceptación visual, móvil físico, VS real y publicación de ambos Places.
 
 ### Correr con Shift en Lobby — 28/10
 
@@ -104,7 +191,10 @@ Actualizado: 2026-10-28. Diseño en [DISENO](DISENO.md), normas en
   gancho 1000, recarga gancho 1600; total ≈35 800. Verificado en Play con 500
   monedas: compra rechazada y tienda mostrando FALTAN 300/500/900/1100.
   Respaldo del plan ×1: ZB_PricingPlanX1Backup_20261028.
-- [ ] Crear en Creator Dashboard los pases Rifle, Spike, Heavy, Plasma y Dorada;
+- [x] **29/10:** conectar Punta Heavy al pase `2058684037` (`hook_heavy`) en
+  `ReplicatedStorage.HookOffers.heavy` de ambos Places; `PurchaseIntegrationReady=true`,
+  precio de referencia 6 R$ confirmado con Marketplace. Cosmético, sin daño adicional.
+- [ ] Crear en Creator Dashboard los pases Rifle, Spike, Plasma y Dorada;
   pegar PassId y poner PurchaseIntegrationReady=true; compra real con cuenta sin pase.
 - [ ] Publicar y validar con Robux; confirmar propiedad tras reconexión y viaje.
 

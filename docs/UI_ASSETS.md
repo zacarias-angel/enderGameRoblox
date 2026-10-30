@@ -1,10 +1,67 @@
 # UI — Buscar en Explorer y reemplazar
 
-Actualizado: **2026-10-28**, contrastado en Edit de Lobby `125075465377023` y
+Actualizado: **2026-10-29**, contrastado en Edit de Lobby `125075465377023` y
 Match `108298899371591`. El corte siguiente prevalece sobre el historial.
 
 **Flujo vigente: seleccionar una instancia y editar Properties. No abrir scripts
 para cambiar una imagen, un texto del manual o sus esquinas.**
+
+## VS: marco/retratos ampliados y resultado final editable — 29/10
+
+**Match:** `PlayerGui.ZB_VersusHud.TeamScore` usa ahora el layout único
+`ReplicatedStorage.Shared.VersusScoreLayout`. En escritorio amplio, 1v1 ocupa
+560×150 con fotos de 88×88; en compacto/táctil, 420×112 con fotos64 (1v1/2v2).
+Equipos grandes se distribuyen por fila o 2×2, sin que MobileHudLayout los vuelva
+a reducir a 30 px. El PNG GeneralFrame permanece completo, Fit y proporcionado.
+
+Nueva plantilla persistida: `StarterGui.ZB_VsMatchResult.Overlay.Card`.
+
+| Instancia | Contenido |
+|---|---|
+| Kicker / Title / Subtitle | Fin de partida, victoria/derrota/cancelación y ganador |
+| BlueName / RedName / Score | Equipos y resultado final |
+| BlueRoster / RedRoster | Fotos del roster (clones limitados a cuatro por equipo) |
+| LocalStats / Mvp | Congelaciones de esta partida y destacado |
+| Footer / ProgressTrack.Fill | Cuenta atrás del servidor y estado de regreso/reintento |
+| Accent / Border | Color del resultado (celeste, rojo o ámbar) |
+
+El controlador RoundResultController.client de Match enlaza estos objetos sin
+reconstruir la pantalla. Card es CanvasGroup: entrada/fade de .4 s; composición
+720×460 o 360×490 según ancho, con escala para caber en viewport. Overlay comienza
+Visible=false. FINALIZE_TIME=10 del servidor determina la lectura antes del viaje;
+el texto no anuncia otra ronda cuando terminó la partida. Resultado modal con
+DisplayOrder160, sobre VersusHud120.
+
+QA por snapshots de servidor y capturas: laptop 1365×768, iPhone17 Pro horizontal
+750×381, victoria/derrota/cancelación/reintento. Simulador restaurado al viewport
+predeterminado; VS real, teléfono físico y publicación pendientes.
+
+## Sonidos de compra/gancho y velocidad reforzada — 29/10
+
+En ambos Places, editar los Sound de `ReplicatedStorage.Shared.GameplaySounds`:
+
+| Instancia | SoundId | Volume | Looped | Origen |
+|---|---|---:|---|---|
+| PurchaseSuccess | `rbxassetid://10066947742` | .5 | false | Roblox: RBLX UI Purchase (SFX) |
+| HookLaunch | `rbxassetid://115384381235257` | .45 | false | Usuario: `docs/assets/ui/gancho 1.wav` |
+| HookReel | `rbxassetid://78607765579739` | .24 | true | Usuario: `docs/assets/ui/enrollar.wav` |
+
+PlaybackSpeed=1 en los tres. `GameplayAudioFeedback` clona las voces en
+`SoundService.ZB_GameplayAudioFeedback`; el audio es local. Cambiar las plantillas
+para las siguientes sesiones. Atributos del Folder: HookAudioEnabled y
+PurchaseAudioEnabled permiten silenciar cada grupo. Los tres recursos cargaron en
+Studio; los dos audios del usuario sustituyen a los provisionales de biblioteca.
+
+En `ReplicatedStorage.PresentationSettings`: HookFovBase=70, HookFovBoost=24,
+HookFovResponse=9, HookSpeedLineCount=32, HookSpeedLineWidth=3,
+HookSpeedLineOpacity=1 y HookSpeedLineLength=1.45. Length multiplica el largo del
+trazo, Width su grosor; se mantienen los interruptores HookSpeedLines y
+HookSpeedParticles. Resultado comprobado con velocidad controlada: FOV≈94 y
+32 líneas blancas mayores, periféricas; al terminar se ocultan y vuelve a 70.
+
+Texto de acción del catálogo: dorado equipado / celeste sin equipar, incluso en
+las fichas de láser rojo/verde. El color propio del artículo no colorea ahora la
+acción. Detalle de compra real Studio y equipados en CHECKLIST. Sin publicar.
 
 ## Calendario: ajuste al estilo de mochila confirmado por el usuario — 28/10
 

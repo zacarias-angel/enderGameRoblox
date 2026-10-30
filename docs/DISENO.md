@@ -2,12 +2,178 @@
 
 > La gravedad desapareció. La estrategia no.
 
-Consolidado el 2026-10-02. **Revisión de cambios y calendario el 2026-10-28**.
+Consolidado el 2026-10-02. **Revisión de cambios el 2026-10-29**.
 El corte siguiente prevalece sobre las descripciones históricas de abajo.
 Normas en [REGLAS](REGLAS.md), pruebas en [CHECKLIST](CHECKLIST.md) e
 incidentes en [BUGS](BUGS.md).
 
 ## 0. Estado real y cambios del equipo
+
+### VS: retratos mayores y cierre de partida — 29/10
+
+Aplicado en Match `108298899371591`. El marcador antiguo tenía un contenedor de
+600×78: el PNG completo ajustado con Fit quedaba visualmente reducido y los
+retratos eran de 52 px. El retorno final esperaba solo 3 s; DEFEAT no abría la
+pantalla de resultados y el ganador veía un pie que anunciaba otra ronda.
+
+- Nuevo `Shared.VersusScoreLayout`, dueño único de TeamScore: 1v1 de escritorio
+  amplio tiene marco de 560×150 y retratos de 88 px. En ventanas compactas/táctil,
+  marco 420×112 y retratos de 64 px para 1v1/2v2. Equipos de 3–4 se distribuyen
+  en una fila en escritorio amplio o cuadrícula 2×2 compacta; máximo cuatro por
+  lado. El marco conserva la proporción del PNG completo y la ronda queda dentro.
+- VersusHud usa cuadrículas y recalcula al actualizar roster/cámara/viewport.
+  `VersusLayoutOwned` evita que MobileHudLayout y AtlasUIController sobreescriban
+  tamaños/posición. La guarda de MobileHudLayout se conserva igual en Lobby,
+  aunque allí no existe el VersusHud de Match.
+- Plantilla editable `StarterGui.ZB_VsMatchResult`: overlay oscuro y Card con
+  victoria/derrota/cancelación, marcador Azul/Rojo, retratos, congelaciones locales,
+  jugador con más congelaciones y cuenta atrás/progreso de retorno. El controlador
+  `RoundResultController.client` de Match enlaza la plantilla y anima entrada/fade
+  de .4 s; ya no crea ZB_RoundResult ni presenta dos avisos de derrota simultáneos.
+  AtlasUIController incluye el resultado en el estado modal para liberar cursor.
+- MatchRuntimeService mantiene bloqueo de combate inmediato, pero muestra el
+  resultado durante `Config.Match.FINALIZE_TIME` (10 s; rango 6–20) antes del retorno
+  grupal. El servidor envía returnAt, resultDuration, completedMatch y roundSummary.
+  El resumen usa BattleFreezes de esta partida y se difiere un ciclo para incluir
+  la última congelación. Concesión idempotente de premios y ruta de regreso conservadas.
+- `returnNotBefore` impide que ReturnToLobbyRequest u otra llamada adelanten el
+  regreso. Cancelación muestra su motivo sin contar partida completa durante 3 s.
+  Si falla guardado/teleport, MatchReturnPending muestra «Reintentando el regreso
+  al Lobby…» en lugar de dejar el resultado sin explicación.
+
+QA Studio con snapshots autoritativos de presentación: 1v1, 4v4, victoria, derrota,
+cancelación, espera agotada, reintento y limpieza al volver a COUNTDOWN; sin premio
+ni teleport real generado por esos snapshots. Capturas confirman marcador mayor
+y pantalla de resultado. Laptop promedio: viewport 1365×768, fotos 88×88 y marco
+560×150. iPhone 17 Pro horizontal: viewport 750×381, cuadrícula 4v4 con fotos de
+44 px y resultado completo visible. Juego Sensor/DeviceSafeInsets; simulador
+restaurado al viewport predeterminado. Guardia de retorno probada con la función
+real extraída y grupo vacío: bloquea antes del plazo y libera después; no equivale
+a completar una partida VS real ni a probar recompensas/teleport multicuenta.
+
+Respaldo Match: `ServerStorage.ZB_VersusFinalFeedbackBackup_20261029`.
+Respaldo de la guarda compartida en Lobby: `ZB_VersusScoreLayoutBackup_20261029`.
+Play detenido, fixtures retirados; pendiente aceptación del usuario, VS publicado,
+teléfono físico y publicación de Match.
+
+### Shift de sprint frente a Shift Lock de Roblox — corrección 29/10
+
+Usuario reporta que en producción Shift cambia la cámara e impide correr.
+Inspección Lobby: StarterPlayer.EnableMouseLockOption=true y el controlador
+anterior descartaba InputBegan con gameProcessedEvent, permitiendo el conflicto
+con el control nativo de cámara. Solo Lobby `125075465377023` requiere sprint.
+
+- StarterPlayer.EnableMouseLockOption=false; los nuevos jugadores del Lobby ya
+  reciben DevEnableMouseLock=false.
+- LobbySprintController sustituye InputBegan/InputEnded por la acción contextual
+  `ZB_LobbySprintShift`, prioridad 3020, para LeftShift/RightShift. En Lobby consume
+  Shift antes de los controles de cámara. En batalla devuelve Pass; menú/caja de
+  texto no inician sprint. Conserva cancelación, dos teclas simultáneas y autoridad
+  de LobbySprintService con velocidades 16/26.
+- QA Studio con teclado: LeftShift 16→26, RightShift mantiene 26 tras soltar el
+  izquierdo, soltar ambos restaura 16; MouseBehavior.Default y DevEnableMouseLock=false.
+  Menú B y TextBox enfocado cancelan/bloquean sprint. Acción competidora de prioridad
+  2000 no recibe Shift en Lobby y sí con BattleParticipant=true simulado; sin sprint
+  de Lobby en ese estado. No equivale a una partida ni a validar Roblox Player.
+- Respaldo `ServerStorage.ZB_SprintShiftLockBackup_20261029` incluye controlador y
+  atributo con el valor previo de EnableMouseLockOption. Play detenido y fixtures
+  retirados; Match no modificado. Pendiente publicar Lobby y validar en producción.
+
+### Compra, equipado y presentación del gancho — 29/10
+
+Aplicado en ambos Places, con la venta autoritativa solo en Lobby:
+
+- `EquipmentDashboard`: texto de acción dorado cuando el artículo está equipado;
+  al dejar de estarlo vuelve a celeste, sin heredar el rojo/verde/etc. del artículo
+  ni el gris de un callback ausente. Match conserva su constructor anterior, pero
+  nombra su etiqueta `Action` y la marca UIEditable para respetar este estado.
+- Nuevo `GameplayAudioFeedback` local, tres voces reutilizadas y precarga asíncrona
+  desde `ReplicatedStorage.Shared.GameplaySounds`. Sonidos finales elegidos por el
+  usuario: HookLaunch `115384381235257` (`gancho 1.wav`, volumen .45, sin loop),
+  HookReel `78607765579739` (`enrollar.wav`, volumen .24, con loop); PlaybackSpeed=1.
+  PurchaseSuccess `10066947742` (Roblox, RBLX UI Purchase, volumen .5, sin loop).
+- Lanzamiento una vez al activar Hooking; carrete solo tras HookEnergyResult start
+  aceptado, con el retraso HookLaunchDuration. No se reinicia por update/drain.
+  Soltar/cancelar, menú, salir de batalla o retirar personaje detienen sonidos e
+  invalidan arranques retrasados mediante epoch. Audio solo para el dueño.
+- `WorkshopResult` añade tercer argumento `purchased`: true solo si la operación
+  adquirió un artículo nuevo pagado o una mejora. Reequipar/gratis/error no suenan.
+  `MonetizationService` emite `PurchaseConfirmed` solo tras compra oficial exitosa y
+  concesión del pase; resolver propiedad al entrar no emite sonido de compra.
+- PresentationSettings: HookFovBase=70, HookFovBoost=24 (antes 14), Response=9;
+  máximo esperado 94 a velocidad 70. Líneas blancas de velocidad: Count=32,
+  Width=3 px, Opacity=1 y nuevo HookSpeedLineLength=1.45; opacidad aleatoria interna
+  .55–.9. Mantienen el centro libre y el pool de 32 Frames, sin partículas nuevas.
+  Sigue admitiendo boost negativo y el rango general de FOV 40–110.
+
+QA Studio: los tres audios cargaron en ambos clientes. Q real en Lobby con fixture
+de paredes y avatar anclado confirmó un lanzamiento y un carrete por activación,
+sin reiniciar el loop; soltar detuvo ambos y restauró FOV 70/líneas ocultas. Se repitió
+con los IDs del usuario. Velocidad controlada 70 por render confirmó FOV ≈94,
+32 líneas de 3 px en ambos Places y captura de líneas más notorias en Lobby;
+al limpiar, FOV volvió a 70. Match comprobó carrete/parada con confirmación de
+energía simulada. No equivale a tracción física ni VS multijugador publicado.
+
+Compra real con monedas del perfil de Studio (DataStore omitido): láser rojo
+500→400, purchased=true y un sonido; repetir rojo da purchased=false sin sonido;
+ID inválido falla sin sonido. Cinco cambios reales cyan/red/cyan/red/cyan verificaron
+atributo, único seleccionado y color de Action correcto en Lobby. Match verificó
+rojo→cyan mediante snapshots de inventario de QA, sin conceder propiedad real.
+Compra Robux real, mix/escucha del usuario, teléfono y publicación pendientes.
+
+Paridad Edit: GameplayAudioFeedback 5876 bytes/hash base31 2353056430;
+HookSpeedCamera 5599 bytes/hash 1797715104. Respaldo por Place:
+`ServerStorage.ZB_PurchaseHookFeedbackBackup_20261029`. Fixtures solo runtime,
+retirados al detener Play; ambos Studios en Edit, sin publicar.
+
+### Números flotantes de daño — 29/10
+
+Implementado en Lobby `125075465377023` y Match `108298899371591`.
+Sustituye el «+ N%» fijo de la mira y los dos porcentajes de objetivo anteriores.
+Los valores representan **puntos de congelación aplicados**, sin el sufijo `%`;
+el sistema de combate sigue acumulando hasta 100, sin cambiar su balance.
+
+- `ReplicatedStorage.Shared.FloatingDamageNumbers`: módulo exclusivamente cliente,
+  enlazado desde `CombatFeedback` y dibujado en
+  `PlayerGui.ZB_CombatFeedback.FloatingDamageNumbers`.
+- Cada impacto aparece en su posición mundial confirmada, proyectada con la cámara
+  actual. Tipografía gruesa con borde oscuro, pequeño pop, separación en tres
+  carriles, ascenso y fade durante 1.05 s; tamaño adaptado a la altura del viewport.
+  Impactos normales crema; cabeza roja, mayor y con `!`/`CABEZA`; cierre de la
+  congelación celeste con `CONGELADO`. El golpe a cabeza usa el dato del servidor,
+  no una probabilidad de crítico inventada en cliente.
+- Pool fijo de 24 números y 24 etiquetas auxiliares; una conexión RenderStepped
+  solo mientras haya efectos activos. Sin instancias, tareas ni tweens por impacto.
+  Agrupa impactos del mismo objetivo/tipo dentro de 0.14 s desde el primero, sin
+  reiniciar su duración. Si se llena, recicla el más antiguo; oculta lo que queda
+  fuera del encuadre o detrás de cámara y limpia al reaparecer/salir de combate.
+- `TargetFreezeProgress` conserva sus campos previos y añade `hitPosition`,
+  `headshot`, `completedFreeze`; `damage` es ahora el delta positivo real entre
+  progreso anterior y posterior, limitado por el tope de congelación. Disparos
+  rechazados o sin delta no producen números. Solo se envía al tirador.
+- `ShootingService.server` usa ese contrato en beam y pulse. El adaptador legado
+  `ProjectileWeaponService` también lo prepara, conservando su estado **deshabilitado**.
+  `ShootingController.client` y `ProjectileShotReplication` dejan de crear sus
+  carteles duplicados; `CombatFeedback` mantiene el hitmarker mediante un temporizador
+  único, sin lanzar cuatro tweens por cada tick.
+
+QA Studio: beam real con FireWeapon start/stop contra clon R15 en ambos Places:
+torso 18 → progreso 18; cabeza 54 → 72; cabeza final 28 → 100 con
+completedFreeze=true. Captura del Lobby confirmó números y estilos. Pool probado
+con ráfagas de 100 (Lobby) y 60 (Match), máximo 24, expiración y limpieza; agrupación
+18+18=36, entradas cero/negativas/NaN/infinito rechazadas y posiciones detrás de
+cámara ocultas. Arranque sin los tres elementos antiguos de daño/porcentaje.
+Pulse no se validó en Play (el modo global del fixture permaneció Lobby);
+proyectiles no ejecutados al estar su servicio deshabilitado. Match aislado conserva
+rechazo de TeleportData y warnings de GUI esperada; no hubo errores del nuevo efecto.
+Pendientes: aceptación del usuario, VS multijugador real, móvil y publicación.
+
+Paridad Edit confirmada por hash base31: FloatingDamageNumbers 2867306916,
+CombatFeedback 1750802846, ShootingController 230423977, ProjectileShotReplication
+65164908 y ProjectileWeaponService 1538058348. ShootingService conserva las
+diferencias previas de cada Place (incluido el contador de Libre). Respaldo por
+Place: `ServerStorage.ZB_FloatingDamageBackup_20261029`. Fixtures solo runtime,
+retirados al detener Play; modo final beam y ambos Studios en Edit, sin publicar.
 
 ### Correr con Shift en el Lobby — 28/10
 
@@ -155,7 +321,7 @@ Respaldo del estado ×1: `ZB_PricingPlanX1Backup_20261028` por Place.
 | Cañón `cannon` | Arma | 2039918698 | 10 R$ | Conectado |
 | Punta Base `default` | Gancho | — | Gratis | Activo |
 | Punta Spike `spike` | Gancho | por crear | 10 R$ | PASE PRÓXIMAMENTE |
-| Punta Heavy `heavy` | Gancho | por crear | 15 R$ | PASE PRÓXIMAMENTE |
+| Punta Heavy `heavy` | Gancho | 2058684037 | 6 R$ | Conectado |
 | Cable Base `default` | Cuerda | — | Gratis | Activo |
 | Cuerda Plasma `plasma` | Cuerda | por crear | 10 R$ | PASE PRÓXIMAMENTE |
 | Cuerda Dorada `gold` | Cuerda | por crear | 15 R$ | PASE PRÓXIMAMENTE |
@@ -164,6 +330,11 @@ Respaldo del estado ×1: `ZB_PricingPlanX1Backup_20261028` por Place.
   (`ItemId`, `Category`, `DisplayName`, `SaleMode=GamePass`, `PassId=0`,
   `PassPriceRobux`, `PurchaseIntegrationReady=false`). Mismo contenido en Lobby y
   Match; Match no vende.
+- **29/10:** `HookOffers.heavy` conectado en ambos Places al pase `2058684037`
+  (`hook_heavy`), con `PurchaseIntegrationReady=true` y `PassPriceRobux=6`.
+  Marketplace confirma que está a la venta por 6 R$; la tienda consulta el precio
+  vigente. Desbloquea la punta cosmética Heavy, sin modificar el daño. Pendiente
+  publicar ambos Places y validar compra real, reconexión y viaje Lobby→Match.
 - `WeaponOffers.rifle` pasa a `SaleMode=GamePass`, `PassPriceRobux=10`,
   `PurchaseIntegrationReady=false`. `cannon` conserva su pase y precio.
 - Servidor: `WorkshopService` rechaza comprar con monedas armas/cosméticos de pase y
